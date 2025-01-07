@@ -4,7 +4,9 @@ PaperWM was originally written by [@hedning] and [@olejorgenb]. However, they be
 
 [@smichel17] [joined](https://github.com/paperwm/PaperWM/issues/407) to facilitate transitioning PaperWM to a community project. Unfortunately, he's *also* too busy (and doesn't know Gnome Shell's code base well enough) to take over development directly. So, his role is basically to be a trustworthy person (he hopes!) to manage adding more maintainers. Including writing this document (👋).
 
-[@jtaala] stepped into PaperWM development in late 2022, having discovered PaperWM around that time. He came from i3wm and quickly fell in love with PaperWM and the concept of scrollable tiling window managers. Jay's a PaperWM maintainer and currently leading its development. He's focused on keeping PaperWM up to date (including releases and maintaining/submitting PaperWM's [EGO](https://extensions.gnome.org/extension/6099/paperwm/) versions), fixing issues, developing & implementing requested features, and just trying to make PaperWM a reliable window manager that stays awesome and is loved by its users.  He was active until about November 2024. Between late 2022 and until about November 2024 he oversaw PaperWM development and releases.
+[@jtaala] stepped into PaperWM development in late 2022, having discovered PaperWM around that time. He came from i3wm and quickly fell in love with PaperWM and the concept of scrollable tiling window managers. Jay's a PaperWM maintainer, but is currently [stepping back](https://github.com/paperwm/PaperWM/issues/980). He has been keeping PaperWM up to date (including releases and maintaining/submitting PaperWM's [EGO](https://extensions.gnome.org/extension/6099/paperwm/) versions), fixing issues, developing & implementing requested features, and just trying to make PaperWM a reliable window manager that stays awesome and is loved by its users.  He was active until about November 2024.
+
+[@thesola10] joined PaperWM development in early 2023. Like Jay, he was quickly enamored by the scrollable tiling paradigm. He started contributing features related to touch screens and multiple displays, as this matches his current workflow. Karim is a PaperWM maintainer, focused on keeping PaperWM up to date, and handling pull requests.
 
 ## Community Transition
 
@@ -33,3 +35,4 @@ If it's not clear who will make a decision, it's the current maintainer's decisi
 [@olejorgenb]: https://github.com/olejorgenb
 [@smichel17]: https://github.com/smichel17
 [@jtaala]: https://github.com/jtaala
+[@thesola10]: https://github.com/thesola10
