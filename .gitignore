@@ -8,3 +8,6 @@ paperwm@paperwm.github.com.zip
 node_modules/
 package.json
 package-lock.json
+
+# generated disk image for test VM
+nixos.qcow2

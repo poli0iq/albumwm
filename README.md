@@ -37,16 +37,32 @@ from the repository. The installer will create a link to the repo in
 >
 > After logging back in, you can then enable PaperWM via the `Extensions` application, or by running the following command from the command-line:
 >
-> ```bash
-> /usr/bin/gnome-extensions enable paperwm@paperwm.github.com
-> ```
+> `/usr/bin/gnome-extensions enable paperwm@paperwm.github.com`
+>
 
 > if you have run into issues, delete any older `paperwm@...` symlinks from `~/.local/share/gnome-shell/extensions` and re-run the `install.sh` script.
 
 #### Uninstall PaperWM (if installed via source)
+
 To uninstall simply run `./uninstall.sh`.
 
 Running the extension will automatically install a user config file as described in [User configuration & development](#user-configuration--development).
+
+
+### Try without installing
+
+This repo provides a lightweight VM based on [NixOS](https://nixos.org) to try PaperWM and aid with development. You can launch it if [Nix](https://nixos.org/nix) is installed on your system using this command:
+
+```sh
+nix run .\#vm
+```
+
+Alternatively, the VM can also be launched with GPU acceleration, by installing [NixGL](https://github.com/nix-community/nixgl) first:
+
+```sh
+nixGLIntel nix run .\#vm -- -device virtio-gpu-gl -display gtk,gl=on
+# or nixGLNvidia depending on your host GPU
+```
 
 ## Contributing
 Users are encouraged to submit [issues](https://github.com/paperwm/PaperWM/issues/new/choose) and [Pull Requests](https://github.com/paperwm/PaperWM/pulls)!
