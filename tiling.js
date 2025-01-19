@@ -4305,10 +4305,10 @@ export function ensuredX(meta_window, space) {
     } else if (frame.width > workArea.width * 0.9 - 2 * (Settings.prefs.horizontal_margin + Settings.prefs.window_gap)) {
         // Consider the window to be wide and center it
         x = min + Math.round((workArea.width - frame.width) / 2);
-    } else if (x + frame.width > max) {
+    } else if (x + Settings.prefs.horizontal_margin + frame.width > max) {
         // Align to the right prefs.horizontal_margin
         x = max - Settings.prefs.horizontal_margin - frame.width;
-    } else if (x < min) {
+    } else if (x < min + Settings.prefs.horizontal_margin) {
         // Align to the left prefs.horizontal_margin
         x = min + Settings.prefs.horizontal_margin;
     } else if (x + frame.width === max) {
@@ -4789,7 +4789,7 @@ export function toggleMaximizeHorizontally(metaWindow) {
     let space = spaces.spaceOfWindow(metaWindow);
     let workArea = space.workArea();
     let frame = metaWindow.get_frame_rect();
-    let reqWidth = maxWidthPrc * workArea.width - Settings.prefs.minimum_margin * 2;
+    let reqWidth = maxWidthPrc * workArea.width - Settings.prefs.horizontal_margin * 2;
 
     // Some windows only resize in increments > 1px so we can't rely on a precise width
     // Hopefully this heuristic is good enough
@@ -4803,7 +4803,7 @@ export function toggleMaximizeHorizontally(metaWindow) {
 
         metaWindow.unmaximizedRect = null;
     } else {
-        let x = workArea.x + space.monitor.x + Settings.prefs.minimum_margin;
+        let x = workArea.x + space.monitor.x + Settings.prefs.horizontal_margin;
         metaWindow.unmaximizedRect = frame;
         metaWindow.move_resize_frame(true, x, frame.y, reqWidth, frame.height);
     }
