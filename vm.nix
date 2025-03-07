@@ -4,6 +4,7 @@
   ### Make PaperWM available in system environment
   environment.systemPackages = with pkgs;
   [ paperwm
+    (lib.getBin libinput)
   ];
 
   ### Set graphical session to auto-login GNOME
