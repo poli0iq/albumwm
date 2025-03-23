@@ -27,9 +27,14 @@
           { enabled-extensions = [ "paperwm@paperwm.github.com" ];
           };
         };
+        #NOTE: You can add more dconf settings to test with here!
       }
     ];
   };
+
+  ### Remove unnecessary dependencies
+  #NOTE: This drops many GTK4 apps, re-enable if needed for testing.
+  services.gnome.core-utilities.enable = false;
 
   ### Set default user
   users.users."user" =
