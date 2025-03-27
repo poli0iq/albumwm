@@ -25,6 +25,7 @@
       { settings =
         { "org/gnome/shell" =
           { enabled-extensions = [ "paperwm@paperwm.github.com" ];
+            disable-user-extensions = false;
           };
         };
         #NOTE: You can add more dconf settings to test with here!
