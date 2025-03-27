@@ -66,7 +66,10 @@ export class MoveGrab {
 
         grabbed = true;
         global.display.end_grab_op?.(global.get_current_time());
-        global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
+        if (Utils.version[0] >= 48)
+            global.display.set_cursor(Meta.Cursor.GRABBING);
+        else
+            global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
         this.dispatcher = new Navigator.getActionDispatcher(Clutter.GrabState.POINTER);
         this.actor = this.dispatcher.actor;
 
@@ -131,7 +134,10 @@ export class MoveGrab {
         console.debug("#grab", "begin DnD");
         Navigator.getNavigator().minimaps.forEach(m => typeof m === 'number'
             ? Utils.timeout_remove(m) : m.hide());
-        global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
+        if (Utils.version[0] >= 48)
+            global.display.set_cursor(Meta.Cursor.GRABBING);
+        else
+            global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
         let metaWindow = this.window;
         let clone = metaWindow.clone;
         let space = this.initialSpace;
