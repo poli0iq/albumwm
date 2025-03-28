@@ -4,9 +4,10 @@ else
 XDG_DATA_HOME := ${HOME}/.local/share
 endif
 
+SOURCE      := $$PWD
 EXT_ID      := paperwm@paperwm.github.com
 EXT_DIR     := $(XDG_DATA_HOME)/gnome-shell/extensions
-EXT         = $(EXT_DIR)/$(EXT_ID)
+TARGET      := $(EXT_DIR)/$(EXT_ID)
 
 CONFIG_FILES   = config/user.js config/user.css
 GSCHEMA_FILES  = schemas/org.gnome.shell.extensions.paperwm.gschema.xml
@@ -29,22 +30,27 @@ else
 GNOME_EXT_DISABLE := gnome-shell-extension-tool --disable
 endif
 
+## Update compiled files
+all: $(RELEASE_FILES)
+
 ## Install PaperWM on this system
 install: schemas/gschemas.compiled
-	@if [[ ! -L "$(EXT)" && -d "$(EXT)" ]]; \
+	@if [[ ! -L "$(TARGET)" && -d "$(TARGET)" ]]; \
 	then                                    \
 		echo;                               \
 		echo "INSTALL FAILED:";             \
 		echo;                               \
 		echo "A previous (non-symlinked) installation of PaperWM already exists at:"; \
-		echo "'$(EXT)'.";                   \
+		echo "'$(TARGET)'.";                   \
 		echo;                               \
 		echo "Please remove the installed version from that path and re-run this install script."; \
 		echo;                               \
 		exit 1;                             \
 	fi
+	@$(call rich_echo,"MKDIR","$(EXT_DIR)")
+	@mkdir -p $(EXT_DIR)
 	@$(call rich_echo,"LINK","$(EXT_ID)")
-	@ln -snf $$PWD $(EXT)
+	@ln -snf $(SOURCE) $(TARGET)
 	@echo
 	@echo "INSTALL SUCCESSFUL:"
 	@echo
@@ -59,19 +65,19 @@ install: schemas/gschemas.compiled
 uninstall:
 	@$(call rich_echo,"GNOME_EXT_DISABLE", "$(EXT_ID)")
 	@$(GNOME_EXT_DISABLE) $(EXT_ID)
-	@if [[ `readlink -f $(EXT)` != `readlink -f $$PWD` ]]; \
+	@if [[ `readlink -f $(TARGET)` != `readlink -f $$PWD` ]]; \
 	then                                                   \
-		echo "'$(EXT)' does not link to '$$PWD', refusing to remove."; \
+		echo "'$(TARGET)' does not link to '$$PWD', refusing to remove."; \
 		exit 1                                             \
 	fi
-	@if [ -L $(EXT) ];                                     \
+	@if [ -L $(TARGET) ];                                     \
 	then                                                   \
-		$(call rich_echo,"RM", "$(EXT)")                   \
+		$(call rich_echo,"RM", "$(TARGET)")                   \
 		rm $(EXT);                                         \
 	else                                                   \
-		read -p "Remove $(EXT)? (y/N): " -n 1 -r           \
+		read -p "Remove $(TARGET)? (y/N): " -n 1 -r           \
 		echo                                               \
-		[[ $$REPLY =~ ^[Yy]$ ]] && rm -rf $(EXT)           \
+		[[ $$REPLY =~ ^[Yy]$ ]] && rm -rf $(TARGET)           \
 	fi
 
 
