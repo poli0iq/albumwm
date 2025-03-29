@@ -4,6 +4,7 @@
   ### Make PaperWM available in system environment
   environment.systemPackages = with pkgs;
   [ paperwm
+    (lib.getBin libinput)
   ];
 
   ### Set graphical session to auto-login GNOME
@@ -24,11 +25,17 @@
       { settings =
         { "org/gnome/shell" =
           { enabled-extensions = [ "paperwm@paperwm.github.com" ];
+            disable-user-extensions = false;
           };
         };
+        #NOTE: You can add more dconf settings to test with here!
       }
     ];
   };
+
+  ### Remove unnecessary dependencies
+  #NOTE: This drops many GTK4 apps, re-enable if needed for testing.
+  services.gnome.core-utilities.enable = false;
 
   ### Set default user
   users.users."user" =

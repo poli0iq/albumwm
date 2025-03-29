@@ -72,9 +72,10 @@ export function enable (extension) {
     Main.panel.addToStatusArea('FocusButton', focusButton, 2, 'left');
     Main.panel.addToStatusArea('OpenPositionButton', openPositionButton, 3, 'left');
 
+    /* This causes a crash on GNOME 48
     Tiling.spaces.forEach(s => {
         s.workspaceLabel.clutter_text.set_font_description(menu.label.clutter_text.font_description);
-    });
+    });*/
 
     fixWorkspaceIndicator();
     fixFocusModeIcon();
