@@ -365,7 +365,11 @@ export function byId(mutterId) {
 }
 
 export function asKeyHandler(actionHandler) {
-    return (display, mw, binding) => actionHandler(mw, Tiling.spaces.selectedSpace, { display, binding });
+    if (Utils.version[0] >= 48) {
+        return (display, mw, evt, binding) => actionHandler(mw, Tiling.spaces.selectedSpace, { display, binding });
+    } else {
+        return (display, mw, binding) => actionHandler(mw, Tiling.spaces.selectedSpace, { display, binding });
+    }
 }
 
 export function impliedOptions(options) {
