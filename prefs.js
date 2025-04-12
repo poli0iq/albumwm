@@ -38,7 +38,7 @@ export default class PaperWMPrefs extends ExtensionPreferences {
         } catch (e) { }
 
         const selectedTab = selectedWorkspace !== null ? 1 : 0;
-        window.set_size_request(626, 700);
+        window.set_size_request(700, 750);
         new SettingsWidget(
             this,
             window,

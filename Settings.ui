@@ -130,8 +130,7 @@
     <property name="title" translatable="yes">General</property>
     <property name="icon-name">text-x-generic-symbolic</property>
     <child>
-      <object class="GtkScrolledWindow" id="scrolledWindow">
-        <property name="hscrollbar_policy">never</property>
+      <object class="AdwPreferencesGroup" id="scrolledWindow">
         <child>
           <object class="GtkViewport">
             <property name="focusable">False</property>
@@ -139,13 +138,13 @@
             <child>
               <object class="GtkBox" id="general">
                 <property name="halign">center</property>
-                <property name="margin_start">36</property>
-                <property name="margin_end">36</property>
+                <!-- <property name="margin_start">36</property>
+                <property name="margin_end">36</property> -->
                 <property name="margin_top">16</property>
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>
-                <property name="width_request">480</property>
+                <!-- <property name="width_request">480</property> -->
                 <child>
                   <object class="GtkLabel">
                     <property name="halign">start</property>
@@ -964,7 +963,7 @@
         <property name="margin_bottom">16</property>
         <property name="orientation">vertical</property>
         <property name="spacing">12</property>
-        <property name="width_request">480</property>
+        <!-- <property name="width_request">480</property> -->
         <child type="label">
           <object class="GtkLabel">
             <property name="halign">start</property>
@@ -1146,7 +1145,7 @@
               <object class="GtkListBoxRow">
                 <property name="activatable">False</property>
                 <property name="focusable">False</property>
-                <property name="width_request">100</property>
+                <!-- <property name="width_request">100</property> -->
                 <property name="height_request">80</property>
                 <child>
                   <object class="GtkStack" id="workspace_stack">
@@ -1167,22 +1166,29 @@
     <property name="title" translatable="yes">Keybindings</property>
     <property name="icon-name">input-keyboard-symbolic</property>
     <child>
-      <object class="KeybindingsPane" id="keybindings_pane"/>
+      <object class="AdwPreferencesGroup">
+        <child>
+          <object class="KeybindingsPane" id="keybindings_pane"/>
+        </child>
+      </object>
     </child>
   </object>
   <object class="AdwPreferencesPage" id="winprops_page">
     <property name="title" translatable="yes">Winprops</property>
     <property name="icon-name">sidebar-show-right-symbolic</property>
     <child>
-      <object class="WinpropsPane" id="winpropsPane" />
+      <object class="AdwPreferencesGroup">
+        <child>
+          <object class="WinpropsPane" id="winpropsPane" />
+        </child>
+      </object>
     </child>
   </object>
   <object class="AdwPreferencesPage" id="advanced_page">
     <property name="title" translatable="yes">Advanced</property>
     <property name="icon-name">emblem-system-symbolic</property>
     <child>
-      <object class="GtkScrolledWindow" id="advanced_scrolledWindow">
-        <property name="hscrollbar_policy">never</property>
+      <object class="AdwPreferencesGroup" id="advanced_scrolledWindow">
         <child>
           <object class="GtkViewport">
             <property name="focusable">False</property>
@@ -1190,13 +1196,13 @@
             <child>
               <object class="GtkBox">
                 <property name="halign">center</property>
-                <property name="margin_start">36</property>
-                <property name="margin_end">36</property>
+                <!-- <property name="margin_start">36</property>
+                <property name="margin_end">36</property> -->
                 <property name="margin_top">16</property>
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>
-                <property name="width_request">480</property>
+                <!-- <property name="width_request">480</property> -->
                 <child>
                   <object class="GtkLabel">
                     <property name="halign">start</property>
@@ -2541,17 +2547,18 @@ button or using the &lt;i&gt;Switch between positions for creating windows (e.g.
     <property name="title" translatable="yes">About</property>
     <property name="icon-name">help-about-symbolic</property>
     <child>
-      <object class="GtkScrolledWindow" id="about_scrolledWindow">
-        <property name="hscrollbar_policy">never</property>
+      <object class="AdwPreferencesGroup" id="about_scrolledWindow">
         <child>
           <object class="GtkViewport">
             <property name="focusable">False</property>
+            <property name="hexpand">True</property>
             <property name="vexpand">True</property>
             <child>
               <object class="GtkBox">
+                <property name="hexpand">True</property>
                 <property name="halign">center</property>
-                <property name="margin_start">36</property>
-                <property name="margin_end">36</property>
+                <!-- <property name="margin_start">36</property>
+                <property name="margin_end">36</property> -->
                 <property name="margin_top">16</property>
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
