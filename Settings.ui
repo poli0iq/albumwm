@@ -129,6 +129,7 @@
   <object class="AdwPreferencesPage" id="general_page">
     <property name="title" translatable="yes">General</property>
     <property name="icon-name">text-x-generic-symbolic</property>
+    <property name="width_request">640</property>
     <child>
       <object class="AdwPreferencesGroup" id="scrolledWindow">
         <child>
