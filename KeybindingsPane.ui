@@ -15,20 +15,12 @@
     </child>
     <child>
       <object class="GtkScrolledWindow" id="scrolledWindow">
-        <!-- <property name="hexpand">True</property> -->
         <child>
           <object class="GtkViewport">
             <property name="focusable">False</property>
             <property name="vexpand">True</property>
-            <!-- <property name="hexpand">True</property> -->
             <child>
               <object class="GtkListBox" id="listbox">
-                <!-- <property name="show_separators">True</property> -->
-                <!-- <property name="hexpand">True</property> -->
-                <!-- <property name="margin_start">36</property>
-                <property name="margin_end">36</property> -->
-                <!-- <property name="margin_top">16</property>
-                <property name="margin_bottom">36</property> -->
                 <style>
                   <class name="keybindings" />
                   <class name="frame" />

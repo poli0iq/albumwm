@@ -138,9 +138,6 @@
             <child>
               <object class="GtkBox" id="general">
                 <property name="halign">center</property>
-                <!-- <property name="margin_start">36</property>
-                <property name="margin_end">36</property> -->
-                <!-- <property name="margin_top">16</property> -->
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>
@@ -959,9 +956,6 @@
           <object class="GtkBox" id="workspaces">
             <property name="focusable">False</property>
             <property name="halign">center</property>
-            <!-- <property name="margin_start">36</property>
-            <property name="margin_end">36</property> -->
-            <!-- <property name="margin_top">16</property> -->
             <property name="margin_bottom">16</property>
             <property name="orientation">vertical</property>
             <property name="spacing">12</property>
@@ -1147,7 +1141,7 @@
                   <object class="GtkListBoxRow">
                     <property name="activatable">False</property>
                     <property name="focusable">False</property>
-                    <!-- <property name="width_request">100</property> -->
+                    <property name="width_request">100</property>
                     <property name="height_request">80</property>
                     <child>
                       <object class="GtkStack" id="workspace_stack">
@@ -1200,9 +1194,6 @@
             <child>
               <object class="GtkBox">
                 <property name="halign">center</property>
-                <!-- <property name="margin_start">36</property>
-                <property name="margin_end">36</property> -->
-                <!-- <property name="margin_top">16</property> -->
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>
@@ -2561,9 +2552,6 @@ button or using the &lt;i&gt;Switch between positions for creating windows (e.g.
               <object class="GtkBox">
                 <property name="hexpand">True</property>
                 <property name="halign">center</property>
-                <!-- <property name="margin_start">36</property>
-                <property name="margin_end">36</property> -->
-                <!-- <property name="margin_top">16</property> -->
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>

@@ -2,9 +2,9 @@
 <interface>
   <requires lib="gtk" version="4.0" />
   <template class="KeybindingsRow" parent="GtkListBoxRow">
-    <!-- <style>
+    <style>
       <class name="keybinding" />
-    </style> -->
+    </style>
     <property name="selectable">False</property>
     <property name="activatable">True</property>
     <property name="focusable">True</property>
