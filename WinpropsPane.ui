@@ -4,7 +4,7 @@
   <template class="WinpropsPane" parent="GtkBox">
     <property name="focusable">False</property>
     <property name="orientation">vertical</property>
-    <property name="width_request">640</property>
+    <property name="width_request">580</property>
     <child>
       <object class="GtkBox">
         <property name="focusable">False</property>
