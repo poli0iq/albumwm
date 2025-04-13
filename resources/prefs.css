@@ -22,6 +22,17 @@ list.combos > row {
     min-height: 32px;
 }
 
+list.keybindings > box {
+    background-color: @theme_fg_color;
+}
+
+list.keybindings > box > label {
+    color: @theme_base_color;
+    font-size: larger;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
 list.keybindings > row .header:hover {
     background-color: alpha(@theme_fg_color, 0.10);
 }

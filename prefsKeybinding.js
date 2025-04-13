@@ -1056,8 +1056,7 @@ export const KeybindingsPane = GObject.registerClass({
             use_markup: true,
             label: _(`<b>${sections[row.keybinding.section]}</b>`),
             xalign: 0.0,
-            margin_top: 24,
-            margin_bottom: 6,
+            halign: Gtk.Align.CENTER,
             margin_start: 12,
             margin_end: 12,
         }));
