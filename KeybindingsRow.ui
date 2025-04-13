@@ -8,11 +8,9 @@
     <property name="selectable">False</property>
     <property name="activatable">True</property>
     <property name="focusable">True</property>
-
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>
-
         <child>
           <object class="GtkBox" id="header">
             <property name="spacing">12</property>

@@ -217,8 +217,6 @@
                             <property name="focusable">False</property>
                             <property name="hexpand">0</property>
                             <property name="width-request">120</property>
-                            <!-- <property name="width_chars">12</property> -->
-                            <!-- <property name="max_width_chars">12</property> -->
                             <layout>
                               <property name="column">2</property>
                               <property name="row">0</property>

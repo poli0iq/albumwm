@@ -130,8 +130,7 @@
     <property name="title" translatable="yes">General</property>
     <property name="icon-name">text-x-generic-symbolic</property>
     <child>
-      <object class="GtkScrolledWindow" id="scrolledWindow">
-        <property name="hscrollbar_policy">never</property>
+      <object class="AdwPreferencesGroup" id="scrolledWindow">
         <child>
           <object class="GtkViewport">
             <property name="focusable">False</property>
@@ -139,13 +138,10 @@
             <child>
               <object class="GtkBox" id="general">
                 <property name="halign">center</property>
-                <property name="margin_start">36</property>
-                <property name="margin_end">36</property>
-                <property name="margin_top">16</property>
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>
-                <property name="width_request">480</property>
+                <property name="width_request">580</property>
                 <child>
                   <object class="GtkLabel">
                     <property name="halign">start</property>
@@ -955,204 +951,205 @@
     <property name="icon-name">view-list-symbolic</property>
     <property name="title" translatable="yes">Workspaces</property>
     <child>
-      <object class="GtkBox" id="workspaces">
-        <property name="focusable">False</property>
-        <property name="halign">center</property>
-        <property name="margin_start">36</property>
-        <property name="margin_end">36</property>
-        <property name="margin_top">16</property>
-        <property name="margin_bottom">16</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">12</property>
-        <property name="width_request">480</property>
-        <child type="label">
-          <object class="GtkLabel">
-            <property name="halign">start</property>
-            <property name="hexpand">True</property>
-            <property name="label" translatable="yes">All workspaces</property>
-            <attributes>
-              <attribute name="weight" value="bold"></attribute>
-            </attributes>
-          </object>
-        </child>
+      <object class="AdwPreferencesGroup">
         <child>
-          <object class="GtkListBox">
+          <object class="GtkBox" id="workspaces">
             <property name="focusable">False</property>
-            <property name="selection_mode">none</property>
+            <property name="halign">center</property>
             <property name="margin_bottom">16</property>
-            <style>
-              <class name="frame" />
-            </style>
+            <property name="orientation">vertical</property>
+            <property name="spacing">12</property>
+            <property name="width_request">580</property>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="halign">start</property>
+                <property name="hexpand">True</property>
+                <property name="label" translatable="yes">All workspaces</property>
+                <attributes>
+                  <attribute name="weight" value="bold"></attribute>
+                </attributes>
+              </object>
+            </child>
             <child>
-              <object class="GtkListBoxRow" id="workspace_default_background_row">
-                <property name="activatable">False</property>
+              <object class="GtkListBox">
                 <property name="focusable">False</property>
+                <property name="selection_mode">none</property>
+                <property name="margin_bottom">16</property>
+                <style>
+                  <class name="frame" />
+                </style>
                 <child>
-                  <object class="GtkGrid" id="workspace_default_background_grid">
+                  <object class="GtkListBoxRow" id="workspace_default_background_row">
+                    <property name="activatable">False</property>
                     <property name="focusable">False</property>
-                    <property name="margin_start">12</property>
-                    <property name="margin_end">12</property>
-                    <property name="margin_top">12</property>
-                    <property name="margin_bottom">12</property>
-                    <property name="column_spacing">24</property>
                     <child>
-                      <object class="GtkLabel" id="workspace_default_background_label">
+                      <object class="GtkGrid" id="workspace_default_background_grid">
                         <property name="focusable">False</property>
-                        <property name="hexpand">1</property>
-                        <property name="label" translatable="yes">Use default GNOME Shell background</property>
-                        <property name="xalign">0</property>
-                        <layout>
-                          <property name="column">0</property>
-                          <property name="row">0</property>
-                        </layout>
+                        <property name="margin_start">12</property>
+                        <property name="margin_end">12</property>
+                        <property name="margin_top">12</property>
+                        <property name="margin_bottom">12</property>
+                        <property name="column_spacing">24</property>
+                        <child>
+                          <object class="GtkLabel" id="workspace_default_background_label">
+                            <property name="focusable">False</property>
+                            <property name="hexpand">1</property>
+                            <property name="label" translatable="yes">Use default GNOME Shell background</property>
+                            <property name="xalign">0</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkSwitch" id="use-default-background">
+                            <property name="valign">center</property>
+                            <layout>
+                              <property name="column">2</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="gnome-background-panel">
+                            <property name="receives_default">1</property>
+                            <property name="tooltip_text" translatable="yes">Launch gnome background picker</property>
+                            <property name="icon-name">org.gnome.Settings-symbolic</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
                       </object>
                     </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkListBoxRow">
+                    <property name="activatable">False</property>
+                    <property name="focusable">False</property>
+                    <property name="tooltip_text" translatable="yes">Resets workspace names to default.</property>
                     <child>
-                      <object class="GtkSwitch" id="use-default-background">
-                        <property name="valign">center</property>
-                        <layout>
-                          <property name="column">2</property>
-                          <property name="row">0</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="gnome-background-panel">
-                        <property name="receives_default">1</property>
-                        <property name="tooltip_text" translatable="yes">Launch gnome background picker</property>
-                        <property name="icon-name">org.gnome.Settings-symbolic</property>
-                        <layout>
-                          <property name="column">1</property>
-                          <property name="row">0</property>
-                        </layout>
+                      <object class="GtkGrid">
+                        <property name="focusable">False</property>
+                        <property name="margin_start">12</property>
+                        <property name="margin_end">12</property>
+                        <property name="margin_top">6</property>
+                        <property name="margin_bottom">6</property>
+                        <property name="column_spacing">32</property>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="focusable">False</property>
+                            <property name="hexpand">1</property>
+                            <property name="label" translatable="yes">Reset workspace names</property>
+                            <property name="xalign">0</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="workspace_reset_button">
+                            <property name="label">Reset</property>
+                            <layout>
+                              <property name="column">2</property>
+                              <property name="row">0</property>
+                            </layout>
+                            <style>
+                              <class name="destructive-action" />
+                            </style>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
                 </child>
               </object>
             </child>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="halign">start</property>
+                <property name="hexpand">True</property>
+                <property name="label" translatable="yes">Per workspace</property>
+                <attributes>
+                  <attribute name="weight" value="bold"></attribute>
+                </attributes>
+              </object>
+            </child>
             <child>
-              <object class="GtkListBoxRow">
-                <property name="activatable">False</property>
+              <object class="GtkListBox">
                 <property name="focusable">False</property>
-                <property name="tooltip_text" translatable="yes">Resets workspace names to default.</property>
+                <property name="selection_mode">none</property>
+                <property name="margin-bottom">16</property>
+                <style>
+                  <class name="frame" />
+                </style>
                 <child>
-                  <object class="GtkGrid">
+                  <object class="GtkListBoxRow" id="workspace_list_row">
+                    <property name="activatable">False</property>
                     <property name="focusable">False</property>
-                    <property name="margin_start">12</property>
-                    <property name="margin_end">12</property>
-                    <property name="margin_top">6</property>
-                    <property name="margin_bottom">6</property>
-                    <property name="column_spacing">32</property>
                     <child>
-                      <object class="GtkLabel">
+                      <object class="GtkGrid" id="workspace_grid">
                         <property name="focusable">False</property>
-                        <property name="hexpand">1</property>
-                        <property name="label" translatable="yes">Reset workspace names</property>
-                        <property name="xalign">0</property>
-                        <layout>
-                          <property name="column">0</property>
-                          <property name="row">0</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="workspace_reset_button">
-                        <property name="label">Reset</property>
-                        <layout>
-                          <property name="column">2</property>
-                          <property name="row">0</property>
-                        </layout>
-                        <style>
-                          <class name="destructive-action" />
-                        </style>
+                        <property name="margin_start">12</property>
+                        <property name="margin_end">12</property>
+                        <property name="margin_top">12</property>
+                        <property name="margin_bottom">12</property>
+                        <property name="column_spacing">32</property>
+                        <child>
+                          <object class="GtkLabel" id="workspace_label">
+                            <property name="focusable">False</property>
+                            <property name="hexpand">1</property>
+                            <property name="label" translatable="yes">Configure workspace</property>
+                            <property name="xalign">0</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="workspace_combo_text">
+                            <property name="focusable">False</property>
+                            <property name="valign">center</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
                 </child>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child type="label">
-          <object class="GtkLabel">
-            <property name="halign">start</property>
-            <property name="hexpand">True</property>
-            <property name="label" translatable="yes">Per workspace</property>
-            <attributes>
-              <attribute name="weight" value="bold"></attribute>
-            </attributes>
-          </object>
-        </child>
-        <child>
-          <object class="GtkListBox">
-            <property name="focusable">False</property>
-            <property name="selection_mode">none</property>
-            <property name="margin-bottom">16</property>
-            <style>
-              <class name="frame" />
-            </style>
-            <child>
-              <object class="GtkListBoxRow" id="workspace_list_row">
-                <property name="activatable">False</property>
-                <property name="focusable">False</property>
                 <child>
-                  <object class="GtkGrid" id="workspace_grid">
+                  <object class="GtkListBoxRow">
+                    <property name="activatable">False</property>
                     <property name="focusable">False</property>
-                    <property name="margin_start">12</property>
-                    <property name="margin_end">12</property>
-                    <property name="margin_top">12</property>
-                    <property name="margin_bottom">12</property>
-                    <property name="column_spacing">32</property>
                     <child>
-                      <object class="GtkLabel" id="workspace_label">
-                        <property name="focusable">False</property>
-                        <property name="hexpand">1</property>
-                        <property name="label" translatable="yes">Configure workspace</property>
-                        <property name="xalign">0</property>
-                        <layout>
-                          <property name="column">0</property>
-                          <property name="row">0</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="workspace_combo_text">
-                        <property name="focusable">False</property>
-                        <property name="valign">center</property>
-                        <layout>
-                          <property name="column">1</property>
-                          <property name="row">0</property>
-                        </layout>
+                      <object class="GtkSeparator">
+                        <property name="orientation">horizontal</property>
+                        <property name="hexpand">True</property>
                       </object>
                     </child>
                   </object>
                 </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkListBoxRow">
-                <property name="activatable">False</property>
-                <property name="focusable">False</property>
                 <child>
-                  <object class="GtkSeparator">
-                    <property name="orientation">horizontal</property>
-                    <property name="hexpand">True</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkListBoxRow">
-                <property name="activatable">False</property>
-                <property name="focusable">False</property>
-                <property name="width_request">100</property>
-                <property name="height_request">80</property>
-                <child>
-                  <object class="GtkStack" id="workspace_stack">
+                  <object class="GtkListBoxRow">
+                    <property name="activatable">False</property>
                     <property name="focusable">False</property>
+                    <property name="width_request">100</property>
+                    <property name="height_request">80</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkStack" id="workspace_stack">
+                        <property name="focusable">False</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
                     </child>
                   </object>
                 </child>
@@ -1167,22 +1164,29 @@
     <property name="title" translatable="yes">Keybindings</property>
     <property name="icon-name">input-keyboard-symbolic</property>
     <child>
-      <object class="KeybindingsPane" id="keybindings_pane"/>
+      <object class="AdwPreferencesGroup">
+        <child>
+          <object class="KeybindingsPane" id="keybindings_pane"/>
+        </child>
+      </object>
     </child>
   </object>
   <object class="AdwPreferencesPage" id="winprops_page">
     <property name="title" translatable="yes">Winprops</property>
     <property name="icon-name">sidebar-show-right-symbolic</property>
     <child>
-      <object class="WinpropsPane" id="winpropsPane" />
+      <object class="AdwPreferencesGroup">
+        <child>
+          <object class="WinpropsPane" id="winpropsPane" />
+        </child>
+      </object>
     </child>
   </object>
   <object class="AdwPreferencesPage" id="advanced_page">
     <property name="title" translatable="yes">Advanced</property>
     <property name="icon-name">emblem-system-symbolic</property>
     <child>
-      <object class="GtkScrolledWindow" id="advanced_scrolledWindow">
-        <property name="hscrollbar_policy">never</property>
+      <object class="AdwPreferencesGroup" id="advanced_scrolledWindow">
         <child>
           <object class="GtkViewport">
             <property name="focusable">False</property>
@@ -1190,13 +1194,10 @@
             <child>
               <object class="GtkBox">
                 <property name="halign">center</property>
-                <property name="margin_start">36</property>
-                <property name="margin_end">36</property>
-                <property name="margin_top">16</property>
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>
-                <property name="width_request">480</property>
+                <property name="width_request">580</property>
                 <child>
                   <object class="GtkLabel">
                     <property name="halign">start</property>
@@ -2541,22 +2542,20 @@ button or using the &lt;i&gt;Switch between positions for creating windows (e.g.
     <property name="title" translatable="yes">About</property>
     <property name="icon-name">help-about-symbolic</property>
     <child>
-      <object class="GtkScrolledWindow" id="about_scrolledWindow">
-        <property name="hscrollbar_policy">never</property>
+      <object class="AdwPreferencesGroup" id="about_scrolledWindow">
         <child>
           <object class="GtkViewport">
             <property name="focusable">False</property>
+            <property name="hexpand">True</property>
             <property name="vexpand">True</property>
             <child>
               <object class="GtkBox">
+                <property name="hexpand">True</property>
                 <property name="halign">center</property>
-                <property name="margin_start">36</property>
-                <property name="margin_end">36</property>
-                <property name="margin_top">16</property>
                 <property name="margin_bottom">16</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">12</property>
-                <property name="width_request">480</property>
+                <property name="width_request">580</property>
                 <child>
                   <object class="GtkLabel">
                     <property name="halign">start</property>
