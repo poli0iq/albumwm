@@ -113,6 +113,13 @@ export function enable(extension) {
                     return Clutter.EVENT_PROPAGATE;
                 }
 
+                // if our vertical gesture is disabled, propagate always!
+                // (might be used for a vertical-workspaces addon)
+                if (gestureWorkspaceFingers() === 0) {
+                    swipeTrackersEnable();
+                    return Clutter.EVENT_PROPAGATE;
+                }
+
                 let dir_y = -dy * natural * Settings.prefs.swipe_sensitivity[1];
                 // if not Tiling.inPreview and swipe is UP => propagate event to overview
                 if (!Tiling.inPreview && dir_y > 0) {
