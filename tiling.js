@@ -4218,7 +4218,9 @@ Opening "${metaWindow?.title}" on current space.`);
         else {
             delete metaWindow.focusOnOpen;
             console.debug("#winprops", "focusing space of inserted window");
-            spaces.spaceOfWindow(metaWindow)?.activateWithFocus(metaWindow, false, true);
+            Utils.later_add(Meta.LaterType.IDLE, () => {
+                spaces.spaceOfWindow(metaWindow)?.activateWithFocus(metaWindow, false, true);
+            });
         }
     }
 
