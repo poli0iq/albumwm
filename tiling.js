@@ -3424,7 +3424,7 @@ export function isMaximized(metaWindow) {
     return metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH;
 }
 
-export function isMaximizedHorizontal(metaWindow) {
+function isMaximizedHorizontal(metaWindow) {
     if (!metaWindow) {
         return false;
     }
