@@ -571,8 +571,7 @@ export class Space extends Array {
 
             let f = mw.get_frame_rect();
 
-            let resizable = !mw.fullscreen &&
-                mw.get_maximized() !== Meta.MaximizeFlags.BOTH;
+            let resizable = !mw.fullscreen && !isMaximized(mw);
 
             if (mw.preferredWidth) {
                 let prop = mw.preferredWidth;
@@ -869,7 +868,7 @@ export class Space extends Array {
             return false;
         } else {
             // Fullscreen windows are only placeable on the monitor origin
-            if ((metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH && x !== min) ||
+            if ((isMaximized(metaWindow) && x !== min) ||
                 (metaWindow.fullscreen && x !== 0)) {
                 return false;
             }
@@ -1394,8 +1393,7 @@ export class Space extends Array {
             if (Easer.isEasing(w.clone))
                 return;
 
-            let unMovable = w.fullscreen ||
-                w.get_maximized() === Meta.MaximizeFlags.BOTH;
+            let unMovable = w.fullscreen || isMaximized(w);
             if (unMovable)
                 return;
 
@@ -3417,6 +3415,33 @@ export function isScratch(metaWindow) {
     return Scratch.isScratchWindow(metaWindow);
 }
 
+export function isMaximized(metaWindow) {
+    if (!metaWindow) {
+        return false;
+    }
+    if (typeof metaWindow.is_maximized === 'function') // GNOME >= 49
+        return metaWindow.is_maximized();
+    return metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH;
+}
+
+function isMaximizedHorizontal(metaWindow) {
+    if (!metaWindow) {
+        return false;
+    }
+    if (typeof metaWindow.get_maximize_flags === 'function') // GNOME >= 49
+        return metaWindow.get_maximize_flags() === Meta.MaximizeFlags.Horizontal;
+    return metaWindow.get_maximized() === Meta.MaximizeFlags.Horizontal;
+}
+
+function unmaximize(metaWindow, flags) {
+    if (!metaWindow) {
+        return false;
+    }
+    if (typeof metaWindow.set_unmaximize_flags === 'function') // GNOME >= 49
+        return metaWindow.set_unmaximize_flags(flags);
+    return metaWindow.unmaximize(flags);
+}
+
 export function is_override_redirect(metaWindow) {
     // Note: is_overrride_redirect() seem to be false for all wayland windows
     const windowType = metaWindow.windowType;
@@ -3491,10 +3516,8 @@ export function registerWindow(metaWindow) {
     });
 
     signals.connect(metaWindow, 'notify::maximized-horizontally', metaWindow => {
-        if (
-            Settings.prefs.maximize_within_tiling &&
-            metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
-            metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+        if (Settings.prefs.maximize_within_tiling && isMaximized(metaWindow)) {
+            unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
 
             // restore last layout frame
             if (metaWindow._last_layout_frame) {
@@ -3725,8 +3748,7 @@ export function resizeHandler(metaWindow) {
     x -= space.monitor.x;
 
     // for non-maximised windows, enforce horizontal margin in restore position
-    if (metaWindow.get_maximized() !== Meta.MaximizeFlags.BOTH &&
-        metaWindow.get_maximized() !== Meta.MaximizeFlags.Horizontal) {
+    if (!isMaximized(metaWindow) && !isMaximizedHorizontal(metaWindow)) {
         x = Math.max(x, Settings.prefs.horizontal_margin);
     }
 
@@ -4138,8 +4160,8 @@ Opening "${metaWindow?.title}" on current space.`);
         return;
 
     metaWindow.unmake_above();
-    if (metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
-        metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    if (isMaximized(metaWindow)) {
+        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
         toggleMaximizeHorizontally(metaWindow);
     }
 
@@ -4776,9 +4798,9 @@ export function isWindowAnimating(metaWindow) {
 export function toggleMaximizeHorizontally(metaWindow) {
     metaWindow = metaWindow || display.focus_window;
 
-    if (metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
+    if (isMaximized(metaWindow)) {
         // ASSUMPTION: MaximizeFlags.HORIZONTALLY is not used
-        metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
         metaWindow.unmaximizedRect = null;
         return;
     }
@@ -4823,8 +4845,8 @@ export function resizeHInc(metaWindow) {
     let targetHeight = Math.min(currentHeight + step, maxHeight);
     let targetY = frame.y;
 
-    if (metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
-        metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    if (isMaximized(metaWindow)) {
+        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
     }
 
     // Space.layout will ensure the window is moved if necessary
@@ -4844,8 +4866,8 @@ export function resizeHDec(metaWindow) {
     let targetHeight = Math.max(currentHeight - step, minHeight);
     let targetY = frame.y;
 
-    if (metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
-        metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    if (isMaximized(metaWindow)) {
+        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
     }
 
     // Space.layout will ensure the window is moved if necessary
@@ -4864,8 +4886,8 @@ export function resizeWInc(metaWindow) {
     let targetWidth = Math.min(currentWidth + step, maxWidth);
     let targetX = frame.x;
 
-    if (metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
-        metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    if (isMaximized(metaWindow)) {
+        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
     }
 
     // Space.layout will ensure the window is moved if necessary
@@ -4885,8 +4907,8 @@ export function resizeWDec(metaWindow) {
     let targetWidth = Math.max(currentWidth - step, minWidth);
     let targetX = frame.x;
 
-    if (metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
-        metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    if (isMaximized(metaWindow)) {
+        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
     }
 
     // Space.layout will ensure the window is moved if necessary
@@ -4939,8 +4961,8 @@ export function cycleWindowWidthDirection(metaWindow, direction) {
         }
     }
 
-    if (metaWindow.get_maximized() === Meta.MaximizeFlags.BOTH) {
-        metaWindow.unmaximize(Meta.MaximizeFlags.BOTH);
+    if (isMaximized(metaWindow)) {
+        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
     }
 
     // Space.layout will ensure the window is moved if necessary
