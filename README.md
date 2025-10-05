@@ -93,7 +93,7 @@ Activating a window will ensure it's fully visible, scrolling the tiling if nece
 
 Pressing <kbd>Super</kbd><kbd>I</kbd> will move the window to the right below the active window, tiling them vertically in a column. <kbd>Super</kbd><kbd>O</kbd> will do the opposite, pushing the bottom window out of the current column.
 
-Swiping the trackpad horizontally with three fingers (only available in Wayland) or swiping the panel horizontally on a touch screen will scroll the tiling.
+You can scroll the tiling by swiping the trackpad horizontally with three fingers (Wayland only), swiping the panel on a touch screen, or using the mouse scroll wheel on the topbar.
 
 <kbd>Alt</kbd><kbd>Tab</kbd> is of course also available.
 
