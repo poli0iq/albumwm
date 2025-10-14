@@ -541,7 +541,7 @@ export class Space extends Array {
 
         const k = column.indexOf(grabWindow);
         if (k < 0) {
-            throw new Error(`Anchor doesn't exist in column ${grabWindow.title}`);
+            throw new Error(`Anchor doesn't exist in column ${grabWindow?.title}`);
         }
 
         const gap = Settings.prefs.window_gap;
