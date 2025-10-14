@@ -744,7 +744,7 @@ export class Space extends Array {
             if (inGrab && column.includes(inGrab.window) && !allocator) {
                 [resultingWidth, relayout] =
                     this.layoutGrabColumn(column, x, y0, targetWidth, availableHeight, time,
-                        selectedInColumn);
+                        inGrab.window);
             } else {
                 allocator = allocator || allocateDefault;
                 let targetHeights = allocator(column, availableHeight, selectedInColumn);
