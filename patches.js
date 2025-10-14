@@ -583,7 +583,7 @@ export function _checkWorkspaces() {
     let workspaceManager = global.workspace_manager;
     let i;
     let emptyWorkspaces = [];
-    let minimum = Main.layoutManager.monitors.length + 1;
+    let minimum = Main.layoutManager.monitors.length;
 
     if (!Meta.prefs_get_dynamic_workspaces()) {
         // if less spaces than minimum, create!
@@ -640,8 +640,7 @@ export function _checkWorkspaces() {
     }
 
     /**
-     * Set minimum workspaces to be max of num_monitors+1.
-     * This ensures that we have at least one workspace at the end.
+     * Set minimum workspaces to be max of num_monitors.
      */
     // Make sure we have a minimum number of spaces
     for (i = 0; i < minimum; i++) {
