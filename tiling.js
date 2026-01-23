@@ -541,7 +541,7 @@ export class Space extends Array {
 
         const k = column.indexOf(grabWindow);
         if (k < 0) {
-            throw new Error(`Anchor doesn't exist in column ${grabWindow.title}`);
+            throw new Error(`Anchor doesn't exist in column ${grabWindow?.title}`);
         }
 
         const gap = Settings.prefs.window_gap;
@@ -740,10 +740,10 @@ export class Space extends Array {
 
             let resultingWidth, relayout;
             let allocator = allocators && allocators[i];
-            if (inGrab && column.includes(inGrab.window) && !allocator) {
+            if (inGrab && inGrab.dnd && column.includes(inGrab.window) && !allocator) {
                 [resultingWidth, relayout] =
                     this.layoutGrabColumn(column, x, y0, targetWidth, availableHeight, time,
-                        selectedInColumn);
+                        inGrab.window);
             } else {
                 allocator = allocator || allocateDefault;
                 let targetHeights = allocator(column, availableHeight, selectedInColumn);
