@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+var GrabState = GrabState || { NONE: 0, POINTER: 1, KEYBOARD: 2, ALL: 3 };
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
@@ -83,7 +84,7 @@ class ActionDispatcher {
         // grab = stage.grab(this.actor)
         grab = Main.pushModal(this.actor);
         // We expect at least a keyboard grab here
-        if ((grab.get_seat_state() & Clutter.GrabState.KEYBOARD) === 0) {
+        if (grab && typeof grab.get_seat_state === "function" && (grab.get_seat_state() & GrabState.KEYBOARD) === 0) {
             console.error("Failed to grab modal");
             throw new Error('Could not grab modal');
         }
@@ -196,7 +197,7 @@ class ActionDispatcher {
 
     _keyReleaseEvent(_actor, event) {
         if (this._destroy) {
-            dismissDispatcher(Clutter.GrabState.KEYBOARD);
+            dismissDispatcher(GrabState.KEYBOARD);
         }
 
         if (this._modifierMask) {
@@ -254,7 +255,7 @@ class ActionDispatcher {
         let nav = getNavigator();
         nav.accept();
         !this._destroy && nav.destroy();
-        dismissDispatcher(Clutter.GrabState.KEYBOARD);
+        dismissDispatcher(GrabState.KEYBOARD);
         let space = Tiling.spaces.selectedSpace;
         let metaWindow = space.selectedWindow;
         if (metaWindow) {
@@ -539,12 +540,12 @@ export function dismissDispatcher(mode) {
     }
 
     dispatcher.mode ^= mode;
-    if (dispatcher.mode === Clutter.GrabState.NONE) {
+    if (dispatcher.mode === GrabState.NONE) {
         dispatcher.destroy();
     }
 }
 
 export function preview_navigate(meta_window, space, { _display, _screen, binding }) {
-    let tabPopup = getActionDispatcher(Clutter.GrabState.KEYBOARD);
+    let tabPopup = getActionDispatcher(GrabState.KEYBOARD);
     tabPopup.show(binding.is_reversed(), binding.get_name(), binding.get_mask());
 }
