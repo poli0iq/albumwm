@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+var GrabState = GrabState || { NONE: 0, POINTER: 1, KEYBOARD: 2, ALL: 3 };
 import GDesktopEnums from 'gi://GDesktopEnums';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
@@ -1271,7 +1272,7 @@ export class Space extends Array {
         this.drifting = true;
 
         // stop drifting on key_release
-        Navigator.getActionDispatcher(Clutter.GrabState.KEYBOARD)
+        Navigator.getActionDispatcher(GrabState.KEYBOARD)
             .addKeyReleaseCallback(() => {
                 Utils.timeout_remove(driftTimeout);
                 this.drifting = null;
@@ -5476,7 +5477,7 @@ export function takeWindow(metaWindow, space, options = {}) {
         };
 
         // get the action dispatcher signal to connect to
-        Navigator.getActionDispatcher(Clutter.GrabState.KEYBOARD)
+        Navigator.getActionDispatcher(GrabState.KEYBOARD)
             .addKeypressCallback((_modmask, keysym, _event) => {
                 switch (keysym) {
                 case Clutter.KEY_space: {
@@ -5531,7 +5532,7 @@ export function takeWindow(metaWindow, space, options = {}) {
 
         signals.connectOneShot(navigator, 'destroy', () => {
             // ensure keyboard grabstate is dimissed (in case moving stopped via pointer)
-            Navigator.dismissDispatcher(Clutter.GrabState.KEYBOARD);
+            Navigator.dismissDispatcher(GrabState.KEYBOARD);
             navigator.showTakeHint(false);
 
             let selectedSpace = spaces.selectedSpace;
