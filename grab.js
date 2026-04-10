@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+var GrabState = GrabState || { NONE: 0, POINTER: 1, KEYBOARD: 2, ALL: 3 };
 import GLib from 'gi://GLib';
 import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
@@ -67,10 +68,10 @@ export class MoveGrab {
         grabbed = true;
         global.display.end_grab_op?.(global.get_current_time());
         if (Utils.version[0] >= 48)
-            global.display.set_cursor(Meta.Cursor.GRABBING);
+            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.GRABBING);
         else
-            global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
-        this.dispatcher = new Navigator.getActionDispatcher(Clutter.GrabState.POINTER);
+            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
+        this.dispatcher = new Navigator.getActionDispatcher(GrabState.POINTER);
         this.actor = this.dispatcher.actor;
 
         let metaWindow = this.window;
@@ -135,9 +136,9 @@ export class MoveGrab {
         Navigator.getNavigator().minimaps.forEach(m => typeof m === 'number'
             ? Utils.timeout_remove(m) : m.hide());
         if (Utils.version[0] >= 48)
-            global.display.set_cursor(Meta.Cursor.GRABBING);
+            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.GRABBING);
         else
-            global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
+            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
         let metaWindow = this.window;
         let clone = metaWindow.clone;
         let space = this.initialSpace;
@@ -552,10 +553,10 @@ export class MoveGrab {
         // // If the window is transient this will take care of its parent too.
         Tiling.setInGrab(false);
         if (this.dispatcher) {
-            Navigator.dismissDispatcher(Clutter.GrabState.POINTER);
+            Navigator.dismissDispatcher(GrabState.POINTER);
         }
 
-        global.display.set_cursor(Meta.Cursor.DEFAULT);
+        if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.DEFAULT); else global.display.set_cursor(Meta.Cursor.DEFAULT);
 
         /**
          * Gnome 44 removed the ability to manually end_grab_op.
