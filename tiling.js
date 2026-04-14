@@ -1,5 +1,4 @@
 import Clutter from 'gi://Clutter';
-var GrabState = GrabState || { NONE: 0, POINTER: 1, KEYBOARD: 2, ALL: 3 };
 import GDesktopEnums from 'gi://GDesktopEnums';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
@@ -12,7 +11,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {
     Settings, Utils, Lib, Gestures, Navigator, Grab, Topbar, Scratch, Stackoverlay, Background
 } from './imports.js';
-import { Easer } from './utils.js';
+import { Easer, DispatcherMode } from './utils.js';
 import { ClickOverlay } from './stackoverlay.js';
 import { WorkspaceSettings } from './workspace.js';
 
@@ -1272,7 +1271,7 @@ export class Space extends Array {
         this.drifting = true;
 
         // stop drifting on key_release
-        Navigator.getActionDispatcher(GrabState.KEYBOARD)
+        Navigator.getActionDispatcher(DispatcherMode.KEYBOARD)
             .addKeyReleaseCallback(() => {
                 Utils.timeout_remove(driftTimeout);
                 this.drifting = null;
@@ -5477,7 +5476,7 @@ export function takeWindow(metaWindow, space, options = {}) {
         };
 
         // get the action dispatcher signal to connect to
-        Navigator.getActionDispatcher(GrabState.KEYBOARD)
+        Navigator.getActionDispatcher(DispatcherMode.KEYBOARD)
             .addKeypressCallback((_modmask, keysym, _event) => {
                 switch (keysym) {
                 case Clutter.KEY_space: {
@@ -5532,7 +5531,7 @@ export function takeWindow(metaWindow, space, options = {}) {
 
         signals.connectOneShot(navigator, 'destroy', () => {
             // ensure keyboard grabstate is dimissed (in case moving stopped via pointer)
-            Navigator.dismissDispatcher(GrabState.KEYBOARD);
+            Navigator.dismissDispatcher(DispatcherMode.KEYBOARD);
             navigator.showTakeHint(false);
 
             let selectedSpace = spaces.selectedSpace;

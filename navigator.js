@@ -1,8 +1,9 @@
 import Clutter from 'gi://Clutter';
-var GrabState = GrabState || { NONE: 0, POINTER: 1, KEYBOARD: 2, ALL: 3 };
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
+
+import { DispatcherMode } from './utils.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
@@ -66,7 +67,7 @@ export function primaryModifier(mask) {
    Adapted from SwitcherPopup, without any visual handling.
  */
 class ActionDispatcher {
-    /** @type {import('@gi-types/clutter10').GrabState} */
+    /** @type {number} DispatcherMode bitmask */
     mode;
 
     constructor() {
@@ -197,7 +198,7 @@ class ActionDispatcher {
 
     _keyReleaseEvent(_actor, event) {
         if (this._destroy) {
-            dismissDispatcher(GrabState.KEYBOARD);
+            dismissDispatcher(DispatcherMode.KEYBOARD);
         }
 
         if (this._modifierMask) {
@@ -255,7 +256,7 @@ class ActionDispatcher {
         let nav = getNavigator();
         nav.accept();
         !this._destroy && nav.destroy();
-        dismissDispatcher(GrabState.KEYBOARD);
+        dismissDispatcher(DispatcherMode.KEYBOARD);
         let space = Tiling.spaces.selectedSpace;
         let metaWindow = space.selectedWindow;
         if (metaWindow) {
@@ -510,8 +511,7 @@ export function finishNavigation(force = true) {
 }
 
 /**
- *
- * @param {import('@gi-types/clutter10').GrabState} mode
+ * @param {number} mode - DispatcherMode bitmask
  * @returns {ActionDispatcher}
  */
 export function getActionDispatcher(mode) {
@@ -531,8 +531,7 @@ export function finishDispatching() {
 }
 
 /**
- *
- * @param {import('@gi-types/clutter10').GrabState} mode
+ * @param {number} mode - DispatcherMode bitmask
  */
 export function dismissDispatcher(mode) {
     if (!dispatcher) {
@@ -540,12 +539,12 @@ export function dismissDispatcher(mode) {
     }
 
     dispatcher.mode ^= mode;
-    if (dispatcher.mode === GrabState.NONE) {
+    if (dispatcher.mode === DispatcherMode.NONE) {
         dispatcher.destroy();
     }
 }
 
 export function preview_navigate(meta_window, space, { _display, _screen, binding }) {
-    let tabPopup = getActionDispatcher(GrabState.KEYBOARD);
+    let tabPopup = getActionDispatcher(DispatcherMode.KEYBOARD);
     tabPopup.show(binding.is_reversed(), binding.get_name(), binding.get_mask());
 }

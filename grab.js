@@ -1,5 +1,4 @@
 import Clutter from 'gi://Clutter';
-var GrabState = GrabState || { NONE: 0, POINTER: 1, KEYBOARD: 2, ALL: 3 };
 import GLib from 'gi://GLib';
 import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
@@ -8,7 +7,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import { Settings, Utils, Tiling, Navigator, Scratch, Gestures } from './imports.js';
-import { Easer } from './utils.js';
+import { DispatcherMode, Easer } from './utils.js';
 
 export let grabbed = false;
 
