@@ -1420,10 +1420,8 @@ export class Space extends Array {
 
         this.fixOverlays();
 
-        if (!Utils.is_wayland_compositor()) {
-            // See startAnimate
-            Main.layoutManager.untrackChrome(this.background);
-        }
+        // See startAnimate
+        Main.layoutManager.untrackChrome(this.background);
 
         this._isAnimating = false;
 
@@ -1463,7 +1461,7 @@ export class Space extends Array {
     }
 
     startAnimate() {
-        if (!this._isAnimating && !Utils.is_wayland_compositor()) {
+        if (!this._isAnimating) {
             // Tracking the background fixes issue #80
             // It also let us activate window clones clicked during animation
             // Untracked in moveDone
@@ -3159,12 +3157,10 @@ export const Spaces = class Spaces extends Map {
             to.border.opacity = 255;
             Utils.actor_raise(to.clip);
 
-            // Fixes a weird bug where mouse input stops
-            // working after mousing to another monitor on
-            // X11.
-            if (!Utils.is_wayland_compositor()) {
-                to.startAnimate();
-            }
+            // Ensures window clones are clickable after switching monitors.
+            // Originally X11-only but also needed on Wayland for proper
+            // input handling after space switches.
+            to.startAnimate();
 
             to.moveDone();
             if (callback) {
