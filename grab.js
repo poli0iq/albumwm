@@ -11,6 +11,21 @@ import { DispatcherMode, Easer } from './utils.js';
 
 export let grabbed = false;
 
+/**
+ * Sets the cursor type, using the GNOME 50+ actor-based API when available,
+ * falling back to the legacy Meta.Cursor API for older versions.
+ */
+function setCursor(cursorType) {
+    if (Utils.version[0] >= 50) {
+        // GNOME 50+: Meta.Cursor and display.set_cursor() are removed
+        global.stage.set_cursor_type(cursorType);
+    } else {
+        global.display.set_cursor(cursorType === Clutter.CursorType.GRABBING
+            ? (Utils.version[0] >= 48 ? Meta.Cursor.GRABBING : Meta.Cursor.MOVE_OR_RESIZE_WINDOW)
+            : Meta.Cursor.DEFAULT);
+    }
+}
+
 let dragDriftTimeout;
 export function enable() {
 
@@ -66,11 +81,8 @@ export class MoveGrab {
 
         grabbed = true;
         global.display.end_grab_op?.(global.get_current_time());
-        if (Utils.version[0] >= 48)
-            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.GRABBING);
-        else
-            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
-        this.dispatcher = new Navigator.getActionDispatcher(GrabState.POINTER);
+        setCursor(Clutter.CursorType.GRABBING);
+        this.dispatcher = new Navigator.getActionDispatcher(DispatcherMode.POINTER);
         this.actor = this.dispatcher.actor;
 
         let metaWindow = this.window;
@@ -134,10 +146,7 @@ export class MoveGrab {
         console.debug("#grab", "begin DnD");
         Navigator.getNavigator().minimaps.forEach(m => typeof m === 'number'
             ? Utils.timeout_remove(m) : m.hide());
-        if (Utils.version[0] >= 48)
-            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.GRABBING);
-        else
-            if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.GRABBING); else global.display.set_cursor(Meta.Cursor.MOVE_OR_RESIZE_WINDOW);
+        setCursor(Clutter.CursorType.GRABBING);
         let metaWindow = this.window;
         let clone = metaWindow.clone;
         let space = this.initialSpace;
@@ -552,10 +561,10 @@ export class MoveGrab {
         // // If the window is transient this will take care of its parent too.
         Tiling.setInGrab(false);
         if (this.dispatcher) {
-            Navigator.dismissDispatcher(GrabState.POINTER);
+            Navigator.dismissDispatcher(DispatcherMode.POINTER);
         }
 
-        if (global.stage.set_cursor_type) global.stage.set_cursor_type(Clutter.CursorType.DEFAULT); else global.display.set_cursor(Meta.Cursor.DEFAULT);
+        setCursor(Clutter.CursorType.DEFAULT);
 
         /**
          * Gnome 44 removed the ability to manually end_grab_op.
