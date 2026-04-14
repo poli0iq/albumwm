@@ -82,10 +82,8 @@ class ActionDispatcher {
             return;
         }
 
-        // grab = stage.grab(this.actor)
         grab = Main.pushModal(this.actor);
-        // We expect at least a keyboard grab here
-        if (grab && typeof grab.get_seat_state === "function" && (grab.get_seat_state() & GrabState.KEYBOARD) === 0) {
+        if (!grab) {
             console.error("Failed to grab modal");
             throw new Error('Could not grab modal');
         }
