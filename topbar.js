@@ -148,7 +148,7 @@ export function disable() {
     menu.destroy();
     menu = null;
     Main.panel.statusArea.activities.show();
-    // remove PaperWM style classes names for Main.panel
+    // remove AlbumWM style classes names for Main.panel
     removeStyles();
 
     screenSignals.forEach(id => workspaceManager.disconnect(id));
@@ -418,7 +418,7 @@ const BaseIcon = GObject.registerClass(
         }
 
         /**
-         * Returns a nicely formatted keybind string from PaperWM
+         * Returns a nicely formatted keybind string from AlbumWM
          * @param {String} key
          */
         getKeybindString(key) {
@@ -754,7 +754,7 @@ export const WorkspaceMenu = GObject.registerClass(
             this._prefItem.connect('activate', () => {
                 this.menu.close(true);
                 let wi = workspaceManager.get_active_workspace_index();
-                let temp_file = Gio.File.new_for_path(GLib.get_tmp_dir()).get_child('paperwm.workspace');
+                let temp_file = Gio.File.new_for_path(GLib.get_tmp_dir()).get_child('albumwm.workspace');
                 temp_file.replace_contents(wi.toString(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
                 openPrefs();
             });

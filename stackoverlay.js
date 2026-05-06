@@ -56,7 +56,7 @@ export function disable() {
 
 /**
  * Checks for multiple monitors and if so, then enables multimonitor
- * support in PaperWM.
+ * support in AlbumWM.
  */
 export function multimonitorSupport() {
     // if only one monitor, return
@@ -103,13 +103,13 @@ export function enableMultimonitorSupport() {
             const selected = space?.selectedWindow;
             space?.activateWithFocus(selected, false, false);
         });
-    console.debug('paperwm multimonitor support is ENABLED');
+    console.debug('albumwm multimonitor support is ENABLED');
 }
 
 export function disableMultimonitorSupport() {
     pointerWatch?.remove();
     pointerWatch = null;
-    console.debug('paperwm multimonitor support is DISABLED');
+    console.debug('albumwm multimonitor support is DISABLED');
 }
 
 export function createAppIcon(metaWindow, size) {

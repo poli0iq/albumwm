@@ -31,8 +31,8 @@
           modules = [
             ./vm.nix
             { nixpkgs.overlays = [
-                # Introduce PaperWM into our extensions
-                (s: super: { paperwm = self.packages.${system}.default; })
+                # Introduce AlbumWM into our extensions
+                (s: super: { albumwm = self.packages.${system}.default; })
 
                 # Pull GNOME-specific packages from GNOME staging
                 (s: super: {

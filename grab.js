@@ -567,7 +567,7 @@ export class MoveGrab {
         /**
          * Gnome 44 removed the ability to manually end_grab_op.
          * Previously we would end the grab_op before doing
-         * PaperWM grabs.  In 44, we can't do this so the grab op
+         * AlbumWM grabs.  In 44, we can't do this so the grab op
          * may still be in progress, which is okay, but won't be ended
          * until we "click out".  We do this here if needed.
          */

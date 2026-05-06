@@ -1,8 +1,8 @@
 <schemalist>
 
   <!-- Keybindings -->
-  <schema id="org.gnome.shell.extensions.paperwm.keybindings"
-          path="/org/gnome/shell/extensions/paperwm/keybindings/">
+  <schema id="org.gnome.shell.extensions.albumwm.keybindings"
+          path="/org/gnome/shell/extensions/albumwm/keybindings/">
 
     <key type="as" name="new-window">
       <default><![CDATA[['<Super>Return', '<Super>n']]]></default>
@@ -435,7 +435,7 @@
       <summary>Maximize the width of the active window</summary>
     </key>
 
-    <key type="as" name="paper-toggle-fullscreen">
+    <key type="as" name="album-toggle-fullscreen">
       <default><![CDATA[['<Super><shift>f']]]></default>
       <summary>Toggle fullscreen</summary>
     </key>
@@ -451,7 +451,7 @@
     </key>
   </schema>
 
-  <schema id="org.gnome.shell.extensions.paperwm.workspace">
+  <schema id="org.gnome.shell.extensions.albumwm.workspace">
       <key type="i" name="index">
           <default>-1</default>
           <summary>The workspace index</summary>
@@ -470,7 +470,7 @@
       </key>
       <key type="b" name="show-position-bar">
           <default>true</default>
-          <summary>Show the PaperWM Window Position Bar</summary>
+          <summary>Show the AlbumWM Window Position Bar</summary>
       </key>
       <key type="s" name="color">
           <default>''</default>
@@ -482,23 +482,23 @@
       </key>
   </schema>
 
-  <schema id="org.gnome.shell.extensions.paperwm.workspacelist"
-          path="/org/gnome/shell/extensions/paperwm/workspaces/">
+  <schema id="org.gnome.shell.extensions.albumwm.workspacelist"
+          path="/org/gnome/shell/extensions/albumwm/workspaces/">
       <key name="list" type="as">
           <default>[]</default>
       </key>
   </schema>
 
-  <schema id="org.gnome.shell.extensions.paperwm" path="/org/gnome/shell/extensions/paperwm/">
+  <schema id="org.gnome.shell.extensions.albumwm" path="/org/gnome/shell/extensions/albumwm/">
     <key type="s" name="last-used-display-server">
         <default>''</default>
-        <summary>Saves the last display server used for PaperWM (Wayland / X11)</summary>
+        <summary>Saves the last display server used for AlbumWM (Wayland / X11)</summary>
     </key>
 
     <!-- backup settings (used for restore) -->
     <key type="s" name="restore-keybinds">
         <default>''</default>
-        <summary>Keybind overrides saved for restoring after PaperWM disable</summary>
+        <summary>Keybind overrides saved for restoring after AlbumWM disable</summary>
     </key>
 
     <key type="s" name="restore-attach-modal-dialogs">
@@ -690,7 +690,7 @@
 
     <key type="b" name="disable-topbar-styling">
         <default>false</default>
-        <summary>Disables all topbar styling by PaperWM</summary>
+        <summary>Disables all topbar styling by AlbumWM</summary>
     </key>
 
     <key type="b" name="show-workspace-indicator">
@@ -755,7 +755,7 @@
 
     <key type="b" name="gesture-enabled">
         <default>true</default>
-        <summary>Enables PaperWM touchpad gestures</summary>
+        <summary>Enables AlbumWM touchpad gestures</summary>
     </key>
 
     <key type="i" name="gesture-horizontal-fingers">
@@ -768,8 +768,8 @@
         <summary>Number of fingers for workspace switching. 0:DISABLED 3:THREE_FINGERS 4:FOUR_FINGERS</summary>
     </key>
 
-    <child name="keybindings" schema="org.gnome.shell.extensions.paperwm.keybindings"/>
-    <child name="workspaces" schema="org.gnome.shell.extensions.paperwm.workspacelist"/>
+    <child name="keybindings" schema="org.gnome.shell.extensions.albumwm.keybindings"/>
+    <child name="workspaces" schema="org.gnome.shell.extensions.albumwm.workspacelist"/>
 
   </schema>
 

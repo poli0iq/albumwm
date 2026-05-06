@@ -1,9 +1,12 @@
 {
-  "uuid": "paperwm@paperwm.github.com",
-  "name": "PaperWM",
-  "description": "Tiling window manager with a twist",
-  "url": "https://github.com/paperwm/PaperWM",
-  "settings-schema": "org.gnome.shell.extensions.paperwm",
-  "shell-version": [ "45", "46", "47", "48", "49", "50" ],
-  "version-name": "50.0.1"
+  "uuid": "albumwm@0iq.dev",
+  "name": "AlbumWM",
+  "description": "Scrollable tiling extension for GNOME Shell",
+  "url": "https://albumwm.0iq.dev",
+  "settings-schema": "org.gnome.shell.extensions.albumwm",
+  "shell-version": [
+    "49",
+    "50"
+  ],
+  "version-name": "50.0.0"
 }

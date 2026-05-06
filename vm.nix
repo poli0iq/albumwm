@@ -1,9 +1,9 @@
 { pkgs, config, lib, ... }:
 
 {
-  ### Make PaperWM available in system environment
+  ### Make AlbumWM available in system environment
   environment.systemPackages = with pkgs;
-  [ paperwm
+  [ albumwm
     (lib.getBin libinput)
   ];
 
@@ -18,13 +18,13 @@
     desktopManager.gnome.enable = true;
   };
 
-  ### Set dconf to enable PaperWM out of the box
+  ### Set dconf to enable AlbumWM out of the box
   programs.dconf =
   { enable = true;
     profiles."user".databases = [
       { settings =
         { "org/gnome/shell" =
-          { enabled-extensions = [ "paperwm@paperwm.github.com" ];
+          { enabled-extensions = [ "albumwm@0iq.dev" ];
             disable-user-extensions = false;
           };
         };
@@ -42,9 +42,9 @@
   { isNormalUser = true;
     createHome = true;
     home = "/home";
-    description = "PaperWM test user";
+    description = "AlbumWM test user";
     extraGroups = [ "wheel" ];
-    password = "paperwm";
+    password = "albumwm";
   };
 
   ### No-password sudo

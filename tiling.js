@@ -33,7 +33,7 @@ let sizeSlack = 30;
 export const PreviewMode = { NONE: 0, STACK: 1, SEQUENTIAL: 2 }; // export
 export let inPreview = PreviewMode.NONE; // export
 
-// DEFAULT mode is normal/original PaperWM window focus behaviour
+// DEFAULT mode is normal/original AlbumWM window focus behaviour
 export const FocusModes = { DEFAULT: 0, CENTER: 1, EDGE: 2 }; // export
 
 export const CycleWindowSizesDirection = { FORWARD: 0, BACKWARDS: 1 };
@@ -317,7 +317,7 @@ export class Space extends Array {
 
         const selection = new St.Widget({
             name: 'selection',
-            style_class: 'paperwm-selection tile-preview',
+            style_class: 'albumwm-selection tile-preview',
         });
         this.selection = selection;
         // initial state is shown (unless border-size is 0)
@@ -357,7 +357,7 @@ export class Space extends Array {
 
         this.windowPositionBarBackdrop = new St.Widget({
             name: 'windowPositionBarBackdrop',
-            style_class: 'paperwm-window-position-bar-backdrop',
+            style_class: 'albumwm-window-position-bar-backdrop',
             reactive: true,
         });
         signals.connect(this.windowPositionBarBackdrop, 'scroll-event', (_actor, event) => {
@@ -365,7 +365,7 @@ export class Space extends Array {
         });
         this.windowPositionBar = new St.Widget({
             name: 'windowPositionBar',
-            style_class: 'paperwm-window-position-bar tile-preview',
+            style_class: 'albumwm-window-position-bar tile-preview',
         });
         this.windowPositionBar.hide(); // default on empty space
         Utils.actor_raise(this.windowPositionBar);
@@ -459,14 +459,14 @@ export class Space extends Array {
      * setting animation on workspaceSwitch.
      * @param {Boolean} animate
      */
-    activate(defaultAnimation = true, paperwmAnimation = false) {
+    activate(defaultAnimation = true, albumwmAnimation = false) {
         spaces.space_defaultAnimation = defaultAnimation;
-        spaces.space_paperwmAnimation = paperwmAnimation;
+        spaces.space_albumwmAnimation = albumwmAnimation;
 
         this.workspace.activate(global.get_current_time());
 
         spaces.space_defaultAnimation = true;
-        spaces.space_paperwmAnimation = false; // switch to default
+        spaces.space_albumwmAnimation = false; // switch to default
     }
 
     /**
@@ -474,9 +474,9 @@ export class Space extends Array {
      * setting animation on workspaceSwitch.
      * @param {Boolean} animate
      */
-    activateWithFocus(metaWindow, defaultAnimation = true, paperwmAnimation = false) {
+    activateWithFocus(metaWindow, defaultAnimation = true, albumwmAnimation = false) {
         spaces.space_defaultAnimation = defaultAnimation;
-        spaces.space_paperwmAnimation = paperwmAnimation;
+        spaces.space_albumwmAnimation = albumwmAnimation;
 
         if (metaWindow) {
             this.workspace.activate_with_focus(metaWindow, global.get_current_time());
@@ -485,7 +485,7 @@ export class Space extends Array {
             this.workspace.activate(global.get_current_time());
         }
         spaces.space_defaultAnimation = true;
-        spaces.space_paperwmAnimation = false; // switch to default
+        spaces.space_albumwmAnimation = false; // switch to default
     }
 
     show() {
@@ -1525,7 +1525,7 @@ export class Space extends Array {
         if (Settings.prefs.selection_border_size <= 0) {
             return;
         }
-        this.selection.set_style_class_name('paperwm-selection tile-preview');
+        this.selection.set_style_class_name('albumwm-selection tile-preview');
     }
 
     setSelectionActive() {
@@ -2143,7 +2143,7 @@ border-radius: ${borderWidth}px;
 
     destroy() {
         this.getWindows().forEach(w => {
-            removePaperWMFlags(w);
+            removeAlbumWMFlags(w);
         });
         this.signals.destroy();
         this.signals = null;
@@ -2183,7 +2183,7 @@ export const Spaces = class Spaces extends Map {
         spaceContainer.hide();
         this.spaceContainer = spaceContainer;
         this.space_defaultAnimation = true;
-        this.space_paperwmAnimation = false;
+        this.space_albumwmAnimation = false;
 
         backgroundGroup.add_child(this.spaceContainer);
 
@@ -2230,7 +2230,7 @@ export const Spaces = class Spaces extends Map {
         display.get_tab_list(Meta.TabList.NORMAL_ALL, null)
             .forEach(w => {
                 // remove flags
-                removePaperWMFlags(w);
+                removeAlbumWMFlags(w);
 
                 registerWindow(w);
                 // Fixup allocations on reload
@@ -2581,7 +2581,7 @@ export const Spaces = class Spaces extends Map {
 
         if (this.lteSpacesThanMonitors(
             (s, m) => Main.notify(
-                `PaperWM (cannot move workspace)`,
+                `AlbumWM (cannot move workspace)`,
                 `You need at least ${m + 1} workspaces to complete this operation.`
             )
         )) {
@@ -2633,7 +2633,7 @@ export const Spaces = class Spaces extends Map {
 
         if (this.lteSpacesThanMonitors(
             (s, m) => Main.notify(
-                `PaperWM (cannot swap workspaces)`,
+                `AlbumWM (cannot swap workspaces)`,
                 `You need at least ${m + 1} workspaces to complete this operation.`
             )
         )) {
@@ -2745,7 +2745,7 @@ export const Spaces = class Spaces extends Map {
         this.setMonitors(monitor, toSpace, true);
 
         this.forEach(s => s.setSpaceTopbarElementsVisible());
-        let doAnimate = animate || this.space_paperwmAnimation;
+        let doAnimate = animate || this.space_albumwmAnimation;
         this.animateToSpace(
             toSpace,
             fromSpace,
@@ -3466,7 +3466,7 @@ export function registerWindow(metaWindow) {
     clone.add_child(cloneActor);
 
     // create shade
-    const shade = new St.Widget({ style_class: 'paperwm-clone-shade' });
+    const shade = new St.Widget({ style_class: 'albumwm-clone-shade' });
     // default opacity
     clone.add_child(shade);
     Utils.actor_raise(shade);
@@ -3641,7 +3641,7 @@ export function destroyHandler(actor) {
  * Removes resize, position, and other flags.  Used during cleanup etc.
  * @param {Meta.Window} metaWindow
  */
-export function removePaperWMFlags(w) {
+export function removeAlbumWMFlags(w) {
     delete w._targetWidth;
     delete w._targetHeight;
     delete w._resizeHandlerAdded;
@@ -3826,7 +3826,7 @@ export function saveFullscreenFrame(metaWindow, tiled) {
 }
 
 /**
- * Saves current state for controlled restarts of PaperWM.
+ * Saves current state for controlled restarts of AlbumWM.
  */
 class SaveState {
     constructor() {
@@ -4105,7 +4105,7 @@ export function insertWindow(metaWindow, options = {}) {
         const newspace = spaces.spaceOfIndex(overwriteSpace);
         if (!newspace) {
             Main.notify(
-                `PaperWM [winprop]: cannot open window on workspace ${overwriteSpace} (index)`,
+                `AlbumWM [winprop]: cannot open window on workspace ${overwriteSpace} (index)`,
                 `"${metaWindow?.title}" cannot be opened on workspace with index ${overwriteSpace} 
 (workspace not found). Opening on current workspace instead.`
             );

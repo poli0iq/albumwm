@@ -8,7 +8,7 @@ import { AcceleratorParse } from './acceleratorparse.js';
 
 const _ = s => s;
 
-const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.paperwm.keybindings';
+const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
 const sections = {
     windows: 'Windows',
@@ -75,7 +75,7 @@ const actions = {
         'center-horizontally',
         'center-vertically',
         'center',
-        'paper-toggle-fullscreen',
+        'album-toggle-fullscreen',
         'toggle-maximize-width',
         'resize-h-inc',
         'resize-h-dec',

@@ -9,7 +9,7 @@ import { AcceleratorParse } from './acceleratorparse.js';
     at the top).
  */
 
-const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.paperwm.keybindings';
+const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 const RESTORE_KEYBINDS_KEY = 'restore-keybinds';
 
 // This is the value mutter uses for the keyvalue of above_tab
@@ -201,14 +201,14 @@ export function generateKeycomboMap(settings) {
 export function findConflicts(schemas) {
     schemas = schemas || getConflictSettings();
     let conflicts = [];
-    const paperMap = generateKeycomboMap(keybindSettings);
+    const albumMap = generateKeycomboMap(keybindSettings);
 
     for (let settings of schemas) {
         const against = generateKeycomboMap(settings);
-        for (let combo in paperMap) {
+        for (let combo in albumMap) {
             if (against[combo]) {
                 conflicts.push({
-                    name: paperMap[combo][0],
+                    name: albumMap[combo][0],
                     conflicts: against[combo],
                     settings, combo,
                 });
@@ -445,7 +445,7 @@ export function defwinprop(spec) {
 
 /**
  * Adds user-defined winprops from gsettings (as defined in
- * org.gnome.shell.extensions.paperwm.winprops) to the winprops array.
+ * org.gnome.shell.extensions.albumwm.winprops) to the winprops array.
  */
 export function addWinpropsFromGSettings() {
     // add gsetting (user config) winprops
@@ -483,7 +483,7 @@ export function removeGSettingWinpropsFromArray() {
  * Effectively reloads winprops from gsettings.
  * This is a convenience function which removes gsetting winprops from winprops
  * array and then adds the currently defined
- * org.gnome.shell.extensions.paperwm.winprops winprops.
+ * org.gnome.shell.extensions.albumwm.winprops winprops.
  */
 export function reloadWinpropsFromGSettings() {
     removeGSettingWinpropsFromArray();

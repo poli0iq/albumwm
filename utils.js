@@ -143,11 +143,11 @@ export function color_from_string(colorString) {
 export function toggleWindowBoxes(metaWindow) {
     metaWindow = metaWindow || Display.focus_window;
 
-    if (metaWindow._paperDebugBoxes) {
-        metaWindow._paperDebugBoxes.forEach(box => {
+    if (metaWindow._albumDebugBoxes) {
+        metaWindow._albumDebugBoxes.forEach(box => {
             box.destroy();
         });
-        delete metaWindow._paperDebugBoxes;
+        delete metaWindow._albumDebugBoxes;
         return [];
     }
 
@@ -173,7 +173,7 @@ export function toggleWindowBoxes(metaWindow) {
     }
 
     boxes.forEach(box => global.stage.add_child(box));
-    metaWindow._paperDebugBoxes = boxes;
+    metaWindow._albumDebugBoxes = boxes;
     return boxes;
 }
 

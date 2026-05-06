@@ -33,7 +33,7 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
        to create custom new window handlers.
 
      - Patches is used for monkey patching gnome shell behavior which simply
-       doesn't fit paperwm.
+       doesn't fit albumwm.
 
      - topbar adds the workspace name to the topbar and styles it.
 
@@ -41,11 +41,11 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
      Notes of ordering:
         - several modules import settings, so settings should be before them;
-          - settings.js should not depend on other paperwm modules;
+          - settings.js should not depend on other albumwm modules;
         - Settings should be before Patches (for reverse order disable);
  */
 
-export default class PaperWM extends Extension {
+export default class AlbumWM extends Extension {
     modules = [
         Utils, Settings, Patches,
         Gestures, Keybindings, LiveAltTab, Navigator, Stackoverlay, Scratch,
@@ -55,7 +55,7 @@ export default class PaperWM extends Extension {
     #userStylesheet = null;
 
     enable() {
-        console.log(`#PaperWM enabled`);
+        console.log(`#AlbumWM enabled`);
         this.enableUserConfig();
         this.enableUserStylesheet();
 
@@ -68,7 +68,7 @@ export default class PaperWM extends Extension {
     }
 
     disable() {
-        console.log('#PaperWM disabled');
+        console.log('#AlbumWM disabled');
         this.prepareForDisable();
         [...this.modules].reverse().forEach(m => {
             if (m['disable']) {
@@ -80,19 +80,19 @@ export default class PaperWM extends Extension {
     }
 
     /**
-     * Prepares PaperWM for disable across modules.
+     * Prepares AlbumWM for disable across modules.
      */
     prepareForDisable() {
         /**
          * Finish any navigation (e.g. workspace switch view).
-         * Can put PaperWM in a breakable state of lock/disable
+         * Can put AlbumWM in a breakable state of lock/disable
          * while navigating.
          */
         Navigator.finishNavigation();
     }
 
     getConfigDir() {
-        return Gio.file_new_for_path(`${GLib.get_user_config_dir()}/paperwm`);
+        return Gio.file_new_for_path(`${GLib.get_user_config_dir()}/albumwm`);
     }
 
     configDirExists() {
@@ -124,7 +124,7 @@ export default class PaperWM extends Extension {
             const metadata = this.dir.get_child("metadata.json");
             metadata.copy(configDir.get_child("metadata.json"), Gio.FileCopyFlags.OVERWRITE, null, null);
         } catch (error) {
-            console.error('PaperWM', `could not update user config metadata.json: ${error}`);
+            console.error('AlbumWM', `could not update user config metadata.json: ${error}`);
         }
 
         if (!this.hasUserStyleFile()) {
@@ -132,7 +132,7 @@ export default class PaperWM extends Extension {
                 const user = this.dir.get_child("config/user.css");
                 user.copy(configDir.get_child("user.css"), Gio.FileCopyFlags.NONE, null, null);
             } catch (error) {
-                console.error('PaperWM', `could not update user config metadata.json: ${error}`);
+                console.error('AlbumWM', `could not update user config metadata.json: ${error}`);
             }
         }
     }
@@ -151,9 +151,9 @@ export default class PaperWM extends Extension {
                 this.installConfig();
 
                 const configDir = this.getConfigDir().get_path();
-                Main.notify("PaperWM", `Created user configuration folder: ${configDir}`);
+                Main.notify("AlbumWM", `Created user configuration folder: ${configDir}`);
             } catch (e) {
-                Main.notifyError("PaperWM", `Failed create user configuration folder: ${e.message}`);
+                Main.notifyError("AlbumWM", `Failed create user configuration folder: ${e.message}`);
             }
         }
 
@@ -178,7 +178,7 @@ export default class PaperWM extends Extension {
     }
 
     /**
-     * Reloads user.css styles (if user.css present in ~/.config/paperwm).
+     * Reloads user.css styles (if user.css present in ~/.config/albumwm).
      */
     enableUserStylesheet() {
         this.#userStylesheet = this.getConfigDir().get_child("user.css");
@@ -189,7 +189,7 @@ export default class PaperWM extends Extension {
     }
 
     /**
-     * Unloads user.css styles (if user.css present in ~/.config/paperwm).
+     * Unloads user.css styles (if user.css present in ~/.config/albumwm).
      */
     disableUserStylesheet() {
         let themeContext = St.ThemeContext.get_for_stage(global.stage);

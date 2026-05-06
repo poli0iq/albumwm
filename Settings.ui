@@ -307,7 +307,7 @@
                             <child>
                               <object class="GtkLabel">
                                 <property name="focusable">False</property>
-                                <property name="tooltip_text" translatable="yes">Enables PaperWM's Window Position Bar (colored bar overlay on the Gnome topbar)</property>
+                                <property name="tooltip_text" translatable="yes">Enables AlbumWM's Window Position Bar (colored bar overlay on the Gnome topbar)</property>
                                 <property name="hexpand">1</property>
                                 <property name="label" translatable="yes">Enable Window Position Bar</property>
                                 <property name="xalign">0</property>
@@ -336,7 +336,7 @@
                         <child>
                           <object class="GtkGrid">
                             <property name="focusable">False</property>
-                            <property name="tooltip_text" translatable="yes">Replaces PaperWM's workspace indicator with the Gnome Workspace Indicator Pill (introduced in Gnome 45)</property>
+                            <property name="tooltip_text" translatable="yes">Replaces AlbumWM's workspace indicator with the Gnome Workspace Indicator Pill (introduced in Gnome 45)</property>
                             <property name="margin_start">12</property>
                             <property name="margin_end">12</property>
                             <property name="margin_top">6</property>
@@ -393,7 +393,7 @@
                         <child>
                           <object class="GtkGrid">
                             <property name="focusable">False</property>
-                            <property name="tooltip_text" translatable="yes">Enables / disables PaperWM gestures. Disabling this restores Gnome's default touchpad gestures.</property>
+                            <property name="tooltip_text" translatable="yes">Enables / disables AlbumWM gestures. Disabling this restores Gnome's default touchpad gestures.</property>
                             <property name="margin_start">12</property>
                             <property name="margin_end">12</property>
                             <property name="margin_top">6</property>
@@ -473,7 +473,7 @@
                         <child>
                           <object class="GtkGrid">
                             <property name="focusable">False</property>
-                            <property name="tooltip_text" translatable="yes">Sets the number of fingers used for PaperWM workspace stack view.</property>
+                            <property name="tooltip_text" translatable="yes">Sets the number of fingers used for AlbumWM workspace stack view.</property>
                             <property name="margin_start">12</property>
                             <property name="margin_end">12</property>
                             <property name="margin_top">6</property>
@@ -483,7 +483,7 @@
                               <object class="GtkLabel">
                                 <property name="focusable">False</property>
                                 <property name="hexpand">1</property>
-                                <property name="label" translatable="yes">PaperWM workspace switching &lt;i&gt;(swipe down)&lt;/i&gt;</property>
+                                <property name="label" translatable="yes">AlbumWM workspace switching &lt;i&gt;(swipe down)&lt;/i&gt;</property>
                                 <property name="use_markup">1</property>
                                 <property name="xalign">0</property>
                                 <layout>
@@ -865,7 +865,7 @@
                                   <object class="GtkButton" id="cycle_widths_reset_button">
                                     <property name="margin_end">8</property>
                                     <property name="label">reset</property>
-                                    <property name="tooltip_text" translatable="yes">Resets width values to the default PaperWM width values</property>
+                                    <property name="tooltip_text" translatable="yes">Resets width values to the default AlbumWM width values</property>
                                   </object>
                                 </child>
                                 <child>
@@ -919,7 +919,7 @@
                                   <object class="GtkButton" id="cycle_heights_reset_button">
                                     <property name="margin_end">8</property>
                                     <property name="label">reset</property>
-                                    <property name="tooltip_text" translatable="yes">Resets height values to the default PaperWM height values</property>
+                                    <property name="tooltip_text" translatable="yes">Resets height values to the default AlbumWM height values</property>
                                   </object>
                                 </child>
                                 <child>
@@ -1223,7 +1223,7 @@
                         <child>
                           <object class="GtkGrid">
                             <property name="focusable">False</property>
-                            <property name="tooltip_text" translatable="yes">Sets the duration of PaperWM animated transitions (e.g. switching windows, workspaces etc.). Lower values result in faster transitions.</property>
+                            <property name="tooltip_text" translatable="yes">Sets the duration of AlbumWM animated transitions (e.g. switching windows, workspaces etc.). Lower values result in faster transitions.</property>
                             <property name="margin_start">12</property>
                             <property name="margin_end">12</property>
                             <property name="margin_top">6</property>
@@ -1356,7 +1356,7 @@
                         <child>
                           <object class="GtkGrid">
                             <property name="focusable">False</property>
-                            <property name="tooltip_text" translatable="yes">Disables PaperWM's ability to style the Gnome TopBar</property>
+                            <property name="tooltip_text" translatable="yes">Disables AlbumWM's ability to style the Gnome TopBar</property>
                             <property name="margin_start">12</property>
                             <property name="margin_end">12</property>
                             <property name="margin_top">6</property>
@@ -1859,7 +1859,7 @@
                   <object class="GtkLabel">
                     <property name="halign">start</property>
                     <property name="hexpand">True</property>
-                    <property name="label" translatable="yes">PaperWM Component Size Settings</property>
+                    <property name="label" translatable="yes">AlbumWM Component Size Settings</property>
                     <attributes>
                       <attribute name="weight" value="bold" />
                     </attributes>
@@ -2560,7 +2560,7 @@ button or using the &lt;i&gt;Switch between positions for creating windows (e.g.
                   <object class="GtkLabel">
                     <property name="halign">start</property>
                     <property name="hexpand">True</property>
-                    <property name="label" translatable="yes">PaperWM Version Information</property>
+                    <property name="label" translatable="yes">AlbumWM Version Information</property>
                     <attributes>
                       <attribute name="weight" value="bold" />
                     </attributes>
@@ -2579,7 +2579,7 @@ button or using the &lt;i&gt;Switch between positions for creating windows (e.g.
                 <child>
                   <object class="GtkButton" id="about_version_copy_button">
                     <property name="label">Copy to Clipboard</property>
-                    <property name="tooltip_text" translatable="yes">Copies PaperWM version information to clipboard</property>
+                    <property name="tooltip_text" translatable="yes">Copies AlbumWM version information to clipboard</property>
                     <style>
                       <class name="suggested-action" />
                     </style>

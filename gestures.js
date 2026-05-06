@@ -83,7 +83,7 @@ export function enable(extension) {
                 return Clutter.EVENT_PROPAGATE;
             }
 
-            // PaperWM behaviour
+            // AlbumWM behaviour
             time = event.get_time();
             natural = touchpadSettings.get_boolean("natural-scroll") ? 1 : -1;
             direction = undefined;

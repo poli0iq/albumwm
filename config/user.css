@@ -1,8 +1,8 @@
 /*
-Users may override the default PaperWM styles to suit their preferences.
+Users may override the default AlbumWM styles to suit their preferences.
 Added custom styling in this `user.css` file.
 
-`Disable` and then `enable` PaperWM extension to apply these styles 
+`Disable` and then `enable` AlbumWM extension to apply these styles
 (users do NOT need to logout / login).
 
 DEFAULT STYLES ARE PROVIDED BELOW FOR REFERENCE:
@@ -63,20 +63,20 @@ DEFAULT STYLES ARE PROVIDED BELOW FOR REFERENCE:
     icon-size: 16px;
 }
 
-.paperwm-minimap-selection {
+.albumwm-minimap-selection {
     border-radius: 8px;
 }
 
-.paperwm-clone-shade {
+.albumwm-clone-shade {
     background-color: rgba(0, 0, 0, 0.7);
     border-radius: 7px 7px 0px 0px;
 }
 
-.paperwm-window-position-bar-backdrop {
+.albumwm-window-position-bar-backdrop {
     background-color: rgba(0, 0, 0, 0.35);
 }
 
-.paperwm-window-position-bar {
+.albumwm-window-position-bar {
     border: 0;
     border-radius: 1px;
 }

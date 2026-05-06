@@ -5,12 +5,12 @@ XDG_DATA_HOME := ${HOME}/.local/share
 endif
 
 SOURCE      := $$PWD
-EXT_ID      := paperwm@paperwm.github.com
+EXT_ID      := albumwm@0iq.dev
 EXT_DIR     := $(XDG_DATA_HOME)/gnome-shell/extensions
 TARGET      := $(EXT_DIR)/$(EXT_ID)
 
 CONFIG_FILES   = config/user.js config/user.css
-GSCHEMA_FILES  = schemas/org.gnome.shell.extensions.paperwm.gschema.xml
+GSCHEMA_FILES  = schemas/org.gnome.shell.extensions.albumwm.gschema.xml
 JS_FILES       = $(wildcard *.js)
 UI_FILES       = $(wildcard *.ui)
 RESOURCE_FILES = $(wildcard resources/*)
@@ -35,14 +35,14 @@ SHELL=/bin/bash
 ## Update compiled files
 all: $(RELEASE_FILES)
 
-## Install PaperWM on this system
+## Install AlbumWM on this system
 install: schemas/gschemas.compiled
 	@if [[ ! -L "$(TARGET)" && -d "$(TARGET)" ]]; \
 	then                                    \
 		echo;                               \
 		echo "INSTALL FAILED:";             \
 		echo;                               \
-		echo "A previous (non-symlinked) installation of PaperWM already exists at:"; \
+		echo "A previous (non-symlinked) installation of AlbumWM already exists at:"; \
 		echo "'$(TARGET)'.";                   \
 		echo;                               \
 		echo "Please remove the installed version from that path and re-run this install script."; \
@@ -56,14 +56,14 @@ install: schemas/gschemas.compiled
 	@echo
 	@echo "INSTALL SUCCESSFUL:"
 	@echo
-	@echo "If this is the first time installing PaperWM, then please logout/login"
-	@echo "and enable the PaperWM extension, either with the GNOME Extensions application,"
+	@echo "If this is the first time installing AlbumWM, then please logout/login"
+	@echo "and enable the AlbumWM extension, either with the GNOME Extensions application,"
 	@echo "or manually by executing the following command from a terminal:"
 	@echo
 	@echo "gnome-extensions enable $(EXT_ID)"
 	@echo
 
-## Uninstall PaperWM from this system
+## Uninstall AlbumWM from this system
 uninstall:
 	@$(call rich_echo,"GNOME_EXT_DISABLE", "$(EXT_ID)")
 	@$(GNOME_EXT_DISABLE) $(EXT_ID)

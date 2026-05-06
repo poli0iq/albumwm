@@ -20,7 +20,7 @@ import { Utils, Tiling, Scratch, Settings, OverviewLayout } from './imports.js';
 
 /**
   Some of Gnome Shell's default behavior is really sub-optimal when using
-  paperWM. Other features are simply not possible to implement without monkey
+  albumWM. Other features are simply not possible to implement without monkey
   patching. This is a collection of monkey patches and preferences which works
   around these problems and facilitates new features.
  */
@@ -72,7 +72,7 @@ export function registerOverrideProp(obj, name, override, warn = true) {
     // check if prop exists
     const exists = obj?.[name];
     if (!exists && warn) {
-        console.warn(`#PaperWM: attempt to override prop for '${name}' failed: is null or undefined`);
+        console.warn(`#AlbumWM: attempt to override prop for '${name}' failed: is null or undefined`);
     }
 
     let saved = getSavedProp(obj, name) ?? obj[name];
@@ -94,7 +94,7 @@ export function registerOverridePrototype(obj, name, override) {
     // check if method for prototype exists
     const exists = obj?.prototype?.[name];
     if (!exists) {
-        console.warn(`#PaperWM: attempt to override prototype for '${name}' failed: is null or undefined`);
+        console.warn(`#AlbumWM: attempt to override prototype for '${name}' failed: is null or undefined`);
     }
 
     registerOverrideProp(obj.prototype, name, override);
@@ -141,8 +141,8 @@ export function enableOverride(obj, name) {
 }
 
 /**
- * Sets up PaperWM overrides (needed for operations).  These overrides are registered and restored
- * on PaperWM disable.
+ * Sets up AlbumWM overrides (needed for operations).  These overrides are registered and restored
+ * on AlbumWM disable.
  */
 export function setupOverrides() {
     registerOverridePrototype(WorkspaceAnimation.WorkspaceAnimationController, 'animateSwitch',
@@ -167,14 +167,14 @@ export function setupOverrides() {
                 return;
             }
 
-            // if using PaperWM workspace switch animation, just do complete here
+            // if using AlbumWM workspace switch animation, just do complete here
             if (!Tiling.spaces.space_defaultAnimation) {
                 onComplete();
                 reset();
                 return;
             }
 
-            // if switching to a paperwm space that is already shown on a monitor
+            // if switching to an albumwm space that is already shown on a monitor
             // from / to are workspace indices
             const toSpace = Tiling.spaces.spaceOfIndex(_to);
 
@@ -221,7 +221,7 @@ export function setupOverrides() {
 
     /**
      * Used on overview layout.  UnalignedLayoutStrategy is not exported in Gnome 45, and hence
-     * we need to override this function and call PaperWM customised UnalignedLayoutStrategy found
+     * we need to override this function and call AlbumWM customised UnalignedLayoutStrategy found
      * in overlayout.js.
      */
     registerOverridePrototype(Workspace.WorkspaceLayout, '_createBestLayout', function(area) {
@@ -396,7 +396,7 @@ export function setupOverrides() {
         let size;
         let scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
         const scale = Settings.prefs.window_switcher_preview_scale;
-        // scale size based on PaperWM's minimap-scale
+        // scale size based on AlbumWM's minimap-scale
         if (scale > 0) {
             size = Math.round(this.monitor.height * scale);
         } else {
@@ -474,9 +474,9 @@ export function disableOverrides() {
 
 /**
  * Saves the original setting value (boolean) to restore on disable.
- * We save a backup of the user's setting to PaperWM settings (schema)
+ * We save a backup of the user's setting to AlbumWM settings (schema)
  * for safety (in case gnome terminates etc.).  This ensures original
- * user settings will be restored on next PaperWM disable.
+ * user settings will be restored on next AlbumWM disable.
  * @param key
  */
 let runtimeDisables = [];
@@ -485,11 +485,11 @@ export function saveRuntimeDisable(schemaSettings, key, disableValue) {
         let origValue = schemaSettings.get_boolean(key);
         schemaSettings.set_boolean(key, disableValue);
 
-        // save a backup copy to PaperWM settings (for restore)
+        // save a backup copy to AlbumWM settings (for restore)
         let pkey = `restore-${key}`;
 
         /**
-         * Now if paperwm settings has restore values, it means
+         * Now if albumwm settings has restore values, it means
          * that they weren't previously restore properly (since on
          * successful restore we clear the values).
          */
@@ -497,7 +497,7 @@ export function saveRuntimeDisable(schemaSettings, key, disableValue) {
             gsettings.set_string(pkey, origValue.toString());
         }
 
-        // we want to restore from PaperWM back settings (safer)
+        // we want to restore from AlbumWM back settings (safer)
         let restore = () => {
             let value = gsettings.get_string(pkey);
             // if value is empty, do nothing
@@ -508,7 +508,7 @@ export function saveRuntimeDisable(schemaSettings, key, disableValue) {
             let bvalue = value === 'true';
             schemaSettings.set_boolean(key, bvalue);
 
-            // after restore, empty papermw saved value
+            // after restore, empty albumwm saved value
             gsettings.set_string(pkey, '');
         };
 
@@ -519,9 +519,9 @@ export function saveRuntimeDisable(schemaSettings, key, disableValue) {
 }
 
 /**
- * PaperWM disables certain behaviours during runtime.
- * The user original settings are saved to PaperWM's settings (schema) for restoring
- * purposes (we save to PaperWM's setting just in gnome terminates before PaperWM can
+ * AlbumWM disables certain behaviours during runtime.
+ * The user original settings are saved to AlbumWM's settings (schema) for restoring
+ * purposes (we save to AlbumWM's setting just in gnome terminates before AlbumWM can
  * restore the original user settings).  These settings are then restored on disable().
  */
 export function setupRuntimeDisables() {
@@ -532,7 +532,7 @@ export function setupRuntimeDisables() {
 
 /**
  * Restores the runtime settings that were disabled when
- * PaperWM was enabled.
+ * AlbumWM was enabled.
  */
 export function restoreRuntimeDisables() {
     if (Main.sessionMode.isLocked) {
@@ -598,8 +598,8 @@ export function _checkWorkspaces() {
 
         if (created > 0) {
             Main.notify(
-                `PaperWM (created ${created} workspaces)`,
-                `PaperWM requires a minimum of ${minimum} workspaces for you monitor configuration.`
+                `AlbumWM (created ${created} workspaces)`,
+                `AlbumWM requires a minimum of ${minimum} workspaces for you monitor configuration.`
             );
         }
 

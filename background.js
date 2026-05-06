@@ -3,7 +3,7 @@
  * relevant parts).
  *
  * This was done since `Background` class isn't exported in Gnome 47, and we use the
- * `Background` to add support for animated wallpapers in PaperWM spaces
+ * `Background` to add support for animated wallpapers in AlbumWM spaces
  * (we previously used Meta.Background but it doesn't support animated wallpapers).
  *
  * See https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/449a7a13034d507cd8b6776c8e1a021264c8bf41/js/ui/background.js

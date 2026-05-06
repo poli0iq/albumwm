@@ -6,8 +6,8 @@ import * as Lib from './lib.js';
 /**
  * Workspace related utility functions used by other modules.
  */
-const WORKSPACE_LIST_KEY = 'org.gnome.shell.extensions.paperwm.workspacelist';
-const WORKSPACE_KEY = 'org.gnome.shell.extensions.paperwm.workspace';
+const WORKSPACE_LIST_KEY = 'org.gnome.shell.extensions.albumwm.workspacelist';
+const WORKSPACE_KEY = 'org.gnome.shell.extensions.albumwm.workspace';
 
 export class WorkspaceSettings {
     constructor(extension) {
@@ -71,7 +71,7 @@ export class WorkspaceSettings {
         if (!this.workspaceSettingsCache[uuid]) {
             let settings = new Gio.Settings({
                 settings_schema: this.getSchemaSource().lookup(WORKSPACE_KEY, true),
-                path: `/org/gnome/shell/extensions/paperwm/workspaces/${uuid}/`,
+                path: `/org/gnome/shell/extensions/albumwm/workspaces/${uuid}/`,
             });
             this.workspaceSettingsCache[uuid] = settings;
         }

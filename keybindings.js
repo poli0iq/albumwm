@@ -12,7 +12,7 @@ import {
 const Seat = Clutter.get_default_backend().get_default_seat();
 const display = global.display;
 
-const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.paperwm.keybindings';
+const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
 let keybindSettings;
 export function enable(extension) {
@@ -33,8 +33,8 @@ export function enable(extension) {
             const numConflicts = Settings.conflictKeyChanged(settings, key);
             if (numConflicts > 0) {
                 Main.notifyError(
-                    `PaperWM: overriding '${key}' keybind`,
-                    `this Gnome Keybind will be restored when PaperWM is disabled`);
+                    `AlbumWM: overriding '${key}' keybind`,
+                    `this Gnome Keybind will be restored when AlbumWM is disabled`);
             }
         });
     });
@@ -53,7 +53,7 @@ export function disable() {
     keycomboMap = null;
 }
 
-export function registerPaperAction(actionName, handler, flags) {
+export function registerAlbumAction(actionName, handler, flags) {
     registerAction(
         actionName,
         handler,
@@ -172,16 +172,16 @@ export function setupActions(settings) {
     registerNavigatorAction('move-down-workspace', Tiling.moveDownSpace);
     registerNavigatorAction('move-up-workspace', Tiling.moveUpSpace);
 
-    registerPaperAction('toggle-top-and-position-bar', (_mw, space) => {
+    registerAlbumAction('toggle-top-and-position-bar', (_mw, space) => {
         const value = !space.settings.get_boolean('show-top-bar');
         space.settings.set_boolean('show-top-bar', value);
         space.settings.set_boolean('show-position-bar', value);
     });
-    registerPaperAction('toggle-top-bar', (_mw, space) => {
+    registerAlbumAction('toggle-top-bar', (_mw, space) => {
         const value = space.settings.get_boolean('show-top-bar');
         space.settings.set_boolean('show-top-bar', !value);
     });
-    registerPaperAction('toggle-position-bar', (_mw, space) => {
+    registerAlbumAction('toggle-position-bar', (_mw, space) => {
         const value = space.settings.get_boolean('show-position-bar');
         space.settings.set_boolean('show-position-bar', !value);
     });
@@ -236,106 +236,106 @@ export function setupActions(settings) {
     registerMinimapAction("move-down",
         (_mw, space) => space.swap(Meta.MotionDirection.DOWN));
 
-    registerPaperAction("toggle-scratch-window",
+    registerAlbumAction("toggle-scratch-window",
         Scratch.toggleScratchWindow);
 
-    registerPaperAction("toggle-scratch-layer",
+    registerAlbumAction("toggle-scratch-layer",
         Scratch.toggleScratch);
 
-    registerPaperAction("toggle-scratch",
+    registerAlbumAction("toggle-scratch",
         Scratch.toggle,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("activate-window-under-cursor",
+    registerAlbumAction("activate-window-under-cursor",
         Tiling.activateWindowUnderCursor);
 
-    registerPaperAction("switch-focus-mode",
+    registerAlbumAction("switch-focus-mode",
         Tiling.switchToNextFocusMode);
 
-    registerPaperAction("switch-open-window-position",
+    registerAlbumAction("switch-open-window-position",
         Topbar.switchToNextOpenPositionMode);
-    registerPaperAction("open-window-position-right",
+    registerAlbumAction("open-window-position-right",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.RIGHT));
-    registerPaperAction("open-window-position-left",
+    registerAlbumAction("open-window-position-left",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.LEFT));
-    registerPaperAction("open-window-position-start",
+    registerAlbumAction("open-window-position-start",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.START));
-    registerPaperAction("open-window-position-end",
+    registerAlbumAction("open-window-position-end",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.END));
-    registerPaperAction("open-window-position-down",
+    registerAlbumAction("open-window-position-down",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.DOWN));
-    registerPaperAction("open-window-position-up",
+    registerAlbumAction("open-window-position-up",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.UP));
 
-    registerPaperAction("resize-h-inc",
+    registerAlbumAction("resize-h-inc",
         Tiling.resizeHInc,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("resize-h-dec",
+    registerAlbumAction("resize-h-dec",
         Tiling.resizeHDec,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("resize-w-inc",
+    registerAlbumAction("resize-w-inc",
         Tiling.resizeWInc,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("resize-w-dec",
+    registerAlbumAction("resize-w-dec",
         Tiling.resizeWDec,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("cycle-width",
+    registerAlbumAction("cycle-width",
         Tiling.cycleWindowWidth,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("cycle-width-backwards",
+    registerAlbumAction("cycle-width-backwards",
         Tiling.cycleWindowWidthBackwards,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("cycle-height",
+    registerAlbumAction("cycle-height",
         Tiling.cycleWindowHeight,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("cycle-height-backwards",
+    registerAlbumAction("cycle-height-backwards",
         Tiling.cycleWindowHeightBackwards,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("center-horizontally",
+    registerAlbumAction("center-horizontally",
         (mw, _space) => Tiling.centerWindow(mw, true, false),
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("center-vertically",
+    registerAlbumAction("center-vertically",
         (mw, _space) => Tiling.centerWindow(mw, false, true),
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction("center",
+    registerAlbumAction("center",
         (mw, _space) => Tiling.centerWindow(mw, true, true),
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction('new-window',
+    registerAlbumAction('new-window',
         App.duplicateWindow,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction('close-window',
+    registerAlbumAction('close-window',
         metaWindow => metaWindow.delete(global.get_current_time()),
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction('slurp-in',
+    registerAlbumAction('slurp-in',
         (mw, _space) => Tiling.slurp(mw),
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction('barf-out',
+    registerAlbumAction('barf-out',
         (mw, _space) => Tiling.barf(mw),
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction('barf-out-active',
+    registerAlbumAction('barf-out-active',
         (mw, _space) => Tiling.barf(mw, mw),
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction('toggle-maximize-width',
+    registerAlbumAction('toggle-maximize-width',
         Tiling.toggleMaximizeHorizontally,
         Meta.KeyBindingFlags.PER_WINDOW);
 
-    registerPaperAction('paper-toggle-fullscreen',
+    registerAlbumAction('album-toggle-fullscreen',
         metaWindow => {
             if (metaWindow.fullscreen) {
                 metaWindow.unmake_fullscreen();
@@ -462,7 +462,7 @@ export function bindkey(keystr, actionName = null, handler = null, options = {})
         let message;
         let boundAction = keycomboMap[keycombo];
         if (boundAction) {
-            message = `${keystr} already bound to paperwm action: ${boundAction.name}`;
+            message = `${keystr} already bound to albumwm action: ${boundAction.name}`;
         } else {
             let boundId = getBoundActionId(keystr);
             if (boundId !== Meta.KeyBindingAction.NONE) {
@@ -481,7 +481,7 @@ export function bindkey(keystr, actionName = null, handler = null, options = {})
         }
 
         Main.notifyError(
-            "PaperWM (user.js): Could not enable keybinding",
+            "AlbumWM (user.js): Could not enable keybinding",
             `Tried to bind ${keystr} to ${actionName}\n${message}`);
     }
 

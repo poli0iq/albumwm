@@ -14,7 +14,7 @@ import * as WinpropsPane from './winpropsPane.js';
 
 const _ = s => s;
 
-export default class PaperWMPrefs extends ExtensionPreferences {
+export default class AlbumWMPrefs extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const provider = new Gtk.CssProvider();
         provider.load_from_path(`${this.path}/resources/prefs.css`);
@@ -26,7 +26,7 @@ export default class PaperWMPrefs extends ExtensionPreferences {
 
         let selectedWorkspace = null;
         try {
-            const tempFile = Gio.File.new_for_path(GLib.get_tmp_dir()).get_child('paperwm.workspace');
+            const tempFile = Gio.File.new_for_path(GLib.get_tmp_dir()).get_child('albumwm.workspace');
             let [, contents] = tempFile.load_contents(null);
             const decoder = new TextDecoder('utf-8');
             const contentsString = decoder.decode(contents);
@@ -483,7 +483,7 @@ class SettingsWidget {
         Distribution: ${GLib.get_os_info('NAME') ?? 'UNKNOWN'} ${GLib.get_os_info('VERSION') ?? ""}
         GNOME Shell: ${this._getGnomeVersion()}\
         ${this._getLastDisplayServer()}
-        PaperWM version: ${this.extension.metadata['version-name'] ?? 'UNKNOWN'}\
+        AlbumWM version: ${this.extension.metadata['version-name'] ?? 'UNKNOWN'}\
         ${this._getExtensions()}
         `.split('\n')
         .map(v => v.trim())
