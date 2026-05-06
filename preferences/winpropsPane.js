@@ -4,7 +4,7 @@ import Gtk from 'gi://Gtk';
 
 export const WinpropsPane = GObject.registerClass({
     GTypeName: 'WinpropsPane',
-    Template: GLib.uri_resolve_relative(import.meta.url, './WinpropsPane.ui', GLib.UriFlags.NONE),
+    Template: GLib.uri_resolve_relative(import.meta.url, '../WinpropsPane.ui', GLib.UriFlags.NONE),
     InternalChildren: [
         'search',
         'listbox',

@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
-import { AcceleratorParse } from './acceleratorparse.js';
+import { AcceleratorParse } from '../acceleratorparse.js';
 
 const _ = s => s;
 
@@ -1013,7 +1013,7 @@ const KeybindingsRow = GObject.registerClass({
 
 export const KeybindingsPane = GObject.registerClass({
     GTypeName: 'KeybindingsPane',
-    Template: GLib.uri_resolve_relative(import.meta.url, './KeybindingsPane.ui', GLib.UriFlags.NONE),
+    Template: GLib.uri_resolve_relative(import.meta.url, '../KeybindingsPane.ui', GLib.UriFlags.NONE),
     InternalChildren: [
         'search',
         'listbox',

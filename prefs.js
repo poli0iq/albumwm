@@ -8,9 +8,9 @@ import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/
 import * as Settings from './settings.js';
 import { WorkspaceSettings } from './workspace.js';
 // eslint-disable-next-line no-unused-vars
-import * as KeybindingsPane from './prefsKeybinding.js';
+import * as KeybindingsPane from './preferences/keybindingsPane.js';
 // eslint-disable-next-line no-unused-vars
-import * as WinpropsPane from './winpropsPane.js';
+import * as WinpropsPane from './preferences/winpropsPane.js';
 
 const _ = s => s;
 
