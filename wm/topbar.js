@@ -452,9 +452,9 @@ export const FocusIcon = GObject.registerClass(
                 tooltipProps,
                 () => {
                     const pather = relativePath => GLib.uri_resolve_relative(import.meta.url, relativePath, GLib.UriFlags.NONE);
-                    this.gIconDefault = Gio.icon_new_for_string(pather('./resources/focus-mode-default-symbolic.svg'));
-                    this.gIconCenter = Gio.icon_new_for_string(pather('./resources/focus-mode-center-symbolic.svg'));
-                    this.gIconEdge = Gio.icon_new_for_string(pather('./resources/focus-mode-edge-symbolic.svg'));
+                    this.gIconDefault = Gio.icon_new_for_string(pather('../resources/focus-mode-default-symbolic.svg'));
+                    this.gIconCenter = Gio.icon_new_for_string(pather('../resources/focus-mode-center-symbolic.svg'));
+                    this.gIconEdge = Gio.icon_new_for_string(pather('../resources/focus-mode-edge-symbolic.svg'));
                 },
                 mode => {
                     mode = mode ?? Tiling.FocusModes.DEFAULT;
@@ -555,12 +555,12 @@ export const OpenPositionIcon = GObject.registerClass(
                 tooltipProps,
                 () => {
                     const pather = relativePath => GLib.uri_resolve_relative(import.meta.url, relativePath, GLib.UriFlags.NONE);
-                    this.gIconRight = Gio.icon_new_for_string(pather('./resources/open-position-right-symbolic.svg'));
-                    this.gIconLeft = Gio.icon_new_for_string(pather('./resources/open-position-left-symbolic.svg'));
-                    this.gIconStart = Gio.icon_new_for_string(pather('./resources/open-position-start-symbolic.svg'));
-                    this.gIconEnd = Gio.icon_new_for_string(pather('./resources/open-position-end-symbolic.svg'));
-                    this.gIconDown = Gio.icon_new_for_string(pather('./resources/open-position-down-symbolic.svg'));
-                    this.gIconUp = Gio.icon_new_for_string(pather('./resources/open-position-up-symbolic.svg'));
+                    this.gIconRight = Gio.icon_new_for_string(pather('../resources/open-position-right-symbolic.svg'));
+                    this.gIconLeft = Gio.icon_new_for_string(pather('../resources/open-position-left-symbolic.svg'));
+                    this.gIconStart = Gio.icon_new_for_string(pather('../resources/open-position-start-symbolic.svg'));
+                    this.gIconEnd = Gio.icon_new_for_string(pather('../resources/open-position-end-symbolic.svg'));
+                    this.gIconDown = Gio.icon_new_for_string(pather('../resources/open-position-down-symbolic.svg'));
+                    this.gIconUp = Gio.icon_new_for_string(pather('../resources/open-position-up-symbolic.svg'));
 
 
                     // connection to update based on gsetting

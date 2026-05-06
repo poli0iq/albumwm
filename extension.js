@@ -8,7 +8,7 @@ import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 import {
     Utils, Settings, Gestures, Keybindings, LiveAltTab, Navigator,
     Stackoverlay, Scratch, Workspace, Tiling, Topbar, Patches, App, Grab
-} from './imports.js';
+} from './wm/imports.js';
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 

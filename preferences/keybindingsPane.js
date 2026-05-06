@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
-import { AcceleratorParse } from '../acceleratorparse.js';
+import { AcceleratorParse } from '../wm/acceleratorparse.js';
 
 const _ = s => s;
 

@@ -5,8 +5,8 @@ import Gtk from 'gi://Gtk';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import * as Settings from './settings.js';
-import { WorkspaceSettings } from './workspace.js';
+import * as Settings from './wm/settings.js';
+import { WorkspaceSettings } from './wm/workspace.js';
 // eslint-disable-next-line no-unused-vars
 import * as KeybindingsPane from './preferences/keybindingsPane.js';
 // eslint-disable-next-line no-unused-vars
