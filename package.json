@@ -1,0 +1,15 @@
+{
+  "name": "albumwm",
+  "version": "50.0.0",
+  "description": "Scrollable tiling extension for GNOME Shell",
+  "type": "module",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://albumwm.0iq.dev",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,13 +1,11 @@
-.config
-TAGS
+.*
 
-# any generated extension zip
-paperwm@paperwm.github.com.zip
+albumwm@*.zip
 
-# eslint support files
+dist/
 node_modules/
-package.json
-package-lock.json
+schemas/gschemas.compiled
 
-# generated disk image for test VM
+# Nix
+result
 nixos.qcow2

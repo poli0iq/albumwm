@@ -18,22 +18,42 @@
         hostPkgs = import nixpkgs { inherit system; };
       in
       {
-        packages.default = hostPkgs.stdenv.mkDerivation {
+        packages.default = hostPkgs.buildNpmPackage {
           pname = "gnome-shell-extension-albumwm";
           version = "unstable";
           src = ./.;
 
-          makeFlags = [
-            "SOURCE=$(src)"
-            "EXT_DIR=$(out)/share/gnome-shell/extensions"
+          npmDepsHash = "sha256-J06rhvr5SvhlD2hDMzSw/FMHiBGkcnnhA+3h69T0jY8=";
+
+          nativeBuildInputs = with hostPkgs; [
+            glib
           ];
 
-          nativeBuildInputs = [ hostPkgs.glib ];
+          buildPhase = ''
+            runHook preBuild
+            make all
+            runHook postBuild
+          '';
+
+          installPhase = ''
+            runHook preInstall
+            mkdir -p $out/share/gnome-shell/extensions
+            cp -r dist $out/share/gnome-shell/extensions/albumwm@0iq.dev
+            runHook postInstall
+          '';
 
           passthru = {
             extensionPortalSlug = "albumwm";
             extensionUuid = "albumwm@0iq.dev";
           };
+        };
+
+        devShells.default = hostPkgs.mkShell {
+          inputsFrom = [ self.packages.${system}.default ];
+
+          nativeBuildInputs = with hostPkgs; [
+            zip
+          ];
         };
 
         # This allows us to build Qemu for the host system thus avoiding
