@@ -609,7 +609,7 @@ export const KeybindingsModel = GObject.registerClass({
 
 const ComboRow = GObject.registerClass({
     GTypeName: 'ComboRow',
-    Template: GLib.uri_resolve_relative(import.meta.url, './KeybindingsComboRow.ui', GLib.UriFlags.NONE),
+    Template: GLib.uri_resolve_relative(import.meta.url, '../ui/KeybindingsComboRow.ui', GLib.UriFlags.NONE),
     InternalChildren: [
         'stack',
         'shortcutPage',
@@ -843,7 +843,7 @@ const ComboRow = GObject.registerClass({
 
 const KeybindingsRow = GObject.registerClass({
     GTypeName: 'KeybindingsRow',
-    Template: GLib.uri_resolve_relative(import.meta.url, './KeybindingsRow.ui', GLib.UriFlags.NONE),
+    Template: GLib.uri_resolve_relative(import.meta.url, '../ui/KeybindingsRow.ui', GLib.UriFlags.NONE),
     InternalChildren: [
         'header',
         'descLabel',
@@ -1013,7 +1013,7 @@ const KeybindingsRow = GObject.registerClass({
 
 export const KeybindingsPane = GObject.registerClass({
     GTypeName: 'KeybindingsPane',
-    Template: GLib.uri_resolve_relative(import.meta.url, '../KeybindingsPane.ui', GLib.UriFlags.NONE),
+    Template: GLib.uri_resolve_relative(import.meta.url, '../ui/KeybindingsPane.ui', GLib.UriFlags.NONE),
     InternalChildren: [
         'search',
         'listbox',

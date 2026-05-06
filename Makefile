@@ -12,7 +12,7 @@ TARGET      := $(EXT_DIR)/$(EXT_ID)
 CONFIG_FILES   = config/user.js config/user.css
 GSCHEMA_FILES  = schemas/org.gnome.shell.extensions.albumwm.gschema.xml
 JS_FILES       = $(wildcard *.js) $(wildcard preferences/*.js)
-UI_FILES       = $(wildcard *.ui)
+UI_FILES       = $(wildcard ui/*.ui)
 RESOURCE_FILES = $(wildcard resources/*)
 
 RELEASE_FILES = $(JS_FILES) $(UI_FILES) $(RESOURCE_FILES) \

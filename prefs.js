@@ -57,7 +57,7 @@ class SettingsWidget {
         this._settings = extension.getSettings();
         this.workspaceSettings = new WorkspaceSettings(extension);
         const wmSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.wm.preferences' });
-        this.builder = Gtk.Builder.new_from_file(`${extension.path}/Settings.ui`);
+        this.builder = Gtk.Builder.new_from_file(`${extension.path}/ui/Settings.ui`);
         this.window = prefsWindow;
 
         const pages = [

@@ -4,7 +4,7 @@ import Gtk from 'gi://Gtk';
 
 export const WinpropsPane = GObject.registerClass({
     GTypeName: 'WinpropsPane',
-    Template: GLib.uri_resolve_relative(import.meta.url, '../WinpropsPane.ui', GLib.UriFlags.NONE),
+    Template: GLib.uri_resolve_relative(import.meta.url, '../ui/WinpropsPane.ui', GLib.UriFlags.NONE),
     InternalChildren: [
         'search',
         'listbox',
@@ -95,7 +95,7 @@ export const WinpropsPane = GObject.registerClass({
 
 export const WinpropsRow = GObject.registerClass({
     GTypeName: 'WinpropsRow',
-    Template: GLib.uri_resolve_relative(import.meta.url, './WinpropsRow.ui', GLib.UriFlags.NONE),
+    Template: GLib.uri_resolve_relative(import.meta.url, '../ui/WinpropsRow.ui', GLib.UriFlags.NONE),
     InternalChildren: [
         'header',
         'descLabel',
