@@ -481,7 +481,7 @@ export function bindkey(keystr, actionName = null, handler = null, options = {})
         }
 
         Main.notifyError(
-            "AlbumWM (user.js): Could not enable keybinding",
+            "AlbumWM: Could not enable keybinding",
             `Tried to bind ${keystr} to ${actionName}\n${message}`);
     }
 

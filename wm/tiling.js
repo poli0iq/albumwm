@@ -5611,7 +5611,3 @@ export function cycleWorkspaceSettings(dir = 1) {
     return space;
 }
 
-// Backward compatibility
-export function defwinprop(...args) {
-    return Settings.defwinprop(...args);
-}

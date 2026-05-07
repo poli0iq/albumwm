@@ -1,8 +1,5 @@
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import St from 'gi://St';
 
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
 import {
@@ -52,14 +49,8 @@ export default class AlbumWM extends Extension {
         Workspace, Tiling, Topbar, App, Grab,
     ];
 
-    #userStylesheet = null;
-
     enable() {
         console.log(`#AlbumWM enabled`);
-        this.enableUserConfig();
-        this.enableUserStylesheet();
-
-        // run enable method (with extension argument on all modules)
         this.modules.forEach(m => {
             if (m['enable']) {
                 m.enable(this);
@@ -75,126 +66,12 @@ export default class AlbumWM extends Extension {
                 m.disable();
             }
         });
-
-        this.disableUserStylesheet();
     }
 
-    /**
-     * Prepares AlbumWM for disable across modules.
-     */
     prepareForDisable() {
-        /**
-         * Finish any navigation (e.g. workspace switch view).
-         * Can put AlbumWM in a breakable state of lock/disable
-         * while navigating.
-         */
+        // Finishing navigation here avoids leaving AlbumWM in a broken state
+        // if disable hits mid-navigation (e.g. workspace switch view).
         Navigator.finishNavigation();
-    }
-
-    getConfigDir() {
-        return Gio.file_new_for_path(`${GLib.get_user_config_dir()}/albumwm`);
-    }
-
-    configDirExists() {
-        return this.getConfigDir().query_exists(null);
-    }
-
-    hasUserConfigFile() {
-        return this.getConfigDir().get_child("user.js").query_exists(null);
-    }
-
-    hasUserStyleFile() {
-        return this.getConfigDir().get_child("user.css").query_exists(null);
-    }
-
-    /**
-     * Update the metadata.json in user config dir to always keep it up to date.
-     * We copy metadata.json to the config directory so gnome-shell-mode
-     * knows which extension the files belong to (ideally we'd symlink, but
-     * that trips up the importer: Extension.imports.<complete> in
-     * gnome-shell-mode crashes gnome-shell..)
-     */
-    updateUserConfigFiles() {
-        if (!this.configDirExists()) {
-            return;
-        }
-        const configDir = this.getConfigDir();
-
-        try {
-            const metadata = this.dir.get_child("metadata.json");
-            metadata.copy(configDir.get_child("metadata.json"), Gio.FileCopyFlags.OVERWRITE, null, null);
-        } catch (error) {
-            console.error('AlbumWM', `could not update user config metadata.json: ${error}`);
-        }
-
-        if (!this.hasUserStyleFile()) {
-            try {
-                const user = this.dir.get_child("config/user.css");
-                user.copy(configDir.get_child("user.css"), Gio.FileCopyFlags.NONE, null, null);
-            } catch (error) {
-                console.error('AlbumWM', `could not update user config metadata.json: ${error}`);
-            }
-        }
-    }
-
-    installConfig() {
-        const configDir = this.getConfigDir();
-        // if user config folder doesn't exist, create it
-        if (!this.configDirExists()) {
-            configDir.make_directory_with_parents(null);
-        }
-    }
-
-    enableUserConfig() {
-        if (!this.configDirExists()) {
-            try {
-                this.installConfig();
-
-                const configDir = this.getConfigDir().get_path();
-                Main.notify("AlbumWM", `Created user configuration folder: ${configDir}`);
-            } catch (e) {
-                Main.notifyError("AlbumWM", `Failed create user configuration folder: ${e.message}`);
-            }
-        }
-
-        this.updateUserConfigFiles();
-
-        /* TODO: figure out something here
-        fmuellner:
-        > you can't
-        > as I said, it's part of gjs legacy imports
-        > you'll have to do something like const userMod = await import(${this.getConfigDir()}/user.js)
-        */
-        /*
-        // add to searchpath if user has config file and action user.js
-        if (this.hasUserConfigFile()) {
-            let SearchPath = Extension.imports.searchPath;
-            let path = this.getConfigDir().get_path();
-            if (!SearchPath.includes(path)) {
-                SearchPath.push(path);
-            }
-        }
-        */
-    }
-
-    /**
-     * Reloads user.css styles (if user.css present in ~/.config/albumwm).
-     */
-    enableUserStylesheet() {
-        this.#userStylesheet = this.getConfigDir().get_child("user.css");
-        if (this.#userStylesheet.query_exists(null)) {
-            let themeContext = St.ThemeContext.get_for_stage(global.stage);
-            themeContext.get_theme().load_stylesheet(this.#userStylesheet);
-        }
-    }
-
-    /**
-     * Unloads user.css styles (if user.css present in ~/.config/albumwm).
-     */
-    disableUserStylesheet() {
-        let themeContext = St.ThemeContext.get_for_stage(global.stage);
-        themeContext.get_theme().unload_stylesheet(this.#userStylesheet);
-        this.#userStylesheet = null;
     }
 
     spawnPager(content) {

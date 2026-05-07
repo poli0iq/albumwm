@@ -19,8 +19,6 @@
     "node_modules",
     "dist",
     "result",
-    "config",
-    "examples",
     "eslint.config.js"
   ]
 }

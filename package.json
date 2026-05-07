@@ -9,7 +9,7 @@
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "tsc",
-    "postbuild": "cp -r schemas ui resources config metadata.json stylesheet.css LICENSE dist/ && glib-compile-schemas dist/schemas",
+    "postbuild": "cp -r schemas ui resources metadata.json stylesheet.css LICENSE dist/ && glib-compile-schemas dist/schemas",
     "pack": "npm run build && rm -f albumwm@0iq.dev.zip && cd dist && zip -9r ../albumwm@0iq.dev.zip .",
     "install:ext": "npm run pack && gnome-extensions install --force albumwm@0iq.dev.zip",
     "uninstall:ext": "gnome-extensions uninstall albumwm@0iq.dev 2>/dev/null; rm -rf \"$HOME/.local/share/gnome-shell/extensions/albumwm@0iq.dev\"",

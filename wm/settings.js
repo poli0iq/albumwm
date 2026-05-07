@@ -399,7 +399,7 @@ export function find_winprop(meta_window)  {
     return null;
 }
 
-export function defwinprop(spec) {
+function defwinprop(spec) {
     // process preferredWidth - expects inputs like 50% or 400px
     if (spec.preferredWidth) {
         spec.preferredWidth = {
@@ -411,13 +411,9 @@ export function defwinprop(spec) {
         };
     }
 
-    /**
-     * we order specs with gsettings rirst ==> gsetting winprops take precedence
-     * over winprops defined in user.js.  This was done since gsetting winprops
-     * are easier to add/remove (and can be added/removed/edited instantly without
-     * restarting shell).
-     */
-    // add winprop
+    /* gsetting winprops take precedence over hardcoded ones.
+     * They're easier to add/remove and can be edited live without restarting
+     * the shell. */
     winprops.push(spec);
 
     // now order winprops with gsettings first, then title over wm_class
