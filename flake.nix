@@ -29,11 +29,7 @@
             glib
           ];
 
-          buildPhase = ''
-            runHook preBuild
-            make all
-            runHook postBuild
-          '';
+          # Default buildPhase already includes "npm run build"
 
           installPhase = ''
             runHook preInstall

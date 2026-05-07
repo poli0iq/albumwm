@@ -7,7 +7,14 @@
   "license": "GPL-3.0-or-later",
   "homepage": "https://albumwm.0iq.dev",
   "scripts": {
+    "prebuild": "rm -rf dist",
     "build": "tsc",
+    "postbuild": "cp -r schemas ui resources config metadata.json stylesheet.css LICENSE dist/ && glib-compile-schemas dist/schemas",
+    "pack": "npm run build && rm -f albumwm@0iq.dev.zip && cd dist && zip -9r ../albumwm@0iq.dev.zip .",
+    "install:ext": "npm run pack && gnome-extensions install --force albumwm@0iq.dev.zip",
+    "uninstall:ext": "gnome-extensions uninstall albumwm@0iq.dev 2>/dev/null; rm -rf \"$HOME/.local/share/gnome-shell/extensions/albumwm@0iq.dev\"",
+    "clean": "rm -rf dist albumwm@0iq.dev.zip",
+    "distclean": "npm run clean && rm -rf node_modules",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -18,6 +25,5 @@
     "eslint": "^10.3.0",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
-  },
-  "sourceType": "module"
+  }
 }
