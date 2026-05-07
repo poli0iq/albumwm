@@ -20,6 +20,7 @@
     "dist",
     "result",
     "config",
-    "examples"
+    "examples",
+    "eslint.config.js"
   ]
 }
