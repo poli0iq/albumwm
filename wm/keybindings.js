@@ -98,93 +98,18 @@ export function setupActions(settings) {
     registerAction('live-alt-tab-scratch-backward', LiveAltTab.liveAltTabScratch,
         { settings, mutterFlags: Meta.KeyBindingFlags.IS_REVERSED });
 
-    registerAction('move-monitor-right', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.RIGHT, true);
-    }, { settings });
-    registerAction('move-monitor-left', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.LEFT, true);
-    }, { settings });
-    registerAction('move-monitor-above', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.UP, true);
-    }, { settings });
-    registerAction('move-monitor-below', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.DOWN, true);
-    }, { settings });
-
     registerAction('switch-monitor-right', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.RIGHT, false);
+        Tiling.switchMonitor(Meta.DisplayDirection.RIGHT);
     }, { settings });
     registerAction('switch-monitor-left', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.LEFT, false);
+        Tiling.switchMonitor(Meta.DisplayDirection.LEFT);
     }, { settings });
     registerAction('switch-monitor-above', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.UP, false);
+        Tiling.switchMonitor(Meta.DisplayDirection.UP);
     }, { settings });
     registerAction('switch-monitor-below', () => {
-        Tiling.spaces.switchMonitor(Meta.DisplayDirection.DOWN, false);
+        Tiling.switchMonitor(Meta.DisplayDirection.DOWN);
     }, { settings });
-
-    registerAction('move-space-monitor-right', () => {
-        Tiling.spaces.moveToMonitor(Meta.DisplayDirection.RIGHT, Meta.DisplayDirection.LEFT);
-    }, { settings });
-    registerAction('move-space-monitor-left', () => {
-        Tiling.spaces.moveToMonitor(Meta.DisplayDirection.LEFT, Meta.DisplayDirection.RIGHT);
-    }, { settings });
-    registerAction('move-space-monitor-above', () => {
-        Tiling.spaces.moveToMonitor(Meta.DisplayDirection.UP, Meta.DisplayDirection.DOWN);
-    }, { settings });
-    registerAction('move-space-monitor-below', () => {
-        Tiling.spaces.moveToMonitor(Meta.DisplayDirection.DOWN, Meta.DisplayDirection.UP);
-    }, { settings });
-
-    registerAction('swap-monitor-right', () => {
-        Tiling.spaces.swapMonitor(Meta.DisplayDirection.RIGHT, Meta.DisplayDirection.LEFT);
-    }, { settings });
-    registerAction('swap-monitor-left', () => {
-        Tiling.spaces.swapMonitor(Meta.DisplayDirection.LEFT, Meta.DisplayDirection.RIGHT);
-    }, { settings });
-    registerAction('swap-monitor-above', () => {
-        Tiling.spaces.swapMonitor(Meta.DisplayDirection.UP, Meta.DisplayDirection.DOWN);
-    }, { settings });
-    registerAction('swap-monitor-below', () => {
-        Tiling.spaces.swapMonitor(Meta.DisplayDirection.DOWN, Meta.DisplayDirection.UP);
-    }, { settings });
-
-    registerNavigatorAction('previous-workspace', Tiling.selectPreviousSpace);
-    registerNavigatorAction('previous-workspace-backward', Tiling.selectPreviousSpaceBackwards);
-
-    registerNavigatorAction('move-previous-workspace', Tiling.movePreviousSpace);
-    registerNavigatorAction('move-previous-workspace-backward', Tiling.movePreviousSpaceBackwards);
-
-    registerNavigatorAction('switch-down-workspace', (mw, space) => {
-        Tiling.selectDownSpace(mw, space, false);
-    });
-    registerNavigatorAction('switch-up-workspace', (mw, space) => {
-        Tiling.selectUpSpace(mw, space, false);
-    });
-    registerNavigatorAction('switch-down-workspace-from-all-monitors', (mw, space) => {
-        Tiling.selectDownSpace(mw, space, true);
-    });
-    registerNavigatorAction('switch-up-workspace-from-all-monitors', (mw, space) => {
-        Tiling.selectUpSpace(mw, space, true);
-    });
-
-    registerNavigatorAction('move-down-workspace', Tiling.moveDownSpace);
-    registerNavigatorAction('move-up-workspace', Tiling.moveUpSpace);
-
-    registerAlbumAction('toggle-top-and-position-bar', (_mw, space) => {
-        const value = !space.settings.get_boolean('show-top-bar');
-        space.settings.set_boolean('show-top-bar', value);
-        space.settings.set_boolean('show-position-bar', value);
-    });
-    registerAlbumAction('toggle-top-bar', (_mw, space) => {
-        const value = space.settings.get_boolean('show-top-bar');
-        space.settings.set_boolean('show-top-bar', !value);
-    });
-    registerAlbumAction('toggle-position-bar', (_mw, space) => {
-        const value = space.settings.get_boolean('show-position-bar');
-        space.settings.set_boolean('show-position-bar', !value);
-    });
 
     registerNavigatorAction('take-window', Tiling.takeWindow);
 
@@ -205,9 +130,6 @@ export function setupActions(settings) {
     registerMinimapAction("switch-left-loop", (mw, space) => space.switchLeft(true));
     registerMinimapAction("switch-up-loop", (mw, space) => space.switchUp(true));
     registerMinimapAction("switch-down-loop", (mw, space) => space.switchDown(true));
-
-    registerNavigatorAction("switch-up-or-else-workspace", Tiling.switchUpOrElseWorkspace);
-    registerNavigatorAction("switch-down-or-else-workspace", Tiling.switchDownOrElseWorkspace);
 
     registerMinimapAction("switch-first", Tiling.activateFirstWindow);
     registerMinimapAction("switch-second", (mw, space) => Tiling.activateNthWindow(1, space));

@@ -2,9 +2,6 @@
 /* eslint-disable no-invalid-this */
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
-import Meta from 'gi://Meta';
-import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -27,7 +24,6 @@ import { Utils, Tiling, Scratch, Settings, OverviewLayout } from './imports.js';
 
 let savedProps, signals;
 let gsettings, mutterSettings;
-let pillSwipeTimer;
 export function enable(extension) {
     savedProps = new Map();
     gsettings = extension.getSettings();
@@ -60,8 +56,6 @@ export function disable() {
     swipeTrackers = null;
     gsettings = null;
     mutterSettings = null;
-    Utils.timeout_remove(pillSwipeTimer);
-    pillSwipeTimer = null;
     actions = null;
 }
 
@@ -145,57 +139,10 @@ export function enableOverride(obj, name) {
  * on AlbumWM disable.
  */
 export function setupOverrides() {
-    registerOverridePrototype(WorkspaceAnimation.WorkspaceAnimationController, 'animateSwitch',
-        // WorkspaceAnimation.WorkspaceAnimationController.animateSwitch
-        // Disable the workspace switching animation in Gnome 40+
-        function (_from, _to, _direction, onComplete) {
-            // ensure swipeTrackers are disabled after this
-            const reset = () => {
-                // gnome windows switch animation time = 250, do that plus a little more
-                pillSwipeTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
-                    swipeTrackers.forEach(t => {
-                        t.enabled = false;
-                    });
-                    pillSwipeTimer = null;
-                    return false; // on return false destroys timeout
-                });
-            };
-
-            if (Tiling.inPreview) {
-                onComplete();
-                reset();
-                return;
-            }
-
-            // if using AlbumWM workspace switch animation, just do complete here
-            if (!Tiling.spaces.space_defaultAnimation) {
-                onComplete();
-                reset();
-                return;
-            }
-
-            // if switching to an albumwm space that is already shown on a monitor
-            // from / to are workspace indices
-            const toSpace = Tiling.spaces.spaceOfIndex(_to);
-
-            const spaces = Array.from(Tiling.spaces.monitors.values());
-            const toOnMonitor = spaces.some(space => space === toSpace);
-            if (toOnMonitor) {
-                onComplete();
-                reset();
-                return;
-            }
-
-            // standard gnome switch animation
-            const saved = getSavedPrototype(WorkspaceAnimation.WorkspaceAnimationController, 'animateSwitch');
-            saved.call(this, _from, _to, _direction, onComplete);
-            reset();
-        });
-
     registerOverridePrototype(WorkspaceAnimation.WorkspaceAnimationController, '_prepareWorkspaceSwitch',
         function (workspaceIndices) {
             const saved = getSavedPrototype(WorkspaceAnimation.WorkspaceAnimationController, '_prepareWorkspaceSwitch');
-            // hide selection during workspace switch
+            /* hide selection during workspace switch */
             Tiling.spaces.forEach(s => s.hideSelection());
             saved.call(this, workspaceIndices);
         });
@@ -204,20 +151,10 @@ export function setupOverrides() {
         function (switchData) {
             const saved = getSavedPrototype(WorkspaceAnimation.WorkspaceAnimationController,
                 '_finishWorkspaceSwitch');
-            // ensure selection is shown after workspaces swtching
+            /* ensure selection is shown after workspaces switching */
             Tiling.spaces.forEach(s => s.showSelection());
             saved.call(this, switchData);
         });
-
-    registerOverrideProp(Main.wm._workspaceTracker, '_checkWorkspaces', _checkWorkspaces);
-
-    if (WindowManager.TouchpadWorkspaceSwitchAction) // disable 4-finger swipe
-        registerOverridePrototype(WindowManager.TouchpadWorkspaceSwitchAction, '_checkActivated', () => false);
-
-    // disable swipe gesture trackers
-    swipeTrackers.forEach(t => {
-        registerOverrideProp(t, "enabled", false, false);
-    });
 
     /**
      * Used on overview layout.  UnalignedLayoutStrategy is not exported in Gnome 45, and hence
@@ -291,36 +228,6 @@ export function setupOverrides() {
         }
 
         return upstreamValue;
-    });
-
-    const checkScratch = (metaWindow, metaWorkspace) => {
-        if (Scratch.isScratchWindow(metaWindow)) {
-            // check workspace match
-            return metaWorkspace === metaWindow?.get_workspace();
-        }
-
-        return false;
-    };
-    registerOverridePrototype(Workspace.Workspace, '_isMyWindow', function(window) {
-        if (checkScratch(window, this.metaWorkspace)) {
-            return true;
-        }
-
-        const space = Tiling.spaces.spaceOf(this.metaWorkspace);
-        const onSpace = space.indexOf(window) >= 0;
-        const onMonitor = this._monitor === space.monitor;
-        return onSpace && onMonitor;
-    });
-    registerOverridePrototype(WorkspaceThumbnail.WorkspaceThumbnail, '_isMyWindow', function(actor) {
-        const window = actor.meta_window;
-        if (checkScratch(window, this.metaWorkspace)) {
-            return true;
-        }
-
-        const space = Tiling.spaces.spaceOf(this.metaWorkspace);
-        const onSpace = space.indexOf(window) >= 0;
-        const onMonitor = this.monitorIndex === space.monitor.index;
-        return onSpace && onMonitor;
     });
 
     /**
@@ -580,112 +487,3 @@ export function setupActions() {
     actions.forEach(a => global.stage.remove_action(a));
 }
 
-export function _checkWorkspaces() {
-    let workspaceManager = global.workspace_manager;
-    let i;
-    let emptyWorkspaces = [];
-    let minimum = Meta.prefs_get_dynamic_workspaces()
-        ? Main.layoutManager.monitors.length + 1
-        : Main.layoutManager.monitors.length;
-
-    if (!Meta.prefs_get_dynamic_workspaces()) {
-        // if less spaces than minimum, create!
-        let created = 0;
-        while (workspaceManager.nWorkspaces < minimum) {
-            workspaceManager.append_new_workspace(false, global.get_current_time());
-            created++;
-        }
-
-        if (created > 0) {
-            Main.notify(
-                `AlbumWM (created ${created} workspaces)`,
-                `AlbumWM requires a minimum of ${minimum} workspaces for you monitor configuration.`
-            );
-        }
-
-        this._checkWorkspacesId = 0;
-        return false;
-    }
-
-    // Update workspaces only if Dynamic Workspace Management has not been paused by some other function
-    if (this._pauseWorkspaceCheck || Tiling.inPreview)
-        return true;
-
-    for (i = 0; i < this._workspaces.length; i++) {
-        let lastRemoved = this._workspaces[i]._lastRemovedWindow;
-        if ((lastRemoved &&
-             (lastRemoved.get_window_type() === Meta.WindowType.SPLASHSCREEN ||
-              lastRemoved.get_window_type() === Meta.WindowType.DIALOG ||
-              lastRemoved.get_window_type() === Meta.WindowType.MODAL_DIALOG)) ||
-            this._workspaces[i]._keepAliveId)
-            emptyWorkspaces[i] = false;
-        else
-            emptyWorkspaces[i] = true;
-    }
-
-    let sequences = Shell.WindowTracker.get_default().get_startup_sequences();
-    for (i = 0; i < sequences.length; i++) {
-        let index = sequences[i].get_workspace();
-        if (index >= 0 && index <= workspaceManager.n_workspaces)
-            emptyWorkspaces[index] = false;
-    }
-
-    let windows = global.get_window_actors();
-    for (i = 0; i < windows.length; i++) {
-        let actor = windows[i];
-        let win = actor.get_meta_window();
-
-        if (win.is_on_all_workspaces())
-            continue;
-
-        let workspaceIndex = win.get_workspace().index();
-        emptyWorkspaces[workspaceIndex] = false;
-    }
-
-    // If dynamic workspaces are enabled, keep an extra spare workspace.
-    // Otherwise, require only one workspace per monitor.
-    for (i = 0; i < minimum; i++) {
-        if (i >= emptyWorkspaces.length) {
-            workspaceManager.append_new_workspace(false, global.get_current_time());
-            emptyWorkspaces.push(true);
-        }
-    }
-
-    // If we don't have an empty workspace at the end, add one
-    if (!emptyWorkspaces[emptyWorkspaces.length - 1]) {
-        workspaceManager.append_new_workspace(false, global.get_current_time());
-        emptyWorkspaces.push(true);
-    }
-
-    let lastIndex = emptyWorkspaces.length - 1;
-    let lastEmptyIndex = emptyWorkspaces.lastIndexOf(false) + 1;
-    let activeWorkspaceIndex = workspaceManager.get_active_workspace_index();
-
-    // Keep the active workspace
-    emptyWorkspaces[activeWorkspaceIndex] = false;
-
-    // Keep a minimum number of spaces
-    for (i = 0; i < Math.max(Main.layoutManager.monitors.length, minimum); i++) {
-        emptyWorkspaces[i] = false;
-    }
-
-    // Keep visible spaces
-    if (Tiling?.spaces?.monitors) {
-        for (let [, space] of Tiling.spaces.monitors) {
-            emptyWorkspaces[space.workspace.index()] = false;
-        }
-    }
-
-    // Delete empty workspaces except for the last one; do it from the end
-    // to avoid index changes
-    for (i = lastIndex; i >= 0; i--) {
-        // eslint-disable-next-line eqeqeq
-        if (emptyWorkspaces[i] && i != lastEmptyIndex) {
-            workspaceManager.remove_workspace(this._workspaces[i]
-                , global.get_current_time());
-        }
-    }
-
-    this._checkWorkspacesId = 0;
-    return false;
-}

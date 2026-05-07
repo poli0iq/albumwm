@@ -18,13 +18,6 @@ NOTE: please update `./config/users.css` with any new styles added here.
     border: none;
 }
 
-.space-focus-mode-icon {
-    icon-size: 16px;
-    padding: 0 18px 0 18px;
-    margin-left: 3px;
-    background-color: transparent;
-}
-
 .open-position-icon {
     icon-size: 22px;
     padding: 0;

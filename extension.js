@@ -4,7 +4,7 @@ import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
 import {
     Utils, Settings, Gestures, Keybindings, LiveAltTab, Navigator,
-    Stackoverlay, Scratch, Workspace, Tiling, Topbar, Patches, App, Grab
+    Stackoverlay, Scratch, Tiling, Topbar, Patches, App, Grab
 } from './wm/imports.js';
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -46,7 +46,7 @@ export default class AlbumWM extends Extension {
     modules = [
         Utils, Settings, Patches,
         Gestures, Keybindings, LiveAltTab, Navigator, Stackoverlay, Scratch,
-        Workspace, Tiling, Topbar, App, Grab,
+        Tiling, Topbar, App, Grab,
     ];
 
     enable() {

@@ -1,7 +1,6 @@
 import Clutter from 'gi://Clutter';
 import Cogl from 'gi://Cogl';
 import GdkPixbuf from 'gi://GdkPixbuf';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
@@ -628,80 +627,3 @@ export let Easer = {
     },
 };
 
-export class DisplayConfig {
-    static get proxyWrapper() {
-        return Gio.DBusProxy.makeProxyWrapper('<node>\
-        <interface name="org.gnome.Mutter.DisplayConfig">\
-            <method name="GetCurrentState">\
-            <arg name="serial" direction="out" type="u" />\
-            <arg name="monitors" direction="out" type="a((ssss)a(siiddada{sv})a{sv})" />\
-            <arg name="logical_monitors" direction="out" type="a(iiduba(ssss)a{sv})" />\
-            <arg name="properties" direction="out" type="a{sv}" />\
-            </method>\
-            <signal name="MonitorsChanged" />\
-        </interface>\
-    </node>');
-    }
-
-    constructor() {
-        this.proxy = new DisplayConfig.proxyWrapper(
-            Gio.DBus.session,
-            'org.gnome.Mutter.DisplayConfig',
-            '/org/gnome/Mutter/DisplayConfig',
-            (proxy, error) => {
-                if (error) {
-                    console.error(error);
-                    return;
-                }
-                this.upgradeGnomeMonitors();
-            }
-        );
-    }
-
-    /**
-     * Upgrades Main.layoutManager.monitors by adding a dbus monitor connector
-     * (e.g. "eDP-1" or "DP-1", etc.).  Used for stable restoring for monitor
-     * layouts.
-     */
-    upgradeGnomeMonitors(callback = () => {}) {
-        this.proxy.GetCurrentStateRemote((state, error) => {
-            if (error) {
-                console.error(error);
-                return;
-            }
-
-            const [, monitors] = state;
-            for (const monitor of monitors) {
-                const [specs] = monitor;
-                const [connector] = specs;
-
-                // upgrade gnome monitor object to add connector
-                let gnomeIndex = this.monitorManager.get_monitor_for_connector(connector);
-                let gnomeMonitor = this.gnomeMonitors.find(m => m.index === gnomeIndex);
-                if (gnomeMonitor) {
-                    gnomeMonitor.connector = connector;
-                }
-            }
-
-            callback();
-        });
-    }
-
-    /**
-     * Downgrades Main.layoutManager.monitors to default gnome state (without "connector"
-     * information).
-     */
-    downgradeGnomeMonitors() {
-        this.gnomeMonitors.forEach(m => {
-            delete m.connector;
-        });
-    }
-
-    get monitorManager() {
-        return global.backend.get_monitor_manager();
-    }
-
-    get gnomeMonitors() {
-        return Main.layoutManager.monitors;
-    }
-}

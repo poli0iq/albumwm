@@ -1,7 +1,5 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
-import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -14,8 +12,7 @@ const DIRECTIONS = {
     Vertical: false,
 };
 
-let vy, time, vState, navigator, direction, signals;
-let handoffToOverview = false;
+let navigator, direction, signals;
 // 1 is natural scrolling, -1 is unnatural
 let natural = 1;
 export let gliding = false; // exported
@@ -47,14 +44,10 @@ export function enable(extension) {
         }
     });
 
-    /**
-       In order for the space.background actors to get any input we need to hide
-       all the window actors from the stage.
-
-       The stage takes care of scrolling vertically through the workspace mru.
-       Delegating the horizontal scrolling to each space. This way vertical
-       scrolling works anywhere, while horizontal scrolling is done on the space
-       under the mouse cursor.
+    /*
+     * Stage-level capture so 3-finger swipes are seen no matter what's under
+     * the cursor. The handler only sets up state on BEGIN; horizontal
+     * scrolling is delegated to each space.background via horizontalScroll.
      */
     signals.connect(global.stage, 'captured-event', (actor, event) => {
         if (event.type() !== Clutter.EventType.TOUCHPAD_SWIPE) {
@@ -69,106 +62,18 @@ export function enable(extension) {
             return Clutter.EVENT_PROPAGATE;
         }
 
-        const enabled = gestureEnabled();
-        if (!enabled) {
-            // switch to default swipe trackers
+        if (!gestureEnabled()) {
             swipeTrackersEnable();
         }
 
-        const phase = event.get_gesture_phase();
-        const [dx, dy] = event.get_gesture_motion_delta();
-        switch (phase) {
-        case Clutter.TouchpadGesturePhase.BEGIN:
+        if (event.get_gesture_phase() === Clutter.TouchpadGesturePhase.BEGIN) {
             if (shouldPropagate(fingers)) {
                 return Clutter.EVENT_PROPAGATE;
             }
-
-            // AlbumWM behaviour
-            time = event.get_time();
             natural = touchpadSettings.get_boolean("natural-scroll") ? 1 : -1;
             direction = undefined;
-            handoffToOverview = false;
             navigator = Navigator.getNavigator();
-            navigator.connect('destroy', () => {
-                vState = -1;
-            });
             return Clutter.EVENT_STOP;
-        case Clutter.TouchpadGesturePhase.UPDATE:
-            if (shouldPropagate(fingers)) {
-                return Clutter.EVENT_PROPAGATE;
-            }
-
-            if (direction === DIRECTIONS.Horizontal) {
-                return Clutter.EVENT_PROPAGATE;
-            }
-
-            if (enabled && direction === undefined) {
-                if (Math.abs(dx) < Math.abs(dy)) {
-                    vy = 0;
-                    vState = phase;
-                    direction = DIRECTIONS.Vertical;
-                }
-            }
-            if (enabled && direction === DIRECTIONS.Vertical) {
-                // if in overview => propagate event to overview
-                if (Main.overview.visible) {
-                    handoffToOverview = true;
-                    return Clutter.EVENT_PROPAGATE;
-                }
-
-                // if our vertical gesture is disabled, propagate always!
-                // (might be used for a vertical-workspaces addon)
-                if (gestureWorkspaceFingers() === 0) {
-                    swipeTrackersEnable();
-                    handoffToOverview = fingers === 3;
-                    return Clutter.EVENT_PROPAGATE;
-                }
-
-                let dir_y = -dy * natural * Settings.prefs.swipe_sensitivity[1];
-                // if not Tiling.inPreview and swipe is UP => propagate event to overview
-                if (!Tiling.inPreview && dir_y > 0) {
-                    // enable swipe trackers which enables 3-finger up overview
-                    swipeTrackersEnable();
-                    handoffToOverview = true;
-                    return Clutter.EVENT_PROPAGATE;
-                }
-
-                if (gestureWorkspaceFingers() !== fingers) {
-                    handoffToOverview = fingers === 3;
-                    return Clutter.EVENT_PROPAGATE;
-                }
-
-                // initiates workspace stack switching
-                handoffToOverview = false;
-                swipeTrackersEnable(false);
-                updateVertical(dir_y, event.get_time());
-                return Clutter.EVENT_STOP;
-            }
-            return Clutter.EVENT_PROPAGATE;
-        case Clutter.TouchpadGesturePhase.CANCEL:
-        case Clutter.TouchpadGesturePhase.END:
-            // If this finger count should be handled by GNOME, never consume
-            // completion here (prevents overview from getting stuck in 4-finger mode).
-            if (shouldPropagate(fingers)) {
-                direction = undefined;
-                handoffToOverview = false;
-                return Clutter.EVENT_PROPAGATE;
-            }
-
-            if (direction === DIRECTIONS.Vertical) {
-                // GNOME 49+ can receive UPDATE from us for overview handoff.
-                // Do not swallow END/CANCEL in that case or overview gets stuck.
-                if (handoffToOverview) {
-                    handoffToOverview = false;
-                    direction = undefined;
-                    return Clutter.EVENT_PROPAGATE;
-                }
-
-                vState = phase;
-                endVertical();
-                handoffToOverview = false;
-                return Clutter.EVENT_STOP;
-            }
         }
         return Clutter.EVENT_PROPAGATE;
     });
@@ -191,8 +96,7 @@ function shouldPropagate(fingers) {
     else if (
         // if gesure enabled AND finger 4 AND horizontal finger != 4
         fingers === 4 &&
-        gestureHorizontalFingers() !== 4 &&
-        gestureWorkspaceFingers() !== 4
+        gestureHorizontalFingers() !== 4
     ) {
         return true;
     }
@@ -204,8 +108,6 @@ function shouldPropagate(fingers) {
 export function disable() {
     signals.destroy();
     signals = null;
-    Utils.timeout_remove(endVerticalTimeout);
-    endVerticalTimeout = null;
     touchpadSettings = null;
 }
 
@@ -215,10 +117,6 @@ export function gestureEnabled() {
 
 export function gestureHorizontalFingers() {
     return Settings.prefs.gesture_horizontal_fingers;
-}
-
-export function gestureWorkspaceFingers() {
-    return Settings.prefs.gesture_workspace_fingers;
 }
 
 /**
@@ -435,8 +333,7 @@ export function done(space) {
             gliding = false;
         },
         onComplete: () => {
-            if (!Tiling.inPreview)
-                Navigator.getNavigator().finish();
+            Navigator.getNavigator().finish();
         },
     });
 }
@@ -507,102 +404,6 @@ export function findTargetWindow(space, direction) {
         return closest.meta_window;
     else
         return next.meta_window;
-}
-
-let transition = 'easeOutQuad';
-export function updateVertical(dy, t) {
-    // if here then initiate workspace stack (for tiling inPreview show)
-    if (!Tiling.inPreview) {
-        Tiling.spaces.initWorkspaceStack();
-    }
-
-    let selected = Tiling.spaces.selectedSpace;
-    let monitor = navigator.monitor;
-    let v = dy / (t - time);
-    time = t;
-    const StackPositions = Tiling.StackPositions;
-    if (dy > 0 &&
-        selected !== navigator.from &&
-        (selected.actor.y - dy < StackPositions.up * monitor.height)
-    ) {
-        dy = 0;
-        vy = 1;
-        selected.actor.y = StackPositions.up * selected.height;
-        Tiling.spaces.selectStackSpace(Meta.MotionDirection.UP, false, transition);
-        selected = Tiling.spaces.selectedSpace;
-        Easer.removeEase(selected.actor);
-        Easer.addEase(selected.actor, {
-            scale_x: 0.9, scale_y: 0.9, time:
-                Settings.prefs.animation_time, transition,
-        });
-    } else if (dy < 0 &&
-        (selected.actor.y - dy > StackPositions.down * monitor.height)) {
-        dy = 0;
-        vy = -1;
-        selected.actor.y = StackPositions.down * selected.height;
-        Tiling.spaces.selectStackSpace(Meta.MotionDirection.DOWN, false, transition);
-        selected = Tiling.spaces.selectedSpace;
-        Easer.removeEase(selected.actor);
-        Easer.addEase(selected.actor, {
-            scale_x: 0.9, scale_y: 0.9, time:
-                Settings.prefs.animation_time, transition,
-        });
-    } else if (Number.isFinite(v)) {
-        vy = v;
-    }
-
-    selected.actor.y -= dy;
-    if (selected === navigator.from) {
-        let scale = 0.90;
-        let s = 1 - (1 - scale) * (selected.actor.y / (0.1 * monitor.height));
-        s = Math.max(s, scale);
-        Easer.removeEase(selected.actor);
-        selected.actor.set_scale(s, s);
-    }
-}
-
-let endVerticalTimeout;
-export function endVertical() {
-    let test = vy > 0 ? () => vy < 0 : () => vy > 0;
-    let glide = () => {
-        if (vState < Clutter.TouchpadGesturePhase.END) {
-            endVerticalTimeout = null;
-            return false;
-        }
-
-        if (!Number.isFinite(vy)) {
-            endVerticalTimeout = null;
-            return false;
-        }
-
-        let selected = Tiling.spaces.selectedSpace;
-        let y = selected.actor.y;
-        if (selected === navigator.from && y <= 0.1 * selected.height) {
-            navigator.finish();
-            endVerticalTimeout = null;
-            return false;
-        }
-
-        if (test()) {
-            endVerticalTimeout = null;
-            return false;
-        }
-
-        let dy = vy * 16;
-        let v = vy;
-        let accel = Settings.prefs.swipe_friction[1];
-        accel = v > 0 ? -accel : accel;
-        updateVertical(dy, time + 16);
-        vy += accel;
-        return true; // repeat
-    };
-
-    /**
-     * The below timeout_add will be destroyed by the glide
-     * function - which returns false (thus destroying this timeout)
-     * when user gesture fininshes, a space is selected, etc.
-     */
-    endVerticalTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 16, glide);
 }
 
 /**

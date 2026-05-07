@@ -1,6 +1,4 @@
 import Clutter from 'gi://Clutter';
-import GDesktopEnums from 'gi://GDesktopEnums';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
@@ -9,11 +7,10 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {
-    Settings, Utils, Lib, Gestures, Navigator, Grab, Topbar, Scratch, Stackoverlay, Background
+    Settings, Utils, Lib, Gestures, Navigator, Grab, Topbar, Scratch,
 } from './imports.js';
 import { Easer, DispatcherMode } from './utils.js';
 import { ClickOverlay } from './stackoverlay.js';
-import { WorkspaceSettings } from './workspace.js';
 
 const { signals: Signals } = imports;
 const workspaceManager = global.workspace_manager;
@@ -22,16 +19,11 @@ const display = global.display;
 /** @type {Spaces} */
 export let spaces;
 
-let borderWidth = 8;
-
 // Mutter prevints windows from being placed further off the screen than 75 pixels.
 export const stack_margin = 75;
 
 // Some features use this to determine if to sizes is considered equal. ie. `abs(w1 - w2) < sizeSlack`
 let sizeSlack = 30;
-
-export const PreviewMode = { NONE: 0, STACK: 1, SEQUENTIAL: 2 }; // export
-export let inPreview = PreviewMode.NONE; // export
 
 // DEFAULT mode is normal/original AlbumWM window focus behaviour
 export const FocusModes = { DEFAULT: 0, CENTER: 1, EDGE: 2 }; // export
@@ -53,14 +45,11 @@ export const SlurpInsertPosition = { BOTTOM: 0, TOP: 1, ABOVE: 2, BELOW: 3 };
    monitor. The clip lives along side all other space's clips in an actor
    spanning the whole global.workspaceManager
 
-   An @actor to hold everything that's visible, it contains a @background,
-   a @label and a @cloneContainer.
+   An @actor to hold everything that's visible, it contains a @background
+   and a @cloneContainer.
 
    The @cloneContainer holds clones of all the tiled windows, it's clipped
    by @cloneClip to avoid protruding into neighbouringing monitors.
-
-   The @border surrounds the outside of the monitor so is only visible when
-   using the workspace carousel.
 
    Clones are necessary due to restrictions mutter places on MetaWindowActors.
    WindowActors can only live in the `global.window_group` and can't be
@@ -88,26 +77,17 @@ export const SlurpInsertPosition = { BOTTOM: 0, TOP: 1, ABOVE: 2, BELOW: 3 };
  */
 
 let signals, backgroundGroup, grabSignals;
-let gsettings, backgroundSettings, interfaceSettings;
-let displayConfig;
+let gsettings;
 let saveState;
 let startupTimeoutId, timerId, fullscreenStartTimeout, stackSlurpTimeout, workspaceChangeTimeouts;
 let monitorChangeTimeout, driftTimeout;
-let workspaceSettings;
 export let inGrab;
 export function enable(extension) {
     inGrab = false;
 
-    displayConfig = new Utils.DisplayConfig();
     saveState = saveState ?? new SaveState();
 
     gsettings = extension.getSettings();
-    backgroundSettings = new Gio.Settings({
-        schema_id: 'org.gnome.desktop.background',
-    });
-    interfaceSettings = new Gio.Settings({
-        schema_id: "org.gnome.desktop.interface",
-    });
 
     signals = new Utils.Signals();
     grabSignals = new Utils.Signals();
@@ -147,7 +127,6 @@ export function enable(extension) {
 
     backgroundGroup = Main.layoutManager._backgroundGroup;
 
-    workspaceSettings = new WorkspaceSettings(extension);
     spaces = new Spaces();
     let initWorkspaces = () => {
         try {
@@ -167,10 +146,9 @@ export function enable(extension) {
         });
         Topbar.fixTopBar();
 
-        // on idle update space topbar elements and name
+        // on idle update space name
         Utils.later_add(Meta.LaterType.IDLE, () => {
             spaces.forEach(s => {
-                s.setSpaceTopbarElementsVisible();
                 s.updateName();
 
                 /**
@@ -184,22 +162,15 @@ export function enable(extension) {
     };
 
     if (Main.layoutManager._startingUp) {
-        // Defer workspace initialization until existing windows are accessible.
-        // Otherwise we're unable to restore the tiling-order. (when restarting
-        // gnome-shell)
-        signals.connectOneShot(Main.layoutManager, 'startup-complete',
-            () => displayConfig.upgradeGnomeMonitors(initWorkspaces));
+        /* Defer workspace initialization until existing windows are accessible.
+           Otherwise we're unable to restore the tiling-order on gnome-shell restart. */
+        signals.connectOneShot(Main.layoutManager, 'startup-complete', initWorkspaces);
     } else {
-        /**
-         * Upgrade gnome monitor info objects by add "connector" information, and
-         * when done (async) callback to initworkspaces.
-         */
-        // NOTE: this should happen after Patches.enable() have run, so we do
-        // it in a timeout
+        /* Defer past Patches.enable(). */
         startupTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 0, () => {
-            displayConfig.upgradeGnomeMonitors(initWorkspaces);
+            initWorkspaces();
             startupTimeoutId = null;
-            return false; // on return false destroys timeout
+            return false;
         });
     }
 }
@@ -226,15 +197,10 @@ export function disable() {
     signals = null;
 
     saveState.prepare();
-    displayConfig.downgradeGnomeMonitors();
-    displayConfig = null;
     spaces.destroy();
     inGrab = null;
     gsettings = null;
     backgroundGroup = null;
-    backgroundSettings = null;
-    interfaceSettings = null;
-    workspaceSettings = null;
 }
 
 /**
@@ -249,7 +215,7 @@ export class Space extends Array {
     /** @type {import('@gi-types/clutter10').Actor} */
     actor;
 
-    /** @type {import('@gi-types/meta').BackgroundActor} */
+    /** @type {import('@gi-types/clutter').Actor} */
     background;
 
     constructor(workspace, container, doInit) {
@@ -264,14 +230,6 @@ export class Space extends Array {
 
         // default focusMode (can be overriden by saved user pref in Space.init method)
         this.focusMode = FocusModes.DEFAULT;
-        this.focusModeIcon = new Topbar.FocusIcon({
-            name: 'panel',
-            style_class: 'space-focus-mode-icon',
-        })
-            .setClickFunction(() => {
-                switchToNextFocusMode(this);
-            })
-            .setVisible(false); // hide by default
         this.unfocusXPosition = null; // init
 
         let clip = new Clutter.Actor({ name: "clip" });
@@ -288,33 +246,6 @@ export class Space extends Array {
         let cloneContainer = new St.Widget({ name: "clone-container" });
         this.cloneContainer = cloneContainer;
 
-        const workspaceIndicator = new St.Widget({
-            reactive: true,
-            name: 'panel',
-            style_class: 'space-workspace-indicator',
-        });
-        signals.connect(workspaceIndicator, 'button-press-event', () => Main.overview.toggle());
-        signals.connect(workspaceIndicator, 'scroll-event', (_actor, event) => {
-            const direction = event.get_scroll_direction();
-            switch (direction) {
-            case Clutter.ScrollDirection.DOWN:
-                spaces.selectSequenceSpace(Meta.MotionDirection.DOWN);
-                Navigator.getNavigator().finish();
-                return Clutter.EVENT_STOP;
-            case Clutter.ScrollDirection.UP:
-                spaces.selectSequenceSpace(Meta.MotionDirection.UP);
-                Navigator.getNavigator().finish();
-                return Clutter.EVENT_STOP;
-            default:
-                return Clutter.EVENT_STOP;
-            }
-        });
-        this.workspaceIndicator = workspaceIndicator;
-        const workspaceLabel = new St.Label();
-        workspaceIndicator.add_child(workspaceLabel);
-        this.workspaceLabel = workspaceLabel;
-        workspaceLabel.hide();
-
         const selection = new St.Widget({
             name: 'selection',
             style_class: 'albumwm-selection tile-preview',
@@ -330,26 +261,14 @@ export class Space extends Array {
 
         container.add_child(clip);
         clip.add_child(actor);
-        actor.add_child(workspaceIndicator);
-        actor.add_child(this.focusModeIcon);
         actor.add_child(cloneClip);
         cloneClip.add_child(cloneContainer);
 
-        this.border = new St.Widget({ name: "border" });
-        this.actor.add_child(this.border);
-        this.border.hide();
-
-        let monitor = Main.layoutManager.primaryMonitor;
-        const prevSpace = saveState.prevSpaces.get(workspace);
+        const monitor = Main.layoutManager.primaryMonitor;
         this.targetX = 0;
-        if (prevSpace && prevSpace.monitor) {
-            let prevMonitor = Main.layoutManager.monitors[prevSpace.monitor.index];
-            if (prevMonitor)
-                monitor = prevMonitor;
-        }
 
-        // init workspace settings from preferences
-        this.setSettings(workspaceSettings.getWorkspaceSettings(this.index));
+        this.uuid = GLib.uuid_string_random();
+        this.initWorkspaceState();
 
         this.selectedWindow = null;
         this.leftStack = 0; // not implemented
@@ -371,9 +290,8 @@ export class Space extends Array {
         Utils.actor_raise(this.windowPositionBar);
 
         this.showPositionBar && this.enableWindowPositionBar();
-        this.showFocusModeIcon();
 
-        // now set monitor for this space
+        this.createBackground();
         this.setMonitor(monitor);
 
         if (doInit) {
@@ -395,9 +313,7 @@ export class Space extends Array {
         saveState.prevSpaces.delete(workspace);
         this._populated = true;
 
-        // init window position bar and space topbar elements
         this.windowPositionBarBackdrop.height = Topbar.panelBox.height;
-        this.setSpaceTopbarElementsVisible();
 
         // restore focus mode (or fallback to default)
         setFocusMode(focusMode ?? getDefaultFocusMode(), this);
@@ -416,17 +332,8 @@ export class Space extends Array {
                 return;
             }
 
-            // check if after hiding the mouse is on another monitor
-            const monitor = Utils.monitorAtCurrentPoint();
-            const space = spaces.monitors.get(monitor);
-
-            // if space is different, activate that one
-            if (this !== space) {
-                space?.activateWithFocus(space?.selectedWindow, false, false);
-            }
-
             Utils.later_add(Meta.LaterType.IDLE, () => {
-                space.moveDone(() => {
+                this.moveDone(() => {
                     ensureViewport(display.focus_window, this, {
                         moveto: true,
                         force: true,
@@ -439,12 +346,6 @@ export class Space extends Array {
         this.signals.connect(gsettings, 'changed::default-focus-mode', () => {
             setFocusMode(getDefaultFocusMode(), this);
         });
-
-        this.signals.connect(interfaceSettings, "changed::color-scheme", this.updateBackground.bind(this));
-        this.signals.connect(gsettings, 'changed::default-background', this.updateBackground.bind(this));
-        this.signals.connect(gsettings, 'changed::use-default-background', this.updateBackground.bind(this));
-        this.signals.connect(backgroundSettings, 'changed::picture-uri', this.updateBackground.bind(this));
-        this.signals.connect(backgroundSettings, "changed::picture-uri-dark", this.updateBackground.bind(this));
     }
 
     /**
@@ -674,37 +575,15 @@ export class Space extends Array {
             return;
         }
 
-        /**
-         * If current window is fullscreened, then treat workarea as fullscreen (y = 0).
-         * This a "flash of topbar spacing") before consecutive layout call resolves.
-         */
-        const panelBoxHeight = Topbar.panelBox.height;
-        const primaryMonitor = Main.layoutManager.primaryMonitor;
-        switch (true) {
-        case this.selectedWindow?.fullscreen:
+        /* If current window is fullscreened, treat workarea as fullscreen (y = 0)
+           to avoid a "flash of topbar spacing" before the next layout call resolves. */
+        if (this.selectedWindow?.fullscreen) {
             workArea.y = 0;
-            this.setSpaceTopbarElementsVisible(false);
-            break;
-        case this.monitor === primaryMonitor: {
-            if (!this.showTopBar) {
-                // remove panelbox height
-                workArea.y -= panelBoxHeight;
-                workArea.height += panelBoxHeight;
-
-                if (this.showPositionBar) {
-                    // add panelbox height if need to show window position bar
-                    workArea.y += panelBoxHeight;
-                    workArea.height -= panelBoxHeight;
-                }
-            }
-            break;
-        }
-        default:
-            if (this.showPositionBar) {
-                workArea.y += panelBoxHeight;
-                workArea.height -= panelBoxHeight;
-            }
-            break;
+            this.enableWindowPositionBar(false);
+        } else if (!this.showTopBar && !this.showPositionBar) {
+            const panelBoxHeight = Topbar.panelBox.height;
+            workArea.y -= panelBoxHeight;
+            workArea.height += panelBoxHeight;
         }
 
         let availableHeight = workArea.height;
@@ -881,11 +760,10 @@ export class Space extends Array {
     }
 
     getWindow(index, row) {
-        if (row < 0 || index < 0 || index >= this.length)
+        if (!Lib.in_bounds(this, index))
             return false;
-
         let column = this[index];
-        if (row >= column.length)
+        if (!Lib.in_bounds(column, row))
             return false;
         return column[row];
     }
@@ -1148,7 +1026,7 @@ export class Space extends Array {
             } else if (index >= space.length) {
                 index = 0;
             }
-        } else if (index < 0 || index >= space.length) {
+        } else if (!Lib.in_bounds(space, index)) {
             return false;
         }
 
@@ -1173,7 +1051,7 @@ export class Space extends Array {
             } else if (row >= column.length) {
                 row = 0;
             }
-        } else if (row < 0 || row >= column.length) {
+        } else if (!Lib.in_bounds(column, row)) {
             return false;
         }
 
@@ -1202,27 +1080,8 @@ export class Space extends Array {
         case Meta.MotionDirection.LEFT:
             index--;
         }
-        if (index < 0 || index >= space.length) {
-            let monitor = focusMonitor();
-            let dir = index < 0
-                ? Meta.DisplayDirection.LEFT : Meta.DisplayDirection.RIGHT;
-            let i = display.get_monitor_neighbor_index(monitor.index, dir);
-            if (i === -1)
-                return;
-
-            let newMonitor = Main.layoutManager.monitors[i];
-            space = spaces.monitors.get(newMonitor);
-            if (dir === Meta.DisplayDirection.LEFT) {
-                index = space.length - 1;
-            } else {
-                index = 0;
-            }
-            if (space[index].length <= row)
-                row = space[index].length - 1;
-            space.activate(false, false);
-            Navigator.finishNavigation();
-            Navigator.getNavigator().showMinimap(space);
-        }
+        if (!Lib.in_bounds(space, index))
+            return;
 
         let column = space[index];
         if (column.length <= row)
@@ -1235,27 +1094,8 @@ export class Space extends Array {
         case Meta.MotionDirection.DOWN:
             row++;
         }
-        if (row < 0 || row >= column.length) {
-            let monitor = focusMonitor();
-            let dir = row < 0
-                ? Meta.DisplayDirection.UP : Meta.DisplayDirection.DOWN;
-            let i = display.get_monitor_neighbor_index(monitor.index, dir);
-            if (i === -1)
-                return;
-
-            let newMonitor = Main.layoutManager.monitors[i];
-            space = spaces.monitors.get(newMonitor);
-            if (space.length <= index)
-                index = space.length - 1;
-            if (dir === Meta.DisplayDirection.UP) {
-                row = space[index].length - 1;
-            } else {
-                row = 0;
-            }
-            space.activate(false, false);
-            Navigator.finishNavigation();
-            Navigator.getNavigator().showMinimap(space);
-        }
+        if (!Lib.in_bounds(column, row))
+            return;
 
         let metaWindow = space.getWindow(index, row);
         ensureViewport(metaWindow, space);
@@ -1369,7 +1209,7 @@ export class Space extends Array {
     moveDone(focusedWindowCallback = _focusedWindow => { }) {
         if (this.cloneContainer.x !== this.targetX ||
             this.actor.y !== 0 ||
-            Navigator.navigating || inPreview ||
+            Navigator.navigating ||
             Main.overview.visible ||
             // Block when we're carrying a window in dnd
             (inGrab && inGrab.window)
@@ -1536,57 +1376,17 @@ export class Space extends Array {
         this.selection.opacity = 140;
     }
 
-    setSettings([uuid, settings]) {
-        this.signals.disconnect(this.settings);
-
-        this.settings = settings;
-        this.uuid = uuid;
-        if (this.background) {
-            this.updateColor();
-            this.updateBackground();
-        }
+    initWorkspaceState() {
         this.updateName();
-        this.signals.connect(this.settings, 'changed::name', this.updateName.bind(this));
-        this.signals.connect(this.settings, 'changed::color', () => {
-            this.updateColor();
-            this.updateBackground();
-        });
-        this.signals.connect(this.settings, 'changed::background',
-            this.updateBackground.bind(this));
-
         this.updateShowTopBar();
+        this.updateShowPositionBar();
+
         this.signals.connect(gsettings, 'changed::default-show-top-bar',
             this.showTopBarChanged.bind(this));
-        this.signals.connect(this.settings, 'changed::show-top-bar', () => {
-            this.showTopBarChanged();
-            this.layout(false);
-        });
-
-        this.updateShowPositionBar();
-        this.signals.connect(this.settings, 'changed::show-position-bar', () => {
-            this.showPositionBarChanged();
-            this.layout(false);
-        });
-    }
-
-    /**
-     * Returns the user show-top-bar setting if it exists, otherwise returns the
-     * default-show-top-bar setting.
-     * @returns Boolean
-     */
-    _getShowTopBarSetting() {
-        const value = Settings.prefs.default_show_top_bar;
-        let userValue = true;
-        try {
-            userValue = this.settings.get_boolean('show-top-bar');
-        } catch (error) {
-
-        }
-        return value && userValue;
     }
 
     updateShowTopBar() {
-        this.showTopBar = this._getShowTopBarSetting();
+        this.showTopBar = Settings.prefs.default_show_top_bar;
         this._populated && Topbar.fixTopBar();
     }
 
@@ -1599,112 +1399,29 @@ export class Space extends Array {
      * Removes the window position bar actor, and re-adds if needed.
      */
     _removeAddPositionBar() {
-        // remove window position bar actors
         Utils.actor_remove_child(this.actor, this.windowPositionBarBackdrop);
         Utils.actor_remove_child(this.actor, this.windowPositionBar);
 
-        // adds them is should show for this space
-        if (this._getShowPositionBar()) {
-            // this.actor.add_child(this.windowPositionBarBackdrop);
-            // this.actor.add_child(this.windowPositionBar);
+        if (Settings.prefs.show_window_position_bar) {
             Utils.actor_add_child(this.actor, this.windowPositionBarBackdrop);
             Utils.actor_add_child(this.actor, this.windowPositionBar);
         }
     }
 
-    /**
-     * Returns the show-position-bar (workspace) setting.
-     * @returns Boolean
-     */
-    _getShowPositionBar() {
-        const value = Settings.prefs.show_window_position_bar;
-        let userValue = true;
-        try {
-            userValue = this.settings.get_boolean('show-position-bar');
-        } catch (error) {
-
-        }
-        return value && userValue;
-    }
-
     updateShowPositionBar() {
-        this.showPositionBar = this._getShowPositionBar();
+        this.showPositionBar = Settings.prefs.show_window_position_bar;
         Topbar.fixStyle();
     }
 
     showPositionBarChanged() {
         this._removeAddPositionBar();
         this.updateShowPositionBar();
-        this.setSpaceTopbarElementsVisible(true);
-    }
-
-    /**
-     * Returns true if this space has the topbar.
-     */
-    get hasTopBar() {
-        return this.monitor && this.monitor === Topbar.panelMonitor();
-    }
-
-    updateColor() {
-        let color = this.settings.get_string('color');
-        if (color === '') {
-            let colors = Settings.prefs.workspace_colors;
-            let index = this.index % Settings.prefs.workspace_colors.length;
-            color = colors[index];
-        }
-        this.color = color;
-        this.border.set_style(`
-border: ${borderWidth}px ${this.color};
-border-radius: ${borderWidth}px;
-`);
-    }
-
-    updateBackground() {
-        if (!this.monitor) {
-            return;
-        }
-
-        let path = this.settings.get_string('background') || Settings.prefs.default_background;
-        let useDefault = gsettings.get_boolean('use-default-background');
-        if (!path && useDefault) {
-            if (interfaceSettings.get_string("color-scheme") === "prefer-dark") {
-                path = backgroundSettings.get_string("picture-uri-dark");
-            } else {
-                path = backgroundSettings.get_string("picture-uri");
-            }
-        }
-
-        // destroy old background
-        this.metaBackground?.destroy();
-        this.metaBackground = null;
-
-        this.metaBackground = new Background.Background({
-            monitorIndex: this.monitor.index,
-            layoutManager: Main.layoutManager,
-            settings: backgroundSettings,
-            file: Gio.File.new_for_commandline_arg(path),
-            style: GDesktopEnums.BackgroundStyle.ZOOM,
-        });
-
-        this.background.content.set({
-            background: this.metaBackground,
-        });
-
-        // after creating new background apply this space's color
-        if (this.color) {
-            this.metaBackground.set_color(Utils.color_from_string(this.color)[1]);
-        }
     }
 
     updateName() {
-        let name = workspaceSettings.getWorkspaceName(this.settings, this.index);
+        const name = `Workspace ${this.index + 1}`;
         Meta.prefs_change_workspace_name(this.index, name);
-        this.workspaceLabel.text = name;
         this.name = name;
-
-        if (this.workspace === workspaceManager.get_active_workspace()) {
-            Topbar.updateWorkspaceIndicator(this.index);
-        }
     }
 
     /**
@@ -1742,12 +1459,6 @@ border-radius: ${borderWidth}px;
             return;
         }
 
-        // show space duplicate elements if not primary monitor
-        if (!this.hasTopBar) {
-            Utils.actor_raise(this.workspaceIndicator);
-            this.workspaceLabel.show();
-        }
-
         // number of columns (a column have one or more windows)
         let cols = this.length;
         if (cols <= 1) {
@@ -1768,162 +1479,13 @@ border-radius: ${borderWidth}px;
         this.windowPositionBar.x = windex * segments;
     }
 
-    /**
-     * A space contains several elements that are duplicated (in the topbar) so that
-     * they can be seen in the space "topbar" when switching workspaces. This function
-     * sets these elements' visibility when not needed.
-     * @param {boolean} visible
-     */
-    setSpaceTopbarElementsVisible(visible = false, options = {}) {
-        const force = options?.force ?? false;
-        const setVisible = v => {
-            if (v) {
-                this.updateSpaceIconPositions();
-                this.showWorkspaceIndicator(true, force);
-                this.showFocusModeIcon(true, force);
-            }
-            else {
-                this.showWorkspaceIndicator(false, force);
-                this.showFocusModeIcon(false, force);
-            }
-        };
-
-        // if windowPositionBar is disabled ==> don't show elements
-        if (!this.showPositionBar) {
-            setVisible(false);
-            this.enableWindowPositionBar(false);
-            return;
-        }
-
-        if (this.selectedWindow?.fullscreen) {
-            setVisible(false);
-            this.enableWindowPositionBar(false);
-            return;
-        }
-
-        if (this.hasTopBar && inPreview) {
-            Topbar.setTransparentStyle();
-        }
-
-        // if on different monitor then override to show elements
-        if (!this.hasTopBar) {
-            visible = true;
-        }
-
-        // don't show elements on spaces with actual TopBar (unless inPreview)
-        if (this.hasTopBar && !inPreview) {
-            visible = false;
-        }
-
-        // if current window is fullscreen, don't show
-        if (this?.selectedWindow?.fullscreen) {
-            visible = false;
-        }
-
-        setVisible(visible);
-    }
-
-    /**
-    * Updates workspace topbar icon positions.
-    */
-    updateSpaceIconPositions() {
-        // get positions of topbar elements to replicate positions in spaces
-        const vertex = new Graphene.Point3D({ x: 0, y: 0 });
-        const labelPosition = Topbar.menu.label.apply_relative_transform_to_point(Main.panel, vertex);
-        this.workspaceLabel.set_position(labelPosition.x, labelPosition.y);
-
-        if (Settings.prefs.show_workspace_indicator) {
-            const focusPosition = Topbar.focusButton.apply_relative_transform_to_point(Main.panel, vertex);
-            this.focusModeIcon.set_position(focusPosition.x, focusPosition.y);
-        } else {
-            // using gnome pill, set focus icon at first position
-            this.focusModeIcon.set_position(0, 0);
-        }
-    }
-
-    /**
-     * Shows the workspace indicator space element.
-     * @param {boolean} show
-     */
-    showWorkspaceIndicator(show = true, force = false) {
-        this.updateName();
-        if (show && Settings.prefs.show_workspace_indicator) {
-            // if already shown then do nothing
-            if (!force && this.workspaceIndicator.is_visible()) {
-                return;
-            }
-
-            Utils.actor_raise(this.workspaceIndicator);
-            this.workspaceIndicator.opacity = 0;
-            this.workspaceIndicator.show();
-            Easer.addEase(this.workspaceIndicator, {
-                opacity: 255,
-                time: Settings.prefs.animation_time,
-            });
-        } else {
-            // if already shown then do nothing
-            if (!force && !this.workspaceIndicator.is_visible()) {
-                return;
-            }
-
-            Easer.addEase(this.workspaceIndicator, {
-                opacity: 0,
-                time: Settings.prefs.animation_time,
-                onComplete: () => this.workspaceIndicator.hide(),
-            });
-        }
-    }
-
-    /**
-     * Shows the focusModeIcon space element.
-     * @param {boolean} show
-     */
-    showFocusModeIcon(show = true, force = false) {
-        if (show && Settings.prefs.show_focus_mode_icon) {
-            // if already shown then do nothing
-            if (!force && this.focusModeIcon.is_visible()) {
-                return;
-            }
-
-            Utils.actor_raise(this.focusModeIcon);
-            this.focusModeIcon.opacity = 0;
-            this.focusModeIcon.show();
-            Easer.addEase(this.focusModeIcon, {
-                opacity: 255,
-                time: Settings.prefs.animation_time,
-            });
-        } else {
-            // if already hidden then do nothing
-            if (!force && !this.focusModeIcon.is_visible()) {
-                return;
-            }
-            Easer.addEase(this.focusModeIcon, {
-                opacity: 0,
-                time: Settings.prefs.animation_time,
-                onComplete: () => this.focusModeIcon.hide(),
-            });
-        }
-    }
-
     createBackground() {
-        const monitor = this.monitor;
-        if (!monitor) {
-            return;
-        }
-
-        if (this.background) {
-            this.signals.disconnect(this.background);
-            this.background.destroy();
-        }
-
-
-        this.background = new Meta.BackgroundActor(
-            Object.assign({
-                name: "background",
-                monitor: monitor.index,
-                reactive: true, // Disable the background menu
-            }, { meta_display: display })
-        );
+        /* Transparent input actor for click/scroll on the empty area of the
+           space. Mutter draws the actual wallpaper underneath. */
+        this.background = new Clutter.Actor({
+            name: "background",
+            reactive: true,
+        });
 
         this.actor.insert_child_below(this.background, null);
 
@@ -1933,9 +1495,7 @@ border-radius: ${borderWidth}px;
                     return;
                 }
 
-                /**
-                 * if user clicks on window, then ensureViewport on that window before exiting
-                 */
+                /* If user clicks on a window, ensureViewport on that window before exiting. */
                 let [gx, gy] = global.get_pointer();
                 let [, x, y] = this.actor.transform_stage_point(gx, gy);
                 let windowAtPoint = !Gestures.gliding && this.getWindowAtPoint(x, y);
@@ -1983,61 +1543,27 @@ border-radius: ${borderWidth}px;
         });
     }
 
-    setMonitor(monitor, animate = false, options = {}) {
-        const commit = options?.commit ?? true;
-
-        // check monitor exists
-        if (!monitor) {
-            return;
-        }
-
-        // Remake the background when we move monitors. The size/scale will be
-        // incorrect when using fractional scaling.
-        if (monitor !== this.monitor) {
-            if (commit) {
-                this.monitor = monitor;
-            }
-            this.createBackground();
-            this.updateColor();
-            this.updateBackground();
-
-            // update width of windowPositonBarBackdrop (to match monitor)
-            this.windowPositionBarBackdrop.width = monitor.width;
-        }
-
-        let background = this.background;
-        let clip = this.clip;
-
+    setMonitor(monitor) {
+        this.monitor = monitor;
         this.width = monitor.width;
         this.height = monitor.height;
+        this.windowPositionBarBackdrop.width = monitor.width;
 
-        let time = animate ? Settings.prefs.animation_time : 0;
+        this.actor.set_position(0, 0);
+        this.actor.set_scale(1, 1);
 
-        Easer.addEase(this.actor,
-            {
-                x: 0, y: 0, scale_x: 1, scale_y: 1,
-                time,
-            });
-        Easer.addEase(clip,
-            { scale_x: 1, scale_y: 1, time });
-
+        const clip = this.clip;
+        clip.set_scale(1, 1);
         clip.set_position(monitor.x, monitor.y);
         clip.set_size(monitor.width, monitor.height);
-        clip.set_clip(0, 0,
-            monitor.width,
-            monitor.height);
+        clip.set_clip(0, 0, monitor.width, monitor.height);
 
-        let scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
-        this.border.set_position(-borderWidth * scale, -borderWidth * scale);
-        this.border.set_size(monitor.width + scale * borderWidth * 2,
-            monitor.height + scale * borderWidth * 2);
-
-        background.set_size(this.width, this.height);
+        this.background.set_size(monitor.width, monitor.height);
 
         this.cloneClip.set_size(monitor.width, monitor.height);
-        this.cloneClip.set_clip(0, 0, this.width, this.height);
-        // transforms break if there's no height
-        this.cloneContainer.height = this.monitor.height;
+        this.cloneClip.set_clip(0, 0, monitor.width, monitor.height);
+        /* transforms break if there's no height */
+        this.cloneContainer.height = monitor.height;
 
         this.layout(true, { centerIfOne: false });
         this.emit('monitor-changed');
@@ -2158,15 +1684,6 @@ border-radius: ${borderWidth}px;
 
 Signals.addSignalMethods(Space.prototype);
 
-// static object
-export const StackPositions = {
-    top: 0.01,
-    up: 0.035,
-    selected: 0.1,
-    down: 0.95,
-    bottom: 1.1,
-};
-
 /**
    A `Map` to store all `Spaces`'s, indexed by the corresponding workspace.
 */
@@ -2197,20 +1714,15 @@ export const Spaces = class Spaces extends Map {
 
         this.signals.connect(workspaceManager, 'workspaces-reordered',
             () => this.workspacesChanged());
-
-        const OVERRIDE_SCHEMA = 'org.gnome.mutter';
-        this.overrideSettings = new Gio.Settings({ schema_id: OVERRIDE_SCHEMA });
     }
 
     init() {
         // Create extra workspaces if required
         Main.wm._workspaceTracker._checkWorkspaces();
 
-        // Monitors aren't set up properly on `enable`, so we need it enable here.
+        /* Monitors aren't set up properly on `enable`, so we need it enable here. */
         this.monitorsChanged();
-        this.signals.connect(Main.layoutManager, 'monitors-changed', () => {
-            displayConfig.upgradeGnomeMonitors(() => this.monitorsChanged());
-        });
+        this.signals.connect(Main.layoutManager, 'monitors-changed', () => this.monitorsChanged());
 
         this.signals.connect(display, 'window-created',
             (display, metaWindow, _user_data) => this.window_created(metaWindow));
@@ -2221,10 +1733,6 @@ export const Spaces = class Spaces extends Map {
 
         this.signals.connect(global.window_manager, 'switch-workspace',
             (wm, from, to, _direction) => this.switchWorkspace(wm, from, to));
-
-        this.signals.connect(this.overrideSettings, 'changed::workspaces-only-on-primary', () => {
-            displayConfig.upgradeGnomeMonitors(() => this.monitorsChanged());
-        });
 
         // Clone and hook up existing windows
         display.get_tab_list(Meta.TabList.NORMAL_ALL, null)
@@ -2249,192 +1757,56 @@ export const Spaces = class Spaces extends Map {
         this.stack = this.mru();
     }
 
-    /**
-       The monitors-changed signal can trigger _many_ times when
-       connection/disconnecting monitors.
-
-       Monitors are now upgraded via a dbus proxy connector which upgrades
-       Main.layoutManager.monitors with a "connector" property (e.g "eDP-1")
-       which is more stable for restoring monitor layouts.
-     */
     monitorsChanged() {
-        this.onlyOnPrimary = this.overrideSettings.get_boolean('workspaces-only-on-primary');
-        this.monitors = new Map();
-
-        // can be called async (after delay) on disable - use activeSpace as check
+        /* Can fire async (after delay) on disable, so use activeSpace as a liveness check. */
         if (!this.activeSpace) {
             return;
         }
 
-        this.activeSpace.getWindows().forEach(w => {
-            animateWindow(w);
-        });
-
+        this.activeSpace.getWindows().forEach(w => animateWindow(w));
         this.spaceContainer.set_size(global.screen_width, global.screen_height);
 
         for (let overlay of this.clickOverlays) {
             overlay.destroy();
         }
         this.clickOverlays = [];
-        let mru = this.mru();
 
-        let primary = Main.layoutManager.primaryMonitor;
+        const primary = Main.layoutManager.primaryMonitor;
         if (!primary) {
-            // setup periodic timout to call layout on all spaces 5 times (1 second apart)
+            /* Cold path: mutter occasionally reports no primary monitor mid-hotplug.
+               Retry layout 5 times at 1s intervals and bail. */
             monitorChangeTimeout = Utils.periodic_timeout({
                 count: 5,
-                init: () => {
-                    Utils.timeout_remove(monitorChangeTimeout);
-                },
-                callback: () => {
-                    this?.forEach(s => s.layout());
-                },
-                onContinue: called => {
-                    console.warn(`MONITORS_CHANGED: no primary monitor - 'layout' on spaces call ${called}`);
-                },
-                onComplete: () => {
-                    monitorChangeTimeout = null;
-                },
+                init: () => Utils.timeout_remove(monitorChangeTimeout),
+                callback: () => this?.forEach(s => s.layout()),
+                onContinue: called =>
+                    console.warn(`MONITORS_CHANGED: no primary monitor, 'layout' on spaces call ${called}`),
+                onComplete: () => { monitorChangeTimeout = null; },
             });
             return;
         }
 
-        // get monitors but ensure primary monitor is first
-        let monitors = Main.layoutManager.monitors.filter(m => m !== primary);
-        monitors.unshift(primary);
+        const overlay = new ClickOverlay(primary);
+        primary.clickOverlay = overlay;
+        this.clickOverlays.push(overlay);
 
-        for (let monitor of monitors) {
-            let overlay = new ClickOverlay(monitor, this.onlyOnPrimary);
-            monitor.clickOverlay = overlay;
-            this.clickOverlays.push(overlay);
-        }
+        this.forEach(space => space.setMonitor(primary));
 
-        let finish = () => {
-            /**
-             * Gnome may select a workspace that just had it monitor removed (gone).
-             * This this case find the next most recent space that's maintained it's
-             * monitor, and select that.
-             */
-            let recent = this.mru().filter(s => !monitorGoneSpaces.includes(s));
-            let activeSpace = recent?.[0] ?? this.monitors.get(primary);
+        const activeSpace = this.activeSpace;
+        if (activeSpace) {
             activeSpace.activate(false, false);
-
             this.selectedSpace = activeSpace;
-            this.setMonitors(activeSpace.monitor, activeSpace);
-            this.monitors.forEach(space => {
+        }
+        this.forEach(space => {
+            if (space === activeSpace) {
                 space.show();
                 Utils.actor_raise(space.clip);
-            });
-
-            this.spaceContainer.show();
-            Topbar.refreshWorkspaceIndicator();
-            this.forEach(s => s.setSpaceTopbarElementsVisible());
-            Stackoverlay.multimonitorSupport();
-        };
-
-        if (this.onlyOnPrimary) {
-            this.forEach(space => {
-                space.setMonitor(primary);
-            });
-            this.setMonitors(primary, mru[0]);
-            finish();
-            return;
-        }
-
-        /**
-         * Schedule to restore space targetX after this.  Needs to be
-         * scheduled before other loops since prevTargetX will be
-         * updated after this.
-         */
-        Utils.later_add(Meta.LaterType.IDLE, () => {
-            if (saveState.hasPrevTargetX()) {
-                for (let [uuid, targetX] of saveState.prevTargetX) {
-                    let space = this.spaceOfUuid(uuid);
-                    if (space && Number.isFinite(targetX)) {
-                        space.viewportMoveToX(targetX, false);
-                    }
-                }
-            }
-
-            // save restore state after restored previous targetX's
-            saveState.update();
-
-            // run layout on spaces after monitor to ensure windows layout is correct
-            this.forEach(space => space.layout(false));
-        });
-
-        // add any new / need workspaces that were present from prev state
-        let prevNSpaces = saveState?.prevSpaces?.size ?? 0;
-        let addSpaces = Math.max(0, prevNSpaces - workspaceManager.n_workspaces);
-        console.info(`nPrevSpaces ${prevNSpaces}, current nSpaces ${workspaceManager.n_workspaces}, need to add ${addSpaces}`);
-        for (let i = 0; i < addSpaces; i++) {
-            workspaceManager.append_new_workspace(false, global.get_current_time());
-        }
-
-        // Persist as many monitors as possible
-        let indexTracker = [];
-        if (saveState.hasPrevMonitors()) {
-            for (let monitor of monitors) {
-                // if processed spaceIndex, skip
-                let spaceIndex = saveState.prevMonitors.get(monitor.connector);
-                if (indexTracker.includes(spaceIndex)) {
-                    continue;
-                }
-                indexTracker.push(spaceIndex);
-
-                let space = this.spaceOfIndex(spaceIndex);
-                if (space) {
-                    console.info(`${space.name} restored to monitor ${monitor.connector}`);
-                    this.setMonitors(monitor, space);
-                    space.setMonitor(monitor);
-                    mru = mru.filter(s => s !== space);
-                }
-            }
-        }
-
-        // Populate any remaining monitors
-        for (let monitor of monitors) {
-            if (this.monitors.get(monitor) === undefined) {
-                let space = mru[0];
-                if (space === undefined) {
-                    continue;
-                }
-                this.setMonitors(monitor, space);
-                space.setMonitor(monitor);
-                mru = mru.slice(1);
-            }
-        }
-
-        /**
-         * Reset spaces where their monitors no longer exist.
-         * These spaces should be be restored.  We'll track
-         * which spaces have their monitor gone.
-         */
-        let monitorGoneSpaces = [];
-        this.forEach(space => {
-            if (!monitors.includes(space.monitor)) {
-                monitorGoneSpaces.push(space);
-                space.setMonitor(primary);
+            } else {
+                space.hide();
             }
         });
 
-        finish();
-    }
-
-    /**
-     * Sets this.monitors map and updates prevMonitors map (for restore).
-     */
-    setMonitors(monitor, space, save = false) {
-        this.monitors.set(monitor, space);
-        saveState.update(save);
-    }
-
-    _updateMonitor() {
-        let monitorSpaces = this._getOrderedSpaces(this.selectedSpace.monitor);
-        let currentMonitor = this.selectedSpace.monitor;
-        monitorSpaces.forEach((space, _i) => {
-            space.setMonitor(currentMonitor);
-        });
+        this.spaceContainer.show();
     }
 
     destroy() {
@@ -2498,196 +1870,15 @@ export const Spaces = class Spaces extends Map {
             }
         }
 
-        let nextUnusedWorkspaceIndex = nWorkspaces;
         for (let [, space] of this) {
             if (workspaces[space.workspace] !== true) {
                 this.removeSpace(space);
-
-                // Maps in javascript (and thus Spaces) remember insertion order
-                // so the workspaces are sorted by index. The relative ordering
-                // of the removed workspaces will thus be preserved when resurrected.
-                space.settings.set_int('index', nextUnusedWorkspaceIndex);
-                nextUnusedWorkspaceIndex++;
             }
         }
 
-        // Ensure the live spaces have correct indices
         for (let [workspace, space] of this) {
-            space.settings.set_int('index', workspace.index());
             Meta.prefs_change_workspace_name(workspace.index(), space.name);
         }
-    }
-
-    /**
-     * Return true if there are less-than-or-equal-to spaces than monitors.
-     */
-    lteSpacesThanMonitors(onFalseCallback) {
-        const cb = onFalseCallback ?? function (_nSpaces, _nMonitors) { };
-        const nSpaces = [...this].length;
-        const nMonitors = Main.layoutManager.monitors.length;
-
-        if (nSpaces <= nMonitors) {
-            cb(nSpaces, nMonitors);
-        }
-        return nSpaces <= nMonitors;
-    }
-
-    switchMonitor(direction, move, warp = true) {
-        let focus = display.focus_window;
-        let monitor = focusMonitor();
-        let currentSpace = this.monitors.get(monitor);
-        let i = display.get_monitor_neighbor_index(monitor.index, direction);
-        if (i === -1)
-            return;
-        let newMonitor = Main.layoutManager.monitors[i];
-        if (warp) {
-            Utils.warpPointerToMonitor(newMonitor);
-        }
-        let space = this.monitors.get(newMonitor);
-
-        if (move && focus) {
-            let metaWindow = focus.get_transient_for() || focus;
-
-            if (currentSpace && currentSpace.indexOf(metaWindow) !== -1) {
-                currentSpace.removeWindow(metaWindow);
-                metaWindow.foreach_transient(t => {
-                    currentSpace.removeWindow(t);
-                });
-            } else {
-                metaWindow.move_to_monitor(newMonitor.index);
-            }
-            metaWindow.foreach_transient(t => {
-                t.move_to_monitor(newMonitor.index);
-            });
-            if (space) {
-                metaWindow.change_workspace(space.workspace);
-                metaWindow.foreach_transient(t => {
-                    space.addFloating(t);
-                });
-                space.activateWithFocus(focus, false, false);
-            } else {
-                metaWindow.move_to_monitor(newMonitor.index);
-            }
-        } else {
-            space.activate(false, false);
-        }
-    }
-
-    moveToMonitor(direction, backDirection) {
-        const monitor = focusMonitor();
-        const i = display.get_monitor_neighbor_index(monitor.index, direction);
-        if (i === -1)
-            return;
-
-        if (this.lteSpacesThanMonitors(
-            (s, m) => Main.notify(
-                `AlbumWM (cannot move workspace)`,
-                `You need at least ${m + 1} workspaces to complete this operation.`
-            )
-        )) {
-            return;
-        }
-
-        // check how many spaces are on this monitor
-        const numSpaces = [...this].filter(([_monitor, space]) => space?.monitor === monitor).length;
-        // if last space on this monitor, then swap
-        if (numSpaces <= 1) {
-            this.swapMonitor(direction, backDirection);
-            return;
-        }
-
-        let navFinish = () => Navigator.getNavigator().finish();
-        // action on current monitor
-        this.selectStackSpace(Meta.MotionDirection.DOWN);
-        navFinish();
-        // switch to target monitor and action mru
-        this.switchMonitor(direction, false, true);
-        this.selectStackSpace(Meta.MotionDirection.DOWN);
-        navFinish();
-
-        // /**
-        //  * Fullscreen monitor workaround.
-        //  * see https://github.com/paperwm/PaperWM/issues/638
-        //  */
-        // this.forEach(space => {
-        //     space.getWindows().filter(w => w.fullscreen).forEach(w => {
-        //         animateWindow(w);
-        //         w.unmake_fullscreen();
-        //         w.make_fullscreen();
-        //         showWindow(w);
-        //     });
-        // });
-
-        // ensure after swapping that the space elements are shown correctly
-        this.forEach(s => s.setSpaceTopbarElementsVisible(true, { force: true }));
-    }
-
-    swapMonitor(direction, backDirection, options = {}) {
-        const checkIfLast = options.checkIfLast ?? true;
-        const warpIfLast = options.warpIfLast ?? true;
-
-        const monitor = focusMonitor();
-        const i = display.get_monitor_neighbor_index(monitor.index, direction);
-        if (i === -1)
-            return;
-
-        if (this.lteSpacesThanMonitors(
-            (s, m) => Main.notify(
-                `AlbumWM (cannot swap workspaces)`,
-                `You need at least ${m + 1} workspaces to complete this operation.`
-            )
-        )) {
-            return;
-        }
-
-        if (checkIfLast) {
-            // check how many spaces are on this monitor
-            const numSpaces = [...this].filter(([_monitor, space]) => space?.monitor === monitor).length;
-            // if last space on this monitor, then swap
-            if (numSpaces <= 1) {
-                // focus other monitor for a switchback
-                this.switchMonitor(direction, false, false);
-                this.swapMonitor(backDirection, direction, {
-                    checkIfLast: false,
-                    warpIfLast: false,
-                });
-
-                // now switch monitor with warp since we back-flipped
-                this.switchMonitor(direction, false, true);
-                return;
-            }
-        }
-
-        let navFinish = () => Navigator.getNavigator().finish();
-        // action on current monitor
-        this.selectStackSpace(Meta.MotionDirection.DOWN);
-        navFinish();
-        // switch to target monitor and action mru
-        this.switchMonitor(direction, false, false);
-        this.selectStackSpace(Meta.MotionDirection.DOWN);
-        navFinish();
-        // switch back to orig monitor and action mru
-        this.switchMonitor(backDirection, false, false);
-        this.selectStackSpace(Meta.MotionDirection.DOWN);
-        navFinish();
-        // final switch with warp
-        this.switchMonitor(direction, false, warpIfLast);
-
-        // /**
-        //  * Fullscreen monitor workaround.
-        //  * see https://github.com/paperwm/PaperWM/issues/638
-        //  */
-        // this.forEach(space => {
-        //     space.getWindows().filter(w => w.fullscreen).forEach(w => {
-        //         animateWindow(w);
-        //         w.unmake_fullscreen();
-        //         w.make_fullscreen();
-        //         showWindow(w);
-        //     });
-        // });
-
-        // ensure after swapping that the space elements are shown correctly
-        this.forEach(s => s.setSpaceTopbarElementsVisible(true, { force: true }));
     }
 
     switchSpace(fromSpace, toSpace, animate = false) {
@@ -2729,22 +1920,9 @@ export const Spaces = class Spaces extends Map {
             metaWindow.change_workspace(toSpace.workspace);
         }
 
-        if (inPreview === PreviewMode.NONE &&
-            toSpace.monitor === fromSpace.monitor) {
-            // Only start an animation if we're moving between workspaces on the
-            // same monitor
-            this.initWorkspaceSequence();
-        } else {
-            this.selectedSpace.setMonitor(this.selectedSpace.monitor);
-        }
-
         this.stack = this.stack.filter(s => s !== toSpace);
         this.stack = [toSpace, ...this.stack];
 
-        let monitor = toSpace.monitor;
-        this.setMonitors(monitor, toSpace, true);
-
-        this.forEach(s => s.setSpaceTopbarElementsVisible());
         let doAnimate = animate || this.space_albumwmAnimation;
         this.animateToSpace(
             toSpace,
@@ -2754,377 +1932,13 @@ export const Spaces = class Spaces extends Map {
         // Update panel to handle target workspace
         signals.disconnect(Main.panel, this.touchSignal);
         this.touchSignal = signals.connect(Main.panel, "touch-event", Gestures.horizontalTouchScroll.bind(toSpace));
-
-        inPreview = PreviewMode.NONE;
-    }
-
-    _getOrderedSpaces(monitor) {
-        let nWorkspaces = workspaceManager.n_workspaces;
-        let out = [];
-        for (let i = 0; i < nWorkspaces; i++) {
-            let space = this.spaceOf(workspaceManager.get_workspace_by_index(i));
-
-            if (space.monitor === monitor) {
-                out.push(space);
-                continue;
-            }
-
-            // include workspace if it is the current one
-            // or if it is empty and not active on another monitor
-            if (space.length === 0 &&
-                this.monitors.get(space.monitor) !== space) {
-                out.push(space);
-                continue;
-            }
-        }
-        return out;
-    }
-
-    _getOrderedSpacesFromAllMonitors(monitor) {
-        let nWorkspaces = workspaceManager.n_workspaces;
-        let out = [];
-        for (let i = 0; i < nWorkspaces; i++) {
-            let space = this.spaceOf(workspaceManager.get_workspace_by_index(i));
-            if (this.monitors.get(space.monitor) !== space || space.monitor === monitor) {
-                // include workspace if it is the current one
-                // or if it is not active on another monitor
-                out.push(space);
-            }
-        }
-        return out;
-    }
-
-    _animateToSpaceOrdered(toSpace, animate = true) {
-        // Always show the topbar when using the workspace stack
-        Topbar.fixTopBar();
-
-        toSpace = toSpace || this.selectedSpace;
-        let monitorSpaces = this._getOrderedSpaces(toSpace.monitor);
-
-        let currentMonitor = toSpace.monitor;
-        this.selectedSpace = toSpace;
-
-        const scale = 1;
-        const padding_percentage = 4;
-        const to = monitorSpaces.indexOf(toSpace);
-        monitorSpaces.forEach((space, i) => {
-            space.setMonitor(currentMonitor);
-            space.startAnimate();
-
-            Easer.removeEase(space.border);
-            space.border.opacity = 255;
-            space.border.show();
-
-            space.show();
-
-            let padding = (space.height * scale / 100) * padding_percentage;
-            let y = ((space.height + padding) * (i - to)) * scale;
-            if (animate) {
-                Easer.addEase(space.actor, {
-                    time: Settings.prefs.animation_time,
-                    y, scale_y: scale, scale_x: scale,
-                });
-            } else {
-                // Remove any lingering onComplete handlers from animateToSpace
-                Easer.removeEase(space.actor);
-
-                space.actor.y = y;
-                space.actor.scale_y = scale;
-                space.actor.scale_x = scale;
-            }
-
-            let selected = space.selectedWindow;
-            if (selected && selected.fullscreen && space !== toSpace) {
-                selected.clone.y = Main.panel.height + Settings.prefs.vertical_margin;
-            }
-        });
-    }
-
-    initWorkspaceSequence() {
-        if (inPreview) {
-            return;
-        }
-        inPreview = PreviewMode.SEQUENTIAL;
-
-        if (Main.panel.statusArea.appMenu) {
-            Main.panel.statusArea.appMenu.container.hide();
-        }
-
-        this.forEach(s => s.setSpaceTopbarElementsVisible(true));
-        this._animateToSpaceOrdered(this.selectedSpace, false);
-
-        let selected = this.selectedSpace.selectedWindow;
-        if (selected && selected.fullscreen) {
-            Easer.addEase(selected.clone, {
-                y: Main.panel.height + Settings.prefs.vertical_margin,
-                time: Settings.prefs.animation_time,
-            });
-        }
-    }
-
-    selectSequenceSpace(direction, move, fromAllMonitors = false) {
-        // if in stack preview do not run sequence preview
-        if (inPreview === PreviewMode.STACK) {
-            return;
-        }
-
-        let currentSpace = this.activeSpace;
-        let monitorSpaces;
-        if (fromAllMonitors) {
-            monitorSpaces = this._getOrderedSpacesFromAllMonitors(currentSpace.monitor);
-        } else {
-            monitorSpaces = this._getOrderedSpaces(currentSpace.monitor);
-        }
-
-        let from = monitorSpaces.indexOf(this.selectedSpace);
-        let newSpace = this.selectedSpace;
-        let to = from;
-
-        if (move && this.selectedSpace.selectedWindow) {
-            const navigator = Navigator.getNavigator();
-            if (!navigator._moving ||
-                (Array.isArray(navigator._moving) && navigator._moving.length === 0)) {
-                takeWindow(this.selectedSpace.selectedWindow,
-                    this.selectedSpace,
-                    { navigator });
-            }
-        }
-
-        if (direction === Meta.MotionDirection.DOWN) {
-            to = from + 1;
-        }
-        else {
-            to = from - 1;
-        }
-
-        if (to < 0 || to >= monitorSpaces.length) {
-            return;
-        }
-
-        if (to === from && Easer.isEasing(newSpace.actor)) {
-            return;
-        }
-
-        if (!inPreview) {
-            this.initWorkspaceSequence();
-        }
-
-        newSpace = monitorSpaces[to];
-        this.selectedSpace = newSpace;
-
-        // if active (source space) is panelMonitor update indicator
-        if (currentSpace.monitor === Topbar.panelMonitor()) {
-            Topbar.updateWorkspaceIndicator(newSpace.index);
-        }
-
-        const scale = 0.825;
-        const padding_percentage = 4;
-        let last = monitorSpaces.length - 1;
-        monitorSpaces.forEach((space, i) => {
-            // need to set monitor here so it shows up during selection, when it
-            // was previously on another monitor
-            space.setMonitor(currentSpace.monitor, false, { commit: false });
-
-            let padding = (space.height * scale / 100) * padding_percentage;
-            let center = (space.height - (space.height * scale)) / 2;
-            let space_y;
-            if (to === 0) {
-                space_y = padding + (space.height + padding) * (i - to) * scale;
-            } else if (to === last) {
-                space_y = (center * 2 - padding) + (space.height + padding) * (i - to) * scale;
-            } else {
-                space_y = center + (space.height + padding) * (i - to) * scale;
-            }
-
-            space.show();
-            Easer.addEase(space.actor, {
-                y: space_y,
-                time: Settings.prefs.animation_time,
-                scale_x: scale,
-                scale_y: scale,
-            });
-        });
-    }
-
-    initWorkspaceStack() {
-        if (inPreview) {
-            return;
-        }
-
-        inPreview = PreviewMode.STACK;
-
-        // Always show the topbar when using the workspace stack
-        Topbar.fixTopBar();
-        const scale = 0.9;
-        let space = this.activeSpace;
-        let mru = [...this.stack];
-        this.monitors.forEach(space => mru.splice(mru.indexOf(space), 1));
-        mru = [space, ...mru];
-
-        if (Main.panel.statusArea.appMenu)
-            Main.panel.statusArea.appMenu.container.hide();
-        let monitor = space.monitor;
-        this.selectedSpace = space;
-
-        this.forEach(s => s.setSpaceTopbarElementsVisible(true));
-        let cloneParent = space.clip.get_parent();
-        mru.forEach((space, i) => {
-            space.startAnimate();
-
-            if (space.length !== 0) {
-                let scaleX = monitor.width / space.width;
-                let scaleY = monitor.height / space.height;
-                space.clip.set_scale(scaleX, scaleY);
-                space.clip.set_position(monitor.x, monitor.y);
-            } else {
-                space.setMonitor(monitor);
-            }
-
-            Easer.removeEase(space.border);
-            space.border.opacity = 255;
-            space.border.show();
-
-            let h;
-            if (i === 0) {
-                h = 0;
-                space.show();
-            } else if (i === 1) {
-                h = StackPositions.up;
-                space.show();
-            } else if (i === 2) {
-                h = StackPositions.top;
-                space.show();
-            } else {
-                h = StackPositions.top;
-                space.hide();
-            }
-
-            space.actor.set_position(0, space.height * h);
-
-            space.actor.scale_y = scale - i * 0.01;
-            space.actor.scale_x = scale - i * 0.01;
-
-            // Remove any lingering onComplete handlers from animateToSpace
-            Easer.removeEase(space.actor);
-
-            if (mru[i - 1] === undefined) {
-                return;
-            }
-            let child = space.clip;
-            let sibling = mru[i - 1].clip;
-            child !== sibling && cloneParent.set_child_below_sibling(child, sibling);
-            let selected = space.selectedWindow;
-            if (selected && selected.fullscreen) {
-                selected.clone.y = Main.panel.height + Settings.prefs.vertical_margin;
-            }
-        });
-
-        space.actor.scale_y = 1;
-        space.actor.scale_x = 1;
-
-        let selected = space.selectedWindow;
-        if (selected && selected.fullscreen) {
-            Easer.addEase(selected.clone, {
-                y: Main.panel.height + Settings.prefs.vertical_margin,
-                time: Settings.prefs.animation_time,
-            });
-        }
-    }
-
-    selectStackSpace(direction, move) {
-        // if in sequence preview do not run stack preview
-        if (inPreview === PreviewMode.SEQUENTIAL) {
-            return;
-        }
-
-        const scale = 0.9;
-        let space = this.activeSpace;
-        let mru = [...this.stack];
-
-        this.monitors.forEach(space => mru.splice(mru.indexOf(space), 1));
-        mru = [space, ...mru];
-
-        if (!inPreview) {
-            this.initWorkspaceStack();
-        }
-
-        let from = mru.indexOf(this.selectedSpace);
-        let newSpace = this.selectedSpace;
-        let to = from;
-        if (move && this.selectedSpace.selectedWindow) {
-            takeWindow(this.selectedSpace.selectedWindow,
-                this.selectedSpace,
-                { navigator: Navigator.getNavigator() });
-        }
-
-        if (direction === Meta.MotionDirection.DOWN)
-            to = from + 1;
-        else
-            to = from - 1;
-
-        // wrap around workspaces
-        if (to < 0) {
-            to = mru.length - 1;
-        }
-        else if (to >= mru.length) {
-            to = 0;
-        }
-
-        if (to === from && Easer.isEasing(newSpace.actor)) {
-            return;
-        }
-
-        newSpace = mru[to];
-        this.selectedSpace = newSpace;
-
-        // if active (source space) is panelMonitor update indicator
-        if (space.monitor === Topbar.panelMonitor()) {
-            Topbar.updateWorkspaceIndicator(newSpace.index);
-        }
-
-        mru.forEach((space, i) => {
-            let actor = space.actor;
-            let h, onComplete = () => { };
-            if (to === i)
-                h = StackPositions.selected;
-            else if (to + 1 === i)
-                h = StackPositions.up;
-            else if (to - 1 === i)
-                h = StackPositions.down;
-            else if (i > to)
-                h = StackPositions.top;
-            else if (i < to)
-                h = StackPositions.bottom;
-
-            if (Math.abs(i - to) > 2) {
-                onComplete = () => {
-                    space.hide();
-                };
-            } else {
-                space.show();
-            }
-            Easer.addEase(actor,
-                {
-                    y: h * space.height,
-                    time: Settings.prefs.animation_time,
-                    scale_x: scale + (to - i) * 0.01,
-                    scale_y: scale + (to - i) * 0.01,
-                    onComplete,
-                });
-        });
     }
 
     animateToSpace(to, from, animate = true, callback) {
-        let currentPreviewMode = inPreview;
-        inPreview = PreviewMode.NONE;
-
-        Topbar.updateWorkspaceIndicator(to.index);
-        if (to.hasTopBar) {
-            if (to.showPositionBar) {
-                Topbar.setNoBackgroundStyle();
-            } else {
-                Topbar.setTransparentStyle();
-            }
+        if (to.showPositionBar) {
+            Topbar.setNoBackgroundStyle();
+        } else {
+            Topbar.setTransparentStyle();
         }
 
         this.selectedSpace = to;
@@ -3137,55 +1951,32 @@ export const Spaces = class Spaces extends Map {
             from.startAnimate();
         }
 
-        let visible = new Map();
-        for (let [, space] of this.monitors) {
-            visible.set(space, true);
-        }
-
         let time = animate ? Settings.prefs.animation_time : 0;
         let onComplete = () => {
-            // Hide any spaces that aren't visible This
-            // avoids a nasty preformance degregration in some
-            // cases
+            /*
+             * Bail if a newer switch has superseded us. selectedSpace is set
+             * synchronously by the next animateToSpace, so a mismatch means
+             * our "to" is stale and finishing would step on the live one.
+             */
+            if (spaces.selectedSpace !== to) {
+                return;
+            }
+
+            /* Hide any spaces other than "to" to avoid a performance degradation. */
             for (const space of spaces.values()) {
-                if (!visible.get(space)) {
+                if (space !== to) {
                     space.hide();
                 }
             }
 
-            to.border.hide();
-            to.border.opacity = 255;
             Utils.actor_raise(to.clip);
-
-            // Ensures window clones are clickable after switching monitors.
-            // Originally X11-only but also needed on Wayland for proper
-            // input handling after space switches.
             to.startAnimate();
-
             to.moveDone();
             if (callback) {
                 callback();
             }
         };
 
-        if (currentPreviewMode === PreviewMode.SEQUENTIAL) {
-            this._animateToSpaceOrdered(to, animate);
-            let t = to.actor.get_transition('y');
-            if (t) {
-                t.connect('stopped', (timeline, finished) => {
-                    if (finished) {
-                        onComplete();
-                    }
-                });
-            } else {
-                // When switching between monitors there's no animation we can
-                // connect to
-                onComplete();
-            }
-            return;
-        }
-
-        this._updateMonitor();
         Easer.addEase(to.actor,
             {
                 x: 0,
@@ -3196,13 +1987,15 @@ export const Spaces = class Spaces extends Map {
                 onComplete,
             });
 
-        // Animate all the spaces above `to` down below the monitor. We get
-        // these spaces by looking at siblings of upper most actor, ie. the
-        // `clip`. This is done since `this.stack` is already updated.
+        /*
+          Animate all the spaces above `to` down below the monitor by looking
+          at siblings of the uppermost actor, ie. the `clip`. This is done since
+          `this.stack` is already updated.
+        */
         let above = to.clip.get_next_sibling();
         while (above) {
             let space = above.space;
-            if (!visible.get(space)) {
+            if (space !== to) {
                 Easer.addEase(space.actor,
                     {
                         x: 0, y: space.height + 20,
@@ -3505,7 +2298,7 @@ export function registerWindow(metaWindow) {
             delete metaWindow._fullscreen_above;
         }
 
-        spaces.spaceOfWindow(metaWindow)?.setSpaceTopbarElementsVisible(true);
+        spaces.spaceOfWindow(metaWindow)?.enableWindowPositionBar(!metaWindow.fullscreen);
     });
     signals.connect(metaWindow, 'notify::minimized', metaWindow => {
         minimizeHandler(metaWindow);
@@ -3825,66 +2618,21 @@ export function saveFullscreenFrame(metaWindow, tiled) {
     }
 }
 
-/**
- * Saves current state for controlled restarts of AlbumWM.
- */
+/* Saves current state for controlled restarts of AlbumWM. */
 class SaveState {
     constructor() {
-        this.prevMonitors = new Map();
         this.prevSpaces = new Map();
-        this.prevTargetX = new Map();
-    }
-
-    hasPrevMonitors() {
-        return this.prevMonitors?.size > 0;
-    }
-
-    hasPrevSpaces() {
-        return this.prevSpaces?.size > 0;
-    }
-
-    hasPrevTargetX() {
-        return this.prevTargetX?.size > 0;
     }
 
     getPrevSpaceByUUID(uuid) {
         return [...this.prevSpaces.values()].find(s => uuid === s.uuid);
     }
 
-    /**
-     * Updates save state based on current monitors, spaces, and layouts.
-     */
-    update(save = true) {
-        if (!save) {
-            return;
-        }
-
-        /**
-         * For monitors, since these are upgraded with "connector" field,
-         * which we delete on disable. Beefore we delete this field, we want
-         * a copy on connector (and index) to restore space to monitor.
-         */
-        if (spaces?.monitors) {
-            for (let [monitor, space] of spaces.monitors) {
-                this.prevMonitors.set(monitor.connector, space.index);
-            }
-        }
-
-        // store space targetx values
-        this.prevTargetX = new Map();
-        spaces.forEach(s => {
-            if (s.getWindows().length > 0 && s.targetX !== 0) {
-                this.prevTargetX.set(s.uuid, s.targetX);
-            }
-        });
-
-        // save spaces (for window restore)
+    update() {
         this.prevSpaces = new Map(spaces);
     }
 
-    /**
-     * Prepares state for restoring on next enable.
-     */
+    /* Prepares state for restoring on next enable. */
     prepare() {
         this.update();
         this.prevSpaces.forEach(space => {
@@ -3892,7 +2640,7 @@ class SaveState {
             let selected = windows.indexOf(space.selectedWindow);
             if (selected === -1)
                 return;
-            // Stack windows correctly for controlled restarts
+            /* Stack windows correctly for controlled restarts. */
             for (let i = selected; i < windows.length; i++) {
                 windows[i].lower();
             }
@@ -3903,12 +2651,31 @@ class SaveState {
     }
 }
 
-/**
- * Return the currently focused monitor (or more specifically, the current
- * active space's monitor).
- */
-export function focusMonitor() {
-    return spaces?.activeSpace?.monitor;
+/* Switch keyboard focus to a neighbouring monitor. Moving windows between
+   monitors is handled by mutter's built-in move-to-monitor-* keybindings. */
+export function switchMonitor(direction) {
+    const i = display.get_current_monitor();
+    const j = display.get_monitor_neighbor_index(i, direction);
+    if (j === -1)
+        return;
+    const target = Main.layoutManager.monitors[j];
+
+    /* Prefer the active space's selected window if its monitor matches,
+       otherwise any window on the target monitor in the active workspace. */
+    const activeSpace = spaces.activeSpace;
+    let focusTarget = null;
+    if (activeSpace?.monitor === target && activeSpace.selectedWindow) {
+        focusTarget = activeSpace.selectedWindow;
+    }
+    if (!focusTarget) {
+        const ws = workspaceManager.get_active_workspace();
+        focusTarget = ws.list_windows().find(w => w.get_monitor() === j);
+    }
+    if (focusTarget) {
+        Main.activateWindow(focusTarget);
+    } else {
+        Utils.warpPointerToMonitor(target);
+    }
 }
 
 /**
@@ -4106,7 +2873,7 @@ export function insertWindow(metaWindow, options = {}) {
         if (!newspace) {
             Main.notify(
                 `AlbumWM [winprop]: cannot open window on workspace ${overwriteSpace} (index)`,
-                `"${metaWindow?.title}" cannot be opened on workspace with index ${overwriteSpace} 
+                `"${metaWindow?.title}" cannot be opened on workspace with index ${overwriteSpace}
 (workspace not found). Opening on current workspace instead.`
             );
             console.warn("#winprops", `overwriteSpace with index ${overwriteSpace} does not exist. \
@@ -4218,7 +2985,6 @@ Opening "${metaWindow?.title}" on current space.`);
 
             Main.activateWindow(metaWindow);
             ensureViewport(space.selectedWindow, space);
-            space.setSpaceTopbarElementsVisible(true);
 
             slurpCheck(true);
         });
@@ -4372,7 +3138,7 @@ export function ensureViewport(meta_window, space, options = {}) {
 
     space.selectedWindow = meta_window;
     let selected = space.selectedWindow;
-    if (!inPreview && selected.fullscreen) {
+    if (selected.fullscreen) {
         let y = 0;
         let ty = selected.clone.get_transition('y');
         if (!space.isVisible(selected)) {
@@ -4619,7 +3385,6 @@ export function focus_handler(metaWindow) {
 
     if (metaWindow.fullscreen) {
         space.enableWindowPositionBar(false);
-        space.setSpaceTopbarElementsVisible(false);
         space.hideSelection();
         if (!metaWindow.is_above()) {
             metaWindow.make_above();
@@ -4636,11 +3401,8 @@ export function focus_handler(metaWindow) {
         });
 
         let needLayout = false;
-        /**
-         * If has fullscreen window - when selected non-fullscreen window, do layout:
-         * For non-topbar spaces, Bring down fullscreen windows to mimic gnome behaviour with a topbar,
-         * Also ensures if columns group, then it's windows are correctly proportioned.
-         */
+        /* When switching focus off a fullscreen window, re-layout so the previously
+           fullscreened sibling shrinks back and any column proportions are restored. */
         if (space.hasFullScreenWindow()) {
             needLayout = true;
         }
@@ -4662,7 +3424,6 @@ export function focus_handler(metaWindow) {
             space.layout(false);
         }
 
-        space.setSpaceTopbarElementsVisible(true);
         space.enableWindowPositionBar(true);
         space.showSelection();
     }
@@ -5090,10 +3851,7 @@ export function activateWindowUnderCursor(metaWindow, space) {
 export function setFocusMode(mode, space) {
     space = space ?? spaces.activeSpace;
     space.focusMode = mode;
-    space.focusModeIcon.setMode(mode);
-    if (space.hasTopBar) {
-        Topbar.focusButton.setFocusMode(mode);
-    }
+    Topbar.focusButton.setFocusMode(mode);
 
     const workArea = space.workArea();
     const selectedWin = space.selectedWindow;
@@ -5358,48 +4116,6 @@ export function barf(metaWindow, expelWindow) {
     });
 }
 
-export function selectPreviousSpace(_mw, _space) {
-    spaces.selectStackSpace(Meta.MotionDirection.DOWN);
-}
-
-export function selectPreviousSpaceBackwards(_mw, _space) {
-    spaces.selectStackSpace(Meta.MotionDirection.UP);
-}
-
-export function movePreviousSpace(_mw, _space) {
-    spaces.selectStackSpace(Meta.MotionDirection.DOWN, true);
-}
-
-export function movePreviousSpaceBackwards(_mw, _space) {
-    spaces.selectStackSpace(Meta.MotionDirection.UP, true);
-}
-
-export function selectDownSpace(mw, space, fromAllMonitors) {
-    spaces.selectSequenceSpace(Meta.MotionDirection.DOWN, false, fromAllMonitors);
-}
-
-export function selectUpSpace(mw, space, fromAllMonitors) {
-    spaces.selectSequenceSpace(Meta.MotionDirection.UP, false, fromAllMonitors);
-}
-
-export function switchDownOrElseWorkspace(mw, space) {
-    if (!space.switchDown(false))
-        selectDownSpace(mw, space, false);
-}
-
-export function switchUpOrElseWorkspace(mw, space) {
-    if (!space.switchUp(false))
-        selectUpSpace(mw, space, false);
-}
-
-export function moveDownSpace(_mw, _space) {
-    spaces.selectSequenceSpace(Meta.MotionDirection.DOWN, true);
-}
-
-export function moveUpSpace(_mw, _space) {
-    spaces.selectSequenceSpace(Meta.MotionDirection.UP, true);
-}
-
 /**
    Detach the @metaWindow, storing it at the bottom right corner while
    navigating. When done, insert all the detached windows again.
@@ -5566,48 +4282,5 @@ export function sortWindows(space, windows) {
     return space.cloneContainer.get_children()
         .filter(c => clones.includes(c))
         .map(c => c.meta_window);
-}
-
-export function rotated(list, dir = 1) {
-    return [].concat(
-        list.slice(dir),
-        list.slice(0, dir)
-    );
-}
-
-export function cycleWorkspaceSettings(dir = 1) {
-    let n = workspaceManager.get_n_workspaces();
-    let N = workspaceSettings.getWorkspaceList().get_strv('list').length;
-    let space = spaces.selectedSpace;
-    let wsI = space.index;
-
-    // 2 6 7 8   <-- indices
-    // x a b c   <-- settings
-    // a b c x   <-- rotated settings
-
-    let uuids = workspaceSettings.getWorkspaceList().get_strv('list');
-    // Work on tuples of [uuid, settings] since we need to uuid association
-    // in the last step
-    let settings = uuids.map(
-        uuid => [uuid, workspaceSettings.getWorkspaceSettingsByUUID(uuid)]
-    );
-    settings.sort((a, b) => a[1].get_int('index') - b[1].get_int('index'));
-
-    let unbound = settings.slice(n);
-    let strip = [settings[wsI]].concat(unbound);
-
-    strip = rotated(strip, dir);
-
-    let nextSettings = strip[0];
-    unbound = strip.slice(1);
-
-    nextSettings[1].set_int('index', wsI);
-    space.setSettings(nextSettings); // ASSUMPTION: ok that two settings have same index here
-
-    // Re-assign unbound indices:
-    for (let i = n; i < N; i++) {
-        unbound[i - n][1].set_int('index', i);
-    }
-    return space;
 }
 

@@ -27,83 +27,6 @@
       <summary>Switch to previously active scratch window, backward order</summary>
     </key>
 
-    <key type="as" name="previous-workspace">
-      <default><![CDATA[['<Super>Above_Tab']]]></default>
-      <summary>Switch to previously active workspace</summary>
-    </key>
-    <key type="as" name="previous-workspace-backward">
-      <default><![CDATA[['<Super><Shift>Above_Tab']]]></default>
-      <summary>Switch to the previously active workspace, backward order</summary>
-    </key>
-
-    <key type="as" name="move-previous-workspace">
-      <default><![CDATA[['<Super><Ctrl>Above_Tab']]]></default>
-      <summary>Move the active window to the previously active workspace</summary>
-    </key>
-    <key type="as" name="move-previous-workspace-backward">
-      <default><![CDATA[['<Super><Shift><Ctrl>Above_Tab']]]></default>
-      <summary>Move the active window to the previously active workspace, backward order</summary>
-    </key>
-
-    <key type="as" name="switch-down-workspace">
-      <default><![CDATA[['<Super>Page_Down']]]></default>
-      <summary>Switch to workspace below (ws only from current monitor)</summary>
-    </key>
-
-    <key type="as" name="switch-up-workspace">
-      <default><![CDATA[['<Super>Page_Up']]]></default>
-      <summary>Switch to workspace above (ws only from current monitor)</summary>
-    </key>
-
-    <key type="as" name="switch-down-workspace-from-all-monitors">
-      <default><![CDATA[[]]]></default>
-      <summary>Switch to workspace below (ws from all monitors)</summary>
-    </key>
-
-    <key type="as" name="switch-up-workspace-from-all-monitors">
-      <default><![CDATA[[]]]></default>
-      <summary>Switch to workspace above (ws from all monitors)</summary>
-    </key>
-
-    <key type="as" name="move-down-workspace">
-      <default><![CDATA[['<Super><Ctrl>Page_Down']]]></default>
-      <summary>Move window one workspace down</summary>
-    </key>
-    <key type="as" name="move-up-workspace">
-      <default><![CDATA[['<Super><Ctrl>Page_Up']]]></default>
-      <summary>Move window one workspace up</summary>
-    </key>
-
-    <key type="as" name="toggle-top-and-position-bar">
-      <default><![CDATA[['<Super><Ctrl>b']]]></default>
-      <summary>Toggle the Top Bar and Window Position Bar on current workspace</summary>
-    </key>
-    <key type="as" name="toggle-top-bar">
-      <default><![CDATA[[]]]></default>
-      <summary>Toggle the Top Bar on current workspace</summary>
-    </key>
-    <key type="as" name="toggle-position-bar">
-      <default><![CDATA[[]]]></default>
-      <summary>Toggle the Window Position Bar on current workspace</summary>
-    </key>
-
-    <key type="as" name="move-monitor-right">
-        <default><![CDATA[['<Super><Shift><Ctrl>Right']]]></default>
-        <summary>Move the active window to the right monitor</summary>
-    </key>
-    <key type="as" name="move-monitor-left">
-        <default><![CDATA[['<Super><Shift><Ctrl>Left']]]></default>
-        <summary>Move the active window to the left monitor</summary>
-    </key>
-    <key type="as" name="move-monitor-above">
-        <default><![CDATA[['<Super><Shift><Ctrl>Up']]]></default>
-        <summary>Move the active window to the above monitor</summary>
-    </key>
-    <key type="as" name="move-monitor-below">
-        <default><![CDATA[['<Super><Shift><Ctrl>Down']]]></default>
-        <summary>Move the active window to the below monitor</summary>
-    </key>
-
     <key type="as" name="switch-monitor-right">
         <default><![CDATA[['<Super><Shift>Right']]]></default>
         <summary>Switch to the right monitor</summary>
@@ -119,40 +42,6 @@
     <key type="as" name="switch-monitor-below">
         <default><![CDATA[['<Super><Shift>Down']]]></default>
         <summary>Switch to the below monitor</summary>
-    </key>
-
-    <key type="as" name="move-space-monitor-right">
-        <default><![CDATA[['<Ctrl><Alt><Shift>Right']]]></default>
-        <summary>Move workspace to monitor on the right</summary>
-    </key>
-    <key type="as" name="move-space-monitor-left">
-        <default><![CDATA[['<Ctrl><Alt><Shift>Left']]]></default>
-        <summary>Move workspace to monitor on the left</summary>
-    </key>
-    <key type="as" name="move-space-monitor-above">
-        <default><![CDATA[['<Ctrl><Alt><Shift>Up']]]></default>
-        <summary>Move workspace to monitor above</summary>
-    </key>
-    <key type="as" name="move-space-monitor-below">
-        <default><![CDATA[['<Ctrl><Alt><Shift>Down']]]></default>
-        <summary>Move workspace to monitor below</summary>
-    </key>
-
-    <key type="as" name="swap-monitor-right">
-        <default><![CDATA[['<Super><Alt>Right']]]></default>
-        <summary>Swap workspace with monitor to the right</summary>
-    </key>
-    <key type="as" name="swap-monitor-left">
-        <default><![CDATA[['<Super><Alt>Left']]]></default>
-        <summary>Swap workspace with monitor to the left</summary>
-    </key>
-    <key type="as" name="swap-monitor-above">
-        <default><![CDATA[['<Super><Alt>Up']]]></default>
-        <summary>Swap workspace with monitor above</summary>
-    </key>
-    <key type="as" name="swap-monitor-below">
-        <default><![CDATA[['<Super><Alt>Down']]]></default>
-        <summary>Swap workspace with monitor below</summary>
     </key>
 
     <key type="as" name="toggle-scratch-window">
@@ -271,29 +160,20 @@
 
     <key type="as" name="switch-global-right">
         <default><![CDATA[[]]]></default>
-        <summary>Switch to window or monitor to the right</summary>
+        <summary>Switch to window to the right</summary>
     </key>
     <key type="as" name="switch-global-left">
         <default><![CDATA[[]]]></default>
-        <summary>Switch to window or monitor to the left</summary>
+        <summary>Switch to window to the left</summary>
     </key>
     <key type="as" name="switch-global-up">
         <default><![CDATA[[]]]></default>
-        <summary>Switch to window or monitor above</summary>
+        <summary>Switch to window above</summary>
     </key>
     <key type="as" name="switch-global-down">
         <default><![CDATA[[]]]></default>
-        <summary>Switch to window or monitor below</summary>
+        <summary>Switch to window below</summary>
     </key>
-    <key type="as" name="switch-up-or-else-workspace">
-        <default><![CDATA[[]]]></default>
-        <summary>Switch to window or workspace above</summary>
-    </key>
-    <key type="as" name="switch-down-or-else-workspace">
-        <default><![CDATA[[]]]></default>
-        <summary>Switch to window or workspace below</summary>
-    </key>
-
     <key type="as" name="switch-first">
         <default><![CDATA[['<Super>Home']]]></default>
         <summary>Switch to the first window</summary>
@@ -451,44 +331,6 @@
     </key>
   </schema>
 
-  <schema id="org.gnome.shell.extensions.albumwm.workspace">
-      <key type="i" name="index">
-          <default>-1</default>
-          <summary>The workspace index</summary>
-      </key>
-      <key type="s" name="name">
-          <default>''</default>
-          <summary>The name of the workspace</summary>
-      </key>
-      <key type="s" name="background">
-          <default>''</default>
-          <summary>The background image</summary>
-      </key>
-      <key type="b" name="show-top-bar">
-          <default>true</default>
-          <summary>Show the GNOME Top Bar</summary>
-      </key>
-      <key type="b" name="show-position-bar">
-          <default>true</default>
-          <summary>Show the AlbumWM Window Position Bar</summary>
-      </key>
-      <key type="s" name="color">
-          <default>''</default>
-          <summary>The background color</summary>
-      </key>
-      <key type="s" name="directory">
-          <default>''</default>
-          <summary>Affect various integrations. An empty string means use PWD. (usually ~)</summary>
-      </key>
-  </schema>
-
-  <schema id="org.gnome.shell.extensions.albumwm.workspacelist"
-          path="/org/gnome/shell/extensions/albumwm/workspaces/">
-      <key name="list" type="as">
-          <default>[]</default>
-      </key>
-  </schema>
-
   <schema id="org.gnome.shell.extensions.albumwm" path="/org/gnome/shell/extensions/albumwm/">
     <key type="s" name="last-used-display-server">
         <default>''</default>
@@ -637,24 +479,6 @@
       <summary>Handle maximize events from windows (e.g. header bar double click) by maximizing their width without going beyond the margins.</summary>
     </key>
 
-    <key type="as" name="workspace-colors">
-      <default><![CDATA[['#314E6C', '#565248', '#445632', '#663822',
-       '#494066', '#826647', '#4B6983', '#807D74', '#5D7555', '#884631',
-       '#625B81', '#B39169', '#7590AE', '#BAB5AB', '#83A67F', '#C1665A',
-       '#887FA3', '#E0C39E']]]></default>
-      <summary>Workspace colors</summary>
-    </key>
-
-    <key type="s" name="default-background">
-        <default>''</default>
-        <summary>Default background image</summary>
-    </key>
-
-    <key type="b" name="use-default-background">
-        <default>true</default>
-        <summary>Use the default GNOME Shell background</summary>
-    </key>
-
     <key type="b" name="default-show-top-bar">
         <default>true</default>
         <summary>Show the top bar on workspaces by default</summary>
@@ -691,11 +515,6 @@
     <key type="b" name="disable-topbar-styling">
         <default>false</default>
         <summary>Disables all topbar styling by AlbumWM</summary>
-    </key>
-
-    <key type="b" name="show-workspace-indicator">
-        <default>true</default>
-        <summary>Show the workspace indicator/name in the topbar</summary>
     </key>
 
     <key type="b" name="show-window-position-bar">
@@ -763,13 +582,7 @@
         <summary>Number of fingers for tiling horizontal swipe. 0:DISABLED 3:THREE_FINGERS 4:FOUR_FINGERS</summary>
     </key>
 
-    <key type="i" name="gesture-workspace-fingers">
-        <default>3</default>
-        <summary>Number of fingers for workspace switching. 0:DISABLED 3:THREE_FINGERS 4:FOUR_FINGERS</summary>
-    </key>
-
     <child name="keybindings" schema="org.gnome.shell.extensions.albumwm.keybindings"/>
-    <child name="workspaces" schema="org.gnome.shell.extensions.albumwm.workspacelist"/>
 
   </schema>
 

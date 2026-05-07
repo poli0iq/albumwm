@@ -6,7 +6,6 @@ import Gtk from 'gi://Gtk';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import * as Settings from './wm/settings.js';
-import { WorkspaceSettings } from './wm/workspace.js';
 // eslint-disable-next-line no-unused-vars
 import * as KeybindingsPane from './preferences/keybindingsPane.js';
 // eslint-disable-next-line no-unused-vars
@@ -24,45 +23,20 @@ export default class AlbumWMPrefs extends ExtensionPreferences {
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         );
 
-        let selectedWorkspace = null;
-        try {
-            const tempFile = Gio.File.new_for_path(GLib.get_tmp_dir()).get_child('albumwm.workspace');
-            let [, contents] = tempFile.load_contents(null);
-            const decoder = new TextDecoder('utf-8');
-            const contentsString = decoder.decode(contents);
-            let workspaceN = parseInt(contentsString);
-            if (!isNaN(workspaceN)) {
-                selectedWorkspace = workspaceN;
-            }
-            tempFile.delete(null);
-        } catch (e) { }
-
-        const selectedTab = selectedWorkspace !== null ? 1 : 0;
         window.set_size_request(700, 750);
-        new SettingsWidget(
-            this,
-            window,
-            selectedTab,
-            selectedWorkspace || 0);
+        new SettingsWidget(this, window);
     }
 }
 
 class SettingsWidget {
-    /**
-       selectedWorkspace: index of initially selected workspace in workspace settings tab
-       selectedTab: index of initially shown tab
-     */
-    constructor(extension, prefsWindow, selectedPage = 0, selectedWorkspace = 0) {
+    constructor(extension, prefsWindow) {
         this.extension = extension;
         this._settings = extension.getSettings();
-        this.workspaceSettings = new WorkspaceSettings(extension);
-        const wmSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.wm.preferences' });
         this.builder = Gtk.Builder.new_from_file(`${extension.path}/ui/Settings.ui`);
         this.window = prefsWindow;
 
         const pages = [
             this.builder.get_object('general_page'),
-            this.builder.get_object('workspaces_page'),
             this.builder.get_object('keybindings_page'),
             this.builder.get_object('winprops_page'),
             this.builder.get_object('advanced_page'),
@@ -70,10 +44,6 @@ class SettingsWidget {
         ];
 
         pages.forEach(page => prefsWindow.add(page));
-        prefsWindow.set_visible_page(pages[selectedPage]);
-
-        this._backgroundFilter = new Gtk.FileFilter();
-        this._backgroundFilter.add_pixbuf_formats();
 
         // value-changed methods
         const booleanStateChanged = (key, inverted = false) => {
@@ -324,84 +294,6 @@ class SettingsWidget {
 
         booleanStateChanged('show-window-position-bar');
 
-        const enableGnomePill = this.builder.get_object('use-gnome-pill');
-        enableGnomePill.active = !this._settings.get_boolean('show-workspace-indicator');
-        enableGnomePill.connect('state-set', (obj, state) => {
-            this._settings.set_boolean('show-workspace-indicator', !state);
-        });
-
-        // Workspaces
-        booleanStateChanged('use-default-background');
-
-        const backgroundPanelButton = this.builder.get_object('gnome-background-panel');
-        backgroundPanelButton.connect('clicked', () => {
-            GLib.spawn_async(null, ['gnome-control-center', 'background'],
-                GLib.get_environ(),
-                GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-                null);
-        });
-
-        const workspaceCombo = this.builder.get_object('workspace_combo_text');
-        const workspaceStack = this.builder.get_object('workspace_stack');
-        const nWorkspaces = this.workspaceSettings.getWorkspaceList().get_strv('list').length;
-
-        // Note: For some reason we can't set the visible child of the workspace
-        //       stack at construction time.. (!)
-        //       Ensure the initially selected workspace is added to the stack
-        //       first as a workaround.
-        const wsIndices = this.range(nWorkspaces);
-        const wsSettingsByIndex = wsIndices.map(i => this.workspaceSettings.getWorkspaceSettings(i)[1]);
-        const wsIndicesSelectedFirst =
-            this.swapArrayElements(wsIndices.slice(), 0, selectedWorkspace);
-
-        for (let i of wsIndicesSelectedFirst) {
-            const view = this.createWorkspacePage(wsSettingsByIndex[i], i);
-            workspaceStack.add_named(view, i.toString());
-        }
-
-        const workspaces = [];
-        for (let i of wsIndices) {
-            // Combo box entries in normal workspace index order
-            const name = this.getWorkspaceName(wsSettingsByIndex[i], i);
-            workspaceCombo.append_text(name);
-            workspaces.push(name);
-        }
-
-        this.builder.get_object('winpropsPane').setWorkspaces(workspaces);
-
-        this.builder.get_object('workspace_reset_button').connect('clicked', () => {
-            this._updatingName = true;
-            wmSettings.set_strv('workspace-names', []);
-
-            const settings = i => wsSettingsByIndex[i];
-            const name = (s, i) => this.getWorkspaceName(s, i);
-            workspaceCombo.remove_all();
-            for (let i of wsIndices) {
-                settings(i).reset('name');
-                workspaceCombo.append_text(name(settings(i), i));
-            }
-
-            // update pages
-            for (let j of wsIndicesSelectedFirst) {
-                const view = workspaceStack.get_child_by_name(j.toString());
-                const nameEntry = view.get_first_child().get_last_child();
-                nameEntry.set_text(name(settings(j), j));
-            }
-            this._updatingName = false;
-
-            workspaceCombo.set_active(0);
-        });
-
-        workspaceCombo.connect('changed', () => {
-            if (this._updatingName)
-                return;
-
-            const active = workspaceCombo.get_active();
-            workspaceStack.set_visible_child_name(active.toString());
-        });
-
-        workspaceCombo.set_active(selectedWorkspace);
-
         // Keybindings
         const keybindingsPane = this.builder.get_object('keybindings_pane');
         keybindingsPane.init(extension);
@@ -446,7 +338,6 @@ class SettingsWidget {
         const fingerOptionDefault = 'fingers-disabled';
         const fingerNumberDefault = 0;
         enumOptionsChanged('gesture-horizontal-fingers', fingerOptions, fingerOptionDefault, fingerNumberDefault);
-        enumOptionsChanged('gesture-workspace-fingers', fingerOptions, fingerOptionDefault, fingerNumberDefault);
         enumOptionsChanged(
             'default-focus-mode',
             {
@@ -471,8 +362,6 @@ class SettingsWidget {
         booleanStateChanged('show-focus-mode-icon');
         booleanStateChanged('show-open-position-icon');
         booleanStateChanged('disable-topbar-styling', true);
-        // disabled since opposite of gnome-pill
-        // booleanSetState('show-workspace-indicator');
         percentValueChanged('maximize-width-percent', 'maximize-width-percent');
         booleanStateChanged('maximize-within-tiling');
         booleanStateChanged('topbar-mouse-scroll-enable');
@@ -589,220 +478,4 @@ class SettingsWidget {
         }
     }
 
-    range(n) {
-        const r = [];
-        for (let i = 0; i < n; i++)
-            r.push(i);
-        return r;
-    }
-
-    swapArrayElements(array, i, j) {
-        const iVal = array[i];
-        array[i] = array[j];
-        array[j] = iVal;
-        return array;
-    }
-
-    createWorkspacePage(settings, index) {
-        const list = new Gtk.Box({
-            orientation: Gtk.Orientation.VERTICAL,
-            focusable: false,
-        });
-        const nameEntry = new Gtk.Entry();
-        const colorButton = new Gtk.ColorButton();
-
-        // Background
-
-        const backgroundBox = new Gtk.Box({ spacing: 16 });
-        const background = this.createFileChooserButton(
-            settings,
-            'background',
-            'image-x-generic',
-            'document-open-symbolic',
-            {
-                action: Gtk.FileChooserAction.OPEN,
-                title: 'Select workspace background',
-                filter: this._backgroundFilter,
-                select_multiple: false,
-                modal: true,
-                transient_for: this.window.get_root(),
-            }
-        );
-        const clearBackground = new Gtk.Button({
-            icon_name: 'edit-clear-symbolic',
-            tooltip_text: 'Clear workspace background',
-            sensitive: settings.get_string('background') !== '',
-        });
-        backgroundBox.append(background);
-        backgroundBox.append(clearBackground);
-
-        const hideTopBarSwitch = new Gtk.Switch({ active: !settings.get_boolean('show-top-bar') });
-        const hidePositionBarSwitch = new Gtk.Switch({ active: !settings.get_boolean('show-position-bar') });
-
-        const directoryBox = new Gtk.Box({ spacing: 16 });
-        const directoryChooser = this.createFileChooserButton(
-            settings,
-            'directory',
-            'folder',
-            'folder-open-symbolic',
-            {
-                action: Gtk.FileChooserAction.SELECT_FOLDER,
-                title: 'Select workspace directory',
-                select_multiple: false,
-                modal: true,
-                transient_for: this.window.get_root(),
-            }
-        );
-        const clearDirectory = new Gtk.Button({
-            icon_name: 'edit-clear-symbolic',
-            tooltip_text: 'Clear workspace directory',
-            sensitive: settings.get_string('directory') !== '',
-        });
-        directoryBox.append(directoryChooser);
-        directoryBox.append(clearDirectory);
-
-        list.append(this.createRow('Name', nameEntry));
-        list.append(this.createRow('Color', colorButton));
-        list.append(this.createRow('Background', backgroundBox));
-        list.append(this.createRow('Hide Gnome Top Bar', hideTopBarSwitch));
-        list.append(this.createRow('Hide Window Position Bar', hidePositionBarSwitch));
-        list.append(this.createRow('Directory', directoryBox));
-
-        const rgba = new Gdk.RGBA();
-        let color = settings.get_string('color');
-        const palette = this._settings.get_strv('workspace-colors');
-        if (color === '')
-            color = palette[index % palette.length];
-
-        rgba.parse(color);
-        colorButton.set_rgba(rgba);
-
-        nameEntry.set_text(this.getWorkspaceName(settings, index));
-
-        const workspace_combo = this.builder.get_object('workspace_combo_text');
-
-        nameEntry.connect('changed', () => {
-            if (this._updatingName) {
-                return;
-            }
-            let active = workspace_combo.get_active();
-            let name = nameEntry.get_text();
-
-            this._updatingName = true;
-            workspace_combo.remove(active);
-            workspace_combo.insert_text(active, name);
-
-            workspace_combo.set_active(active);
-            this._updatingName = false;
-
-            settings.set_string('name', name);
-        });
-
-        colorButton.connect('color-set', () => {
-            let color = colorButton.get_rgba().to_string();
-            settings.set_string('color', color);
-            settings.set_string('background', '');
-            background.unselect_all();
-        });
-
-        clearBackground.connect('clicked', () => {
-            settings.reset('background');
-        });
-
-        settings.connect('changed::background', () => {
-            // eslint-disable-next-line eqeqeq
-            clearBackground.sensitive = settings.get_string('background') != '';
-        });
-
-        hideTopBarSwitch.connect('state-set', (_switch, state) => {
-            settings.set_boolean('show-top-bar', !state);
-        });
-        settings.connect('changed::show-top-bar', () => {
-            hideTopBarSwitch.set_active(!settings.get_boolean('show-top-bar'));
-        });
-
-        hidePositionBarSwitch.connect('state-set', (_switch, state) => {
-            settings.set_boolean('show-position-bar', !state);
-        });
-        settings.connect('changed::show-position-bar', () => {
-            hidePositionBarSwitch.set_active(!settings.get_boolean('show-position-bar'));
-        });
-
-
-        clearDirectory.connect('clicked', () => {
-            settings.reset('directory');
-        });
-        settings.connect('changed::directory', () => {
-            // eslint-disable-next-line eqeqeq
-            clearDirectory.sensitive = settings.get_string('directory') != '';
-        });
-
-        return list;
-    }
-
-    getWorkspaceName(settings, index) {
-        return this.workspaceSettings.getWorkspaceName(settings, index);
-    }
-
-    createRow(text, widget) {
-        const margin = 12;
-        const box = new Gtk.Box({
-            margin_start: margin, margin_end: margin,
-            margin_top: margin / 2, margin_bottom: margin / 2,
-            orientation: Gtk.Orientation.HORIZONTAL,
-        });
-        const label = new Gtk.Label({
-            label: text, hexpand: true, xalign: 0,
-        });
-
-        box.append(label);
-        box.append(widget);
-
-        return box;
-    }
-
-    createFileChooserButton(settings, key, iconName, symbolicIconName, properties) {
-        const buttonIcon = Gtk.Image.new_from_icon_name(iconName);
-        const buttonLabel = new Gtk.Label();
-        const buttonBox = new Gtk.Box({
-            orientation: Gtk.Orientation.HORIZONTAL,
-            spacing: 8,
-        });
-
-        buttonBox.append(buttonIcon);
-        buttonBox.append(buttonLabel);
-        if (symbolicIconName) {
-            buttonBox.append(new Gtk.Image({ icon_name: symbolicIconName, margin_start: 8 }));
-        }
-
-        const button = new Gtk.Button({ child: buttonBox });
-
-        this.syncStringSetting(settings, key, path => {
-            buttonIcon.visible = path !== '';
-            buttonLabel.label = path === '' ? '(None)' : GLib.filename_display_basename(path);
-        });
-        button.connect('clicked', () => {
-            const chooser = new Gtk.FileChooserDialog(properties);
-            let path = settings.get_string(key);
-            if (path !== '')
-                chooser.set_file(Gio.File.new_for_path(path));
-            chooser.add_button('Open', Gtk.ResponseType.OK);
-            chooser.add_button('Cancel', Gtk.ResponseType.CANCEL);
-            chooser.connect('response', (dialog, response) => {
-                if (response === Gtk.ResponseType.OK) {
-                    settings.set_string(key, chooser.get_file().get_path());
-                }
-                chooser.destroy();
-            });
-            chooser.show();
-        });
-        return button;
-    }
-
-    syncStringSetting(settings, key, callback) {
-        settings.connect(`changed::${key}`, () => {
-            callback(settings.get_string(key));
-        });
-        callback(settings.get_string(key));
-    }
 }

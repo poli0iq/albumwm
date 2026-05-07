@@ -32,17 +32,12 @@ export const WinpropsPane = GObject.registerClass({
 
         this._expandedRow = null;
         this.rows = [];
-        this.workspaces = [];
     }
 
     addWinprops(winprops) {
         winprops.forEach(winprop => {
             this._listbox.insert(this._createRow(winprop), -1);
         });
-    }
-
-    setWorkspaces(workspaces) {
-        this.workspaces = workspaces;
     }
 
     _removeRow(row) {
@@ -66,7 +61,7 @@ export const WinpropsPane = GObject.registerClass({
 
     _createRow(winprop) {
         let wp = winprop ?? { wm_class: '' };
-        const row = new WinpropsRow({ winprop: wp, workspaces: this.workspaces });
+        const row = new WinpropsRow({ winprop: wp });
         this.rows.push(row);
         row.connect('notify::expanded', row => this._onRowExpanded(row));
         row.connect('row-deleted', row => this._removeRow(row));
@@ -116,12 +111,6 @@ export const WinpropsRow = GObject.registerClass({
             'winprop',
             'Winprop',
             GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY
-        ),
-        workspaces: GObject.ParamSpec.jsobject(
-            'workspaces',
-            'workspaces',
-            'Workspaces',
-            GObject.ParamFlags.READWRITE
         ),
         expanded: GObject.ParamSpec.boolean(
             'expanded',
@@ -205,9 +194,8 @@ export const WinpropsRow = GObject.registerClass({
         });
 
         this._space.append_text("CURRENT");
-        for (const [i, name] of this.workspaces.entries()) {
-            // Combo box entries in normal workspace index order
-            this._space.append_text(`${i}: ${name}`);
+        for (let i = 0; i < 16; i++) {
+            this._space.append_text(`Workspace ${i + 1}`);
         }
         // index 0 is CURRENT, so add 1
         this._space.set_active((this.winprop.spaceIndex ?? -1) + 1);

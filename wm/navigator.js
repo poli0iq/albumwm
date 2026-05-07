@@ -27,10 +27,7 @@ let grab, dispatcher, signals;
 export function enable() {
     navigating = false;
 
-    /**
-     * Stop navigation before before/after overview. Avoids a corner-case issue
-     * in multimonitors where workspaces can get snapped to another monitor.
-     */
+    /* Stop navigation before/after overview. */
     signals = new Utils.Signals();
     signals.connect(Main.overview, 'showing', () => {
         finishNavigation();
@@ -405,15 +402,7 @@ class NavigatorClass {
             Tiling.inGrab?.beginDnD();
         }
 
-        if (Main.panel.statusArea.appMenu)
-            Main.panel.statusArea.appMenu.container.show();
-
-        let force = Tiling.inPreview;
         navigating = false;
-
-        if (force) {
-            this?.space?.monitor?.clickOverlay.hide();
-        }
 
         let space = Tiling.spaces.selectedSpace;
         this.space = space;
@@ -429,36 +418,16 @@ class NavigatorClass {
                 selected = display.focus_window;
         }
 
-        let visible = [];
-        for (let monitor of Main.layoutManager.monitors) {
-            visible.push(Tiling.spaces.monitors.get(monitor));
-        }
-
-        if (!visible.includes(space) && this.monitor !== this.space.monitor) {
-            this.space.setMonitor(this.monitor, true);
-        }
-
-        const workspaceId = this.space.workspace.index();
-        if (this.space === from) {
-            // Animate the selected space into full view - normally this
-            // happens on workspace switch, but activating the same workspace
-            // again doesn't trigger a switch signal
-            if (force) {
-                Tiling.spaces.switchWorkspace(null, workspaceId, workspaceId, force);
+        if (this.space !== from) {
+            if (Tiling.inGrab && Tiling.inGrab.window) {
+                this.space.activateWithFocus(Tiling.inGrab.window, false, true);
+            } else {
+                this.space.activate(false, true);
             }
-        } else if (Tiling.inGrab && Tiling.inGrab.window) {
-            this.space.activateWithFocus(Tiling.inGrab.window, false, true);
-        } else {
-            this.space.activate(false, true);
         }
 
         selected = this.space.indexOf(selected) !== -1 ? selected
             : this.space.selectedWindow;
-
-        let curFocus = display.focus_window;
-        if (force && curFocus && curFocus.is_on_all_workspaces()) {
-            selected = curFocus;
-        }
 
         if (selected && !Tiling.inGrab) {
             let hasFocus = selected && selected.has_focus();

@@ -89,7 +89,7 @@ export function makeScratch(metaWindow) {
 
         if (metaWindow[scratchFrame]) {
             let sf = metaWindow[scratchFrame];
-            if (Utils.monitorOfPoint(sf.x, sf.y) === Tiling.focusMonitor()) {
+            if (Utils.monitorOfPoint(sf.x, sf.y) === Main.layoutManager.primaryMonitor) {
                 targetFrame = sf;
             }
         }
@@ -131,7 +131,7 @@ export function makeScratch(metaWindow) {
         }
     }
 
-    Tiling.focusMonitor()?.clickOverlay?.hide();
+    Main.layoutManager.primaryMonitor?.clickOverlay?.hide();
 }
 
 export function unmakeScratch(metaWindow) {
@@ -202,8 +202,7 @@ export function show(top) {
         });
     windows[0].activate(global.get_current_time());
 
-    let monitor = Tiling.focusMonitor();
-    monitor.clickOverlay?.hide();
+    Main.layoutManager.primaryMonitor?.clickOverlay?.hide();
 }
 
 export function hide() {

@@ -7,7 +7,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PointerWatcher from 'resource:///org/gnome/shell/ui/pointerWatcher.js';
 
-import { Settings, Utils, Tiling, Grab, Scratch } from './imports.js';
+import { Settings, Utils, Tiling, Grab } from './imports.js';
 
 /*
   The stack overlay decorates the top stacked window with its icon and
@@ -43,7 +43,7 @@ import { Settings, Utils, Tiling, Grab, Scratch } from './imports.js';
   restack loops)
 */
 
-let pointerWatch, previewPointerWatcher;
+let previewPointerWatcher;
 export function enable(_extension) {
 
 }
@@ -51,65 +51,6 @@ export function enable(_extension) {
 export function disable() {
     previewPointerWatcher?.remove();
     previewPointerWatcher = null;
-    disableMultimonitorSupport();
-}
-
-/**
- * Checks for multiple monitors and if so, then enables multimonitor
- * support in AlbumWM.
- */
-export function multimonitorSupport() {
-    // if only one monitor, return
-    if (Tiling.spaces.monitors?.size > 1) {
-        enableMultimonitorSupport();
-    }
-    else {
-        disableMultimonitorSupport();
-    }
-}
-
-export function enableMultimonitorSupport() {
-    pointerWatch = PointerWatcher.getPointerWatcher().addWatch(100,
-        () => {
-            // if overview return
-            if (Main.overview.visible) {
-                return;
-            }
-
-            const monitor = Utils.monitorAtCurrentPoint();
-            const space = Tiling.spaces.monitors.get(monitor);
-
-            // same space
-            if (space === Tiling.spaces.activeSpace) {
-                return;
-            }
-
-            // check if in the midst of a window resize action
-            if (Tiling.inGrab &&
-                Tiling.inGrab instanceof Grab.ResizeGrab) {
-                const window = global.display?.focus_window;
-                if (window) {
-                    Scratch.makeScratch(window);
-                }
-                return;
-            }
-
-            // if drag/grabbing window, do simple activate
-            if (Tiling.inGrab) {
-                space?.activate(false, false);
-                return;
-            }
-
-            const selected = space?.selectedWindow;
-            space?.activateWithFocus(selected, false, false);
-        });
-    console.debug('albumwm multimonitor support is ENABLED');
-}
-
-export function disableMultimonitorSupport() {
-    pointerWatch?.remove();
-    pointerWatch = null;
-    console.debug('albumwm multimonitor support is DISABLED');
 }
 
 export function createAppIcon(metaWindow, size) {
@@ -127,9 +68,8 @@ export function createAppIcon(metaWindow, size) {
 }
 
 export class ClickOverlay {
-    constructor(monitor, onlyOnPrimary) {
+    constructor(monitor) {
         this.monitor = monitor;
-        this.onlyOnPrimary = onlyOnPrimary;
         this.left = new StackOverlay(Meta.MotionDirection.LEFT, monitor);
         this.right = new StackOverlay(Meta.MotionDirection.RIGHT, monitor);
     }
@@ -421,7 +361,7 @@ export class StackOverlay {
             return false;
         };
 
-        if (space === null || Tiling.inPreview) {
+        if (space === null) {
             // No target. Eg. if we're at the left- or right-most window
             return bail();
         }

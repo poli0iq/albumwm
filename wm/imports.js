@@ -1,6 +1,5 @@
 export * as AcceleratorParse from './acceleratorparse.js';
 export * as App from './app.js';
-export * as Background from './background.js';
 export * as Gestures from './gestures.js';
 export * as Grab from './grab.js';
 export * as Keybindings from './keybindings.js';
@@ -15,5 +14,4 @@ export * as Stackoverlay from './stackoverlay.js';
 export * as Tiling from './tiling.js';
 export * as Topbar from './topbar.js';
 export * as Utils from './utils.js';
-export * as Workspace from './workspace.js';
 export * as OverviewLayout from './overviewlayout.js';
