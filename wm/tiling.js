@@ -79,7 +79,7 @@ export const SlurpInsertPosition = { BOTTOM: 0, TOP: 1, ABOVE: 2, BELOW: 3 };
    To transform a stage point to space coordinates: `space.actor.transform_stage_point(aX, aY)`
  */
 
-let signals, backgroundGroup, grabSignals;
+let signals, grabSignals;
 let gsettings;
 let saveState;
 let startupTimeoutId, timerId, fullscreenStartTimeout, stackSlurpTimeout, workspaceChangeTimeouts;
@@ -127,8 +127,6 @@ export function enable(extension) {
     gsettings.connect('changed::selection-border-size', changedBorder);
     gsettings.connect('changed::selection-border-radius-top', changedBorder);
     gsettings.connect('changed::selection-border-radius-bottom', changedBorder);
-
-    backgroundGroup = Main.layoutManager._backgroundGroup;
 
     spaces = new Spaces();
     let initWorkspaces = () => {
@@ -203,7 +201,6 @@ export function disable() {
     spaces.destroy();
     inGrab = null;
     gsettings = null;
-    backgroundGroup = null;
 }
 
 /**
@@ -1600,11 +1597,16 @@ export const Spaces = class Spaces extends Map {
         this.clickOverlays = [];
         this.signals = new Utils.Signals();
         this.stack = [];
-        let spaceContainer = new Clutter.Actor({ name: 'spaceContainer' });
+        /* MetaBackgroundGroup so mutter's sync_actor_stacking lowers us along
+           with _backgroundGroup; a plain Clutter.Actor would be ignored and
+           drift to the top of window_group, blocking clicks to windows. */
+        let spaceContainer = new Meta.BackgroundGroup({ name: 'spaceContainer' });
         spaceContainer.hide();
         this.spaceContainer = spaceContainer;
 
-        backgroundGroup.add_child(this.spaceContainer);
+        global.window_group.insert_child_above(
+            this.spaceContainer,
+            Main.layoutManager._backgroundGroup);
 
         // Hook up existing workspaces
         for (let i = 0; i < workspaceManager.n_workspaces; i++) {
@@ -3983,16 +3985,17 @@ export function takeWindow(metaWindow, space, options = {}) {
     // setup animate function
     const animateTake = (window, existing) => {
         navigator._moving.push(window);
+        const container = spaces.spaceContainer;
         if (!existing) {
-            Utils.actor_add_child(backgroundGroup, metaWindow.clone);
+            Utils.actor_add_child(container, metaWindow.clone);
         }
 
         const lowest = navigator._moving[navigator._moving.length - 2];
-        lowest && backgroundGroup.set_child_below_sibling(
+        lowest && container.set_child_below_sibling(
             window.clone,
             lowest.clone);
         const point = space.cloneContainer.apply_relative_transform_to_point(
-            backgroundGroup, new Graphene.Point3D({
+            container, new Graphene.Point3D({
                 x: window.clone.x,
                 y: window.clone.y,
             }));
