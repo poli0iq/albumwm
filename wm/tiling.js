@@ -264,7 +264,6 @@ export class Space extends Array {
         actor.add_child(cloneClip);
         cloneClip.add_child(cloneContainer);
 
-        const monitor = Main.layoutManager.primaryMonitor;
         this.targetX = 0;
 
         this.uuid = GLib.uuid_string_random();
@@ -275,7 +274,11 @@ export class Space extends Array {
         this.rightStack = 0; // not implemented
 
         this.createBackground();
-        this.setMonitor(monitor);
+        // primaryMonitor may be null at enable time; Spaces.init() will retry
+        const monitor = Main.layoutManager.primaryMonitor;
+        if (monitor) {
+            this.setMonitor(monitor);
+        }
 
         if (doInit) {
             this.init();
