@@ -332,11 +332,6 @@
   </schema>
 
   <schema id="org.gnome.shell.extensions.albumwm" path="/org/gnome/shell/extensions/albumwm/">
-    <key type="s" name="last-used-display-server">
-        <default>''</default>
-        <summary>Saves the last display server used for AlbumWM (Wayland / X11)</summary>
-    </key>
-
     <!-- backup settings (used for restore) -->
     <key type="s" name="restore-keybinds">
         <default>''</default>

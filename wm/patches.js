@@ -28,12 +28,6 @@ export function enable(extension) {
     savedProps = new Map();
     gsettings = extension.getSettings();
 
-    // save the last display server used
-    gsettings.set_string(
-        'last-used-display-server',
-        Utils.is_wayland_compositor() ? "Wayland" : "Xorg"
-    );
-
     mutterSettings = new Gio.Settings({ schema_id: 'org.gnome.mutter' });
     signals = new Utils.Signals();
     setupSwipeTrackers();
