@@ -401,6 +401,14 @@ export class MoveGrab {
                 clone.x = gx - dx;
                 clone.y = gy - dy;
             }
+            /* spaceMotion only fires over primary, so the last zone stays
+               armed when the pointer leaves it. Clear it so end() can fall
+               through to scratch. */
+            if (monitor !== this.initialSpace.monitor && this.dndTarget) {
+                this.deactivateDndTarget(this.dndTarget);
+                this.dndTarget = null;
+                this.dndTargets = [];
+            }
             return;
         }
 
@@ -512,14 +520,18 @@ export class MoveGrab {
 
                 const halftime = 0.5 * Settings.prefs.animation_time;
                 params.time = halftime;
-                params.onComplete = () => {
-                    Easer.addEase(actor, {
-                        time: halftime,
-                        onComplete: () => {
-                            Scratch.unmakeScratch(metaWindow);
-                        },
-                    });
-                };
+                // Drops off the tiled monitor stay scratch; only bounce back on primary.
+                const dropMonitor = Utils.monitorAtPoint(gx, gy);
+                if (dropMonitor === this.initialSpace.monitor) {
+                    params.onComplete = () => {
+                        Easer.addEase(actor, {
+                            time: halftime,
+                            onComplete: () => {
+                                Scratch.unmakeScratch(metaWindow);
+                            },
+                        });
+                    };
+                }
                 Easer.addEase(actor, params);
             }
 
