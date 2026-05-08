@@ -321,7 +321,6 @@ class SettingsWidget {
         booleanStateChanged('show-focus-mode-icon');
         booleanStateChanged('show-open-position-icon');
         percentValueChanged('maximize-width-percent', 'maximize-width-percent');
-        booleanStateChanged('maximize-within-tiling');
         booleanStateChanged('topbar-mouse-scroll-enable');
     }
 }

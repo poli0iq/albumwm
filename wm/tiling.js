@@ -618,11 +618,6 @@ export class Space extends Array {
 
         callback && callback();
 
-        // save the last size frame (for use in restoring)
-        this.getWindows().forEach(w => {
-            w._last_layout_frame = w.get_frame_rect();
-        });
-
         this.emit('layout', this);
     }
 
@@ -2122,21 +2117,6 @@ export function registerWindow(metaWindow) {
         minimizeHandler(metaWindow);
     });
 
-    signals.connect(metaWindow, 'notify::maximized-horizontally', metaWindow => {
-        if (Settings.prefs.maximize_within_tiling && isMaximized(metaWindow)) {
-            unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
-
-            // restore last layout frame
-            if (metaWindow._last_layout_frame) {
-                const lsf = metaWindow._last_layout_frame;
-                metaWindow.move_resize_frame(true, lsf.x, lsf.y, lsf.width, lsf.height);
-            }
-
-            toggleMaximizeHorizontally(metaWindow);
-            // spaces.spaceOfWindow(metaWindow)?.layout();
-        }
-    });
-
     signals.connect(actor, 'show', actor => {
         showHandler(actor);
     });
@@ -2262,7 +2242,6 @@ export function removeAlbumWMFlags(w) {
     delete w._fullscreen_frame;
     delete w._fullscreen_lock;
     delete w._fullscreen_above;
-    delete w._last_layout_frame;
 }
 
 export function addPositionHandler(metaWindow) {
