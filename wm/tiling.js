@@ -339,38 +339,17 @@ export class Space extends Array {
         return this.workspace.index();
     }
 
-    /**
-     * Activates this space. Safer alternative to space.workspace.activate.  Also allows
-     * setting animation on workspaceSwitch.
-     * @param {Boolean} animate
-     */
-    activate(defaultAnimation = true, albumwmAnimation = false) {
-        spaces.space_defaultAnimation = defaultAnimation;
-        spaces.space_albumwmAnimation = albumwmAnimation;
-
+    activate() {
         this.workspace.activate(global.get_current_time());
-
-        spaces.space_defaultAnimation = true;
-        spaces.space_albumwmAnimation = false; // switch to default
     }
 
-    /**
-     * Activates this space. Safer alternative to space.workspace.activate_with_focus. Also allows
-     * setting animation on workspaceSwitch.
-     * @param {Boolean} animate
-     */
-    activateWithFocus(metaWindow, defaultAnimation = true, albumwmAnimation = false) {
-        spaces.space_defaultAnimation = defaultAnimation;
-        spaces.space_albumwmAnimation = albumwmAnimation;
-
+    activateWithFocus(metaWindow) {
         if (metaWindow) {
             this.workspace.activate_with_focus(metaWindow, global.get_current_time());
         }
         else {
             this.workspace.activate(global.get_current_time());
         }
-        spaces.space_defaultAnimation = true;
-        spaces.space_albumwmAnimation = false; // switch to default
     }
 
     show() {
@@ -1436,7 +1415,7 @@ export class Space extends Array {
         // ensure this space is active if touched
         this.signals.connect(this.background, 'touch-event',
             (_actor, _event) => {
-                this.activateWithFocus(this.selectedWindow, false, false);
+                this.activateWithFocus(this.selectedWindow);
             });
 
         this.signals.connect(this.background, 'scroll-event',
@@ -1624,8 +1603,6 @@ export const Spaces = class Spaces extends Map {
         let spaceContainer = new Clutter.Actor({ name: 'spaceContainer' });
         spaceContainer.hide();
         this.spaceContainer = spaceContainer;
-        this.space_defaultAnimation = true;
-        this.space_albumwmAnimation = false;
 
         backgroundGroup.add_child(this.spaceContainer);
 
@@ -1719,7 +1696,7 @@ export const Spaces = class Spaces extends Map {
 
         const activeSpace = this.activeSpace;
         if (activeSpace) {
-            activeSpace.activate(false, false);
+            activeSpace.activate();
             this.selectedSpace = activeSpace;
         }
         this.forEach(space => {
@@ -1806,16 +1783,7 @@ export const Spaces = class Spaces extends Map {
         }
     }
 
-    switchSpace(fromSpace, toSpace, animate = false) {
-        const fromId = fromSpace?.index;
-        const toId = toSpace?.index;
-        if (!fromSpace || !toSpace) {
-            return;
-        }
-        spaces.switchWorkspace(null, fromId, toId, animate);
-    }
-
-    switchWorkspace(wm, fromIndex, toIndex, animate = false) {
+    switchWorkspace(wm, fromIndex, toIndex) {
         /**
          * disable swipetrackers on workspace switch to avoid gesture confusion
          * see https://github.com/paperwm/PaperWM/issues/682
@@ -1828,9 +1796,7 @@ export const Spaces = class Spaces extends Map {
         }
 
         let to = workspaceManager.get_workspace_by_index(toIndex);
-        let from = workspaceManager.get_workspace_by_index(fromIndex);
         let toSpace = this.spaceOf(to);
-        let fromSpace = this.spaceOf(from);
 
         if (inGrab && inGrab.window) {
             inGrab.window.change_workspace(toSpace.workspace);
@@ -1848,81 +1814,34 @@ export const Spaces = class Spaces extends Map {
         this.stack = this.stack.filter(s => s !== toSpace);
         this.stack = [toSpace, ...this.stack];
 
-        let doAnimate = animate || this.space_albumwmAnimation;
-        this.animateToSpace(
-            toSpace,
-            fromSpace,
-            doAnimate);
+        this.showSpace(toSpace);
 
         // Update panel to handle target workspace
         signals.disconnect(Main.panel, this.touchSignal);
         this.touchSignal = signals.connect(Main.panel, "touch-event", Gestures.horizontalTouchScroll.bind(toSpace));
     }
 
-    animateToSpace(to, from, animate = true, callback) {
+    showSpace(to) {
         this.selectedSpace = to;
         to.show();
-        let selected = to.selectedWindow;
+        const selected = to.selectedWindow;
         if (selected)
             ensureViewport(selected, to);
 
-        if (from) {
-            from.startAnimate();
-        }
+        Easer.removeEase(to.actor);
+        to.actor.set_position(0, 0);
+        to.actor.set_scale(1, 1);
 
-        let time = animate ? Settings.prefs.animation_time : 0;
-        let onComplete = () => {
-            /*
-             * Bail if a newer switch has superseded us. selectedSpace is set
-             * synchronously by the next animateToSpace, so a mismatch means
-             * our "to" is stale and finishing would step on the live one.
-             */
-            if (spaces.selectedSpace !== to) {
-                return;
-            }
-
-            /* Hide any spaces other than "to" to avoid a performance degradation. */
-            for (const space of spaces.values()) {
-                if (space !== to) {
-                    space.hide();
-                }
-            }
-
-            Utils.actor_raise(to.clip);
-            to.startAnimate();
-            to.moveDone();
-            if (callback) {
-                callback();
-            }
-        };
-
-        Easer.addEase(to.actor,
-            {
-                x: 0,
-                y: 0,
-                scale_x: 1,
-                scale_y: 1,
-                time,
-                onComplete,
-            });
-
-        /*
-          Animate all the spaces above `to` down below the monitor by looking
-          at siblings of the uppermost actor, ie. the `clip`. This is done since
-          `this.stack` is already updated.
-        */
-        let above = to.clip.get_next_sibling();
-        while (above) {
-            let space = above.space;
+        for (const space of this.values()) {
             if (space !== to) {
-                Easer.addEase(space.actor,
-                    {
-                        x: 0, y: space.height + 20,
-                        time,
-                    });
+                Easer.removeEase(space.actor);
+                space.hide();
             }
-            above = above.get_next_sibling();
         }
+
+        Utils.actor_raise(to.clip);
+        to.startAnimate();
+        to.moveDone();
     }
 
     addSpace(workspace) {
@@ -2939,7 +2858,7 @@ Opening "${metaWindow?.title}" on current space.`);
             delete metaWindow.focusOnOpen;
             console.debug("#winprops", "focusing space of inserted window");
             Utils.later_add(Meta.LaterType.IDLE, () => {
-                spaces.spaceOfWindow(metaWindow)?.activateWithFocus(metaWindow, false, true);
+                spaces.spaceOfWindow(metaWindow)?.activateWithFocus(metaWindow);
             });
         }
     }

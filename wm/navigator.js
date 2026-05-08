@@ -420,9 +420,9 @@ class NavigatorClass {
 
         if (this.space !== from) {
             if (Tiling.inGrab && Tiling.inGrab.window) {
-                this.space.activateWithFocus(Tiling.inGrab.window, false, true);
+                this.space.activateWithFocus(Tiling.inGrab.window);
             } else {
-                this.space.activate(false, true);
+                this.space.activate();
             }
         }
 
