@@ -791,7 +791,12 @@ export class Space extends Array {
             let clone = w.clone;
             let x = this.visibleX(w);
             let y = this.monitor.y + clone.targetY;
-            x = Math.min(this.width - stack_margin, Math.max(stack_margin - f.width, x));
+            // Mirrors moveDone, see there.
+            if (this.isPlaceable(w)) {
+                x = Math.min(this.width - stack_margin, Math.max(stack_margin - f.width, x));
+            } else {
+                x = Math.max(0, Math.min(this.width - f.width, x));
+            }
             x += this.monitor.x;
 
             // check if mismatch tracking needed, otherwise leave
@@ -1220,8 +1225,14 @@ export class Space extends Array {
             let f = w.get_frame_rect();
             let x = this.visibleX(w);
             let y = this.visibleY(w);
-            x = Math.max(stack_margin - f.width, x);
-            x = Math.min(this.width - stack_margin, x);
+            /* Non-placeable actors must stay on this.monitor or mutter
+               reassigns them (and in workspaces-only-on-primary, sticks them). */
+            if (placeable) {
+                x = Math.max(stack_margin - f.width, x);
+                x = Math.min(this.width - stack_margin, x);
+            } else {
+                x = Math.max(0, Math.min(this.width - f.width, x));
+            }
             x += monitor.x;
             // let b = w.get_frame_rect();
             if (f.x !== x || f.y !== y) {
@@ -2001,6 +2012,18 @@ export const Spaces = class Spaces extends Map {
         metaWindow.unmapped = true;
 
         console.debug('window-created', metaWindow?.title);
+
+        /* Pull windows off secondary monitors before first-frame paints.
+           workspaces-only-on-primary auto-sticks them; unstick so the move
+           takes and downstream guards see a normal new window. */
+        const primary = Main.layoutManager.primaryMonitor;
+        if (primary && metaWindow.get_monitor() !== primary.index) {
+            if (metaWindow.is_on_all_workspaces()) {
+                metaWindow.unstick();
+            }
+            metaWindow.move_to_monitor(primary.index);
+        }
+
         let actor = metaWindow.get_compositor_private();
         animateWindow(metaWindow);
 
@@ -2647,6 +2670,15 @@ export function insertWindow(metaWindow, options = {}) {
     const existing = options?.existing ?? false;
     const dropping = options?.dropping ?? false;
     const dropCallback = options?.dropCallback ?? function() {};
+
+    // Mirrors window_created's monitor pull, for the add_handler path.
+    const primaryMonitor = Main.layoutManager.primaryMonitor;
+    if (!existing && primaryMonitor && metaWindow.get_monitor() !== primaryMonitor.index) {
+        if (metaWindow.is_on_all_workspaces()) {
+            metaWindow.unstick();
+        }
+        metaWindow.move_to_monitor(primaryMonitor.index);
+    }
 
     // Add newly created windows to the space being previewed
     if (!existing &&
