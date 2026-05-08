@@ -20,9 +20,6 @@ export let gliding = false; // exported
 let touchpadSettings;
 export function enable(extension) {
     signals = new Utils.Signals();
-    // Touchpad swipes only works in Wayland
-    if (!Utils.is_wayland_compositor())
-        return;
 
     touchpadSettings = new Gio.Settings({
         schema_id: 'org.gnome.desktop.peripherals.touchpad',

@@ -34,7 +34,7 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
      - topbar adds the workspace name to the topbar and styles it.
 
-     - gestures is responsible for 3-finger swiping (only works in wayland).
+     - gestures is responsible for 3-finger swiping.
 
      Notes of ordering:
         - several modules import settings, so settings should be before them;

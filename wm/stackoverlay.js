@@ -376,9 +376,7 @@ export class StackOverlay {
 
         let overlay = this.overlay;
         overlay.y = this.monitor.y + Main.layoutManager.panelBox.height + Settings.prefs.vertical_margin;
-
-        // Assume the resize edge is at least this big (empirically found..)
-        const minResizeEdge = 8;
+        overlay.width = 1;
 
         if (this._direction === Meta.MotionDirection.LEFT) {
             let column = space[space.indexOf(metaWindow) + 1];
@@ -388,11 +386,7 @@ export class StackOverlay {
             if (!neighbour)
                 return bail(); // Should normally have a neighbour. Bail!
 
-            let width = neighbour.clone.targetX + space.targetX - minResizeEdge;
-            if (space.isPlaceable(metaWindow) || Utils.is_wayland_compositor())
-                width = Math.min(width, 1);
             overlay.x = this.monitor.x;
-            overlay.width = Math.max(width, 1);
             Utils.actor_raise(overlay, neighbour.get_compositor_private());
         } else {
             let column = space[space.indexOf(metaWindow) - 1];
@@ -401,14 +395,7 @@ export class StackOverlay {
             if (!neighbour)
                 return bail(); // Should normally have a neighbour. Bail!
 
-            let frame = neighbour.get_frame_rect();
-            frame.x = neighbour.clone.targetX + space.targetX;
-            let width = this.monitor.width - (frame.x + frame.width) - minResizeEdge;
-            if (space.isPlaceable(metaWindow) || Utils.is_wayland_compositor())
-                width = 1;
-            width = Math.max(width, 1);
-            overlay.x = this.monitor.x + this.monitor.width - width;
-            overlay.width = width;
+            overlay.x = this.monitor.x + this.monitor.width - overlay.width;
             Utils.actor_raise(overlay, neighbour.get_compositor_private());
         }
 

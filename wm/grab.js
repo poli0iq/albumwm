@@ -418,7 +418,6 @@ export class MoveGrab {
         }
 
         if (event.get_state() & Clutter.ModifierType.CONTROL_MASK) {
-            // NB: only works in wayland
             this.beginDnD();
             return;
         }

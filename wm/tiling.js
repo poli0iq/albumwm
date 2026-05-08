@@ -391,15 +391,13 @@ export class Space extends Array {
 
     layoutGrabColumn(column, x, y0, targetWidth, availableHeight, time, grabWindow) {
         let space = this;
-        let needRelayout = false;
 
         function mosh(windows, height, y0) {
             let targetHeights = fitProportionally(
                 windows.map(mw => mw.get_frame_rect().height),
                 height
             );
-            let [, relayout, y] = space.layoutColumnSimple(windows, x, y0, targetWidth, targetHeights, time);
-            needRelayout = needRelayout || relayout;
+            let [, y] = space.layoutColumnSimple(windows, x, y0, targetWidth, targetHeights, time);
             return y;
         }
 
@@ -419,15 +417,12 @@ export class Space extends Array {
         let y = mosh(column.slice(k, k + 1), f.height, yGrabRel);
         k + 1 < column.length && mosh(column.slice(k + 1), H2, y);
 
-        return [targetWidth, needRelayout];
+        return targetWidth;
     }
 
     layoutColumnSimple(windows, x, y0, targetWidth, targetHeights, time) {
         let space = this;
         let y = y0;
-
-        let widthChanged = false;
-        let heightChanged = false;
 
         for (let i = 0; i < windows.length; i++) {
             let mw = windows[i];
@@ -472,19 +467,9 @@ export class Space extends Array {
                 targetHeight = f.height;
             }
             if (mw.maximized_vertically) {
-                // NOTE: This should really be f.y - monitor.y, but eg. firefox
-                // on wayland reports the wrong y coordinates at this point.
+                /* NOTE: This should really be f.y - monitor.y, but eg. firefox
+                   reports the wrong y coordinates at this point. */
                 y -= Settings.prefs.vertical_margin;
-            }
-
-            // When resize is synchronous, ie. for X11 windows
-            let nf = mw.get_frame_rect();
-            if (nf.width !== targetWidth && nf.width !== f.width) {
-                widthChanged = true;
-            }
-            if (nf.height !== targetHeight && nf.height !== f.height) {
-                heightChanged = true;
-                targetHeight = nf.height; // Use actually height for layout
             }
 
             let c = mw.clone;
@@ -507,7 +492,7 @@ export class Space extends Array {
 
             y += targetHeight + Settings.prefs.window_gap;
         }
-        return [targetWidth, widthChanged || heightChanged, y];
+        return [targetWidth, y];
     }
 
     layout(animate = true, options = {}) {
@@ -550,7 +535,6 @@ export class Space extends Array {
 
         let availableHeight = workArea.height;
         let y0 = workArea.y;
-        let fixPointAttempCount = 0;
 
         for (let i = 0; i < this.length; i++) {
             let column = this[i];
@@ -579,27 +563,15 @@ export class Space extends Array {
             // enforce minimum
             targetWidth = Math.min(targetWidth, workArea.width - 2 * Settings.prefs.minimum_margin);
 
-            let resultingWidth, relayout;
+            let resultingWidth;
             let allocator = allocators && allocators[i];
             if (inGrab && inGrab.dnd && column.includes(inGrab.window) && !allocator) {
-                [resultingWidth, relayout] =
-                    this.layoutGrabColumn(column, x, y0, targetWidth, availableHeight, time,
-                        inGrab.window);
+                resultingWidth = this.layoutGrabColumn(column, x, y0, targetWidth, availableHeight, time,
+                    inGrab.window);
             } else {
                 allocator = allocator || allocateDefault;
                 let targetHeights = allocator(column, availableHeight, selectedInColumn);
-                [resultingWidth, relayout] =
-                    this.layoutColumnSimple(column, x, y0, targetWidth, targetHeights, time);
-            }
-
-            if (relayout) {
-                if (fixPointAttempCount < 5) {
-                    i--;
-                    fixPointAttempCount++;
-                    continue;
-                } else {
-                    console.warn("Bail at fixpoint, max tries reached");
-                }
+                [resultingWidth] = this.layoutColumnSimple(column, x, y0, targetWidth, targetHeights, time);
             }
 
             x += resultingWidth + gap;
@@ -1200,8 +1172,8 @@ export class Space extends Array {
             if (placeable)
                 this.visible.push(w);
 
-            // Guard against races between move_to and layout
-            // eg. moving can kill ongoing resize on wayland
+            /* Guard against races between move_to and layout
+               (moving can kill an ongoing resize). */
             if (Easer.isEasing(w.clone))
                 return;
 
@@ -1970,13 +1942,8 @@ export const Spaces = class Spaces extends Map {
         let actor = metaWindow.get_compositor_private();
         animateWindow(metaWindow);
 
-        /*
-          We need reliable `window_type`, `wm_class` et. all to handle window insertion correctly.
-
-          On wayland this is completely broken before `first-frame`. It's
-          somewhat more stable on X11, but there's at minimum some racing with
-          `wm_class` which can break the users winprop rules.
-        */
+        /* We need reliable 'window_type', 'wm_class' et al. to handle window
+           insertion correctly. These are not stable before 'first-frame'. */
         signals.connectOneShot(actor, 'first-frame', () => {
             allocateClone(metaWindow);
             insertWindow(metaWindow, { existing: false });
@@ -2004,8 +1971,8 @@ export function isTiled(metaWindow) {
 }
 
 /**
- * Transient windows are connected to a parent window and take focus.
- * On Wayland it takes entire focus (can't focus parent window while it's open).
+ * Transient windows are connected to a parent window and take entire focus
+ * (can't focus parent window while it's open).
  * @param metaWindow
  * @returns
  */
@@ -2087,7 +2054,6 @@ function unmaximize(metaWindow, flags) {
 }
 
 export function is_override_redirect(metaWindow) {
-    // Note: is_overrride_redirect() seem to be false for all wayland windows
     const windowType = metaWindow.windowType;
     return (
         metaWindow.is_override_redirect() ||
@@ -2102,8 +2068,7 @@ export function registerWindow(metaWindow) {
     }
 
     if (metaWindow.clone) {
-        // Can now happen when setting session-modes to "unlock-dialog" or
-        // resetting gnome-shell in-place (e.g. on X11)
+        // Can happen when setting session-modes to "unlock-dialog".
         console.warn("window already registered", metaWindow.title);
         return false;
     }

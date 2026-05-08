@@ -111,13 +111,6 @@ export function setBackgroundImage(actor, resource_path) {
  */
 export const DispatcherMode = { NONE: 0, POINTER: 1, KEYBOARD: 2 };
 
-export function is_wayland_compositor() {
-    if (typeof Meta.is_wayland_compositor === 'function')
-        return Meta.is_wayland_compositor()
-
-    return true // GNOME 50+ is always a Wayland compositor
-}
-
 /**
  * Backwards compatible function.  Attempts to use Cogl.Color with a fallback
  * to Clutter.Color.
