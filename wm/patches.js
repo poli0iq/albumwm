@@ -433,7 +433,6 @@ export function saveRuntimeDisable(schemaSettings, key, disableValue) {
  */
 export function setupRuntimeDisables() {
     saveRuntimeDisable(mutterSettings, 'attach-modal-dialogs', false);
-    saveRuntimeDisable(mutterSettings, 'workspaces-only-on-primary', false);
     saveRuntimeDisable(mutterSettings, 'edge-tiling', false);
 }
 

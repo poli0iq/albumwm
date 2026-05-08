@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
@@ -21,6 +22,8 @@ export let spaces;
 
 // Mutter prevints windows from being placed further off the screen than 75 pixels.
 export const stack_margin = 75;
+
+const mutterSettings = new Gio.Settings({ schema_id: 'org.gnome.mutter' });
 
 // Some features use this to determine if to sizes is considered equal. ie. `abs(w1 - w2) < sizeSlack`
 let sizeSlack = 30;
@@ -793,7 +796,12 @@ export class Space extends Array {
             let y = this.monitor.y + clone.targetY;
             // Mirrors moveDone, see there.
             if (this.isPlaceable(w)) {
-                x = Math.min(this.width - stack_margin, Math.max(stack_margin - f.width, x));
+                if (mutterSettings.get_boolean('workspaces-only-on-primary')) {
+                    const margin = Math.max(stack_margin, Math.ceil(f.width / 2) + 1);
+                    x = Math.max(margin - f.width, Math.min(this.width - margin, x));
+                } else {
+                    x = Math.min(this.width - stack_margin, Math.max(stack_margin - f.width, x));
+                }
             } else {
                 x = Math.max(0, Math.min(this.width - f.width, x));
             }
@@ -1226,10 +1234,21 @@ export class Space extends Array {
             let x = this.visibleX(w);
             let y = this.visibleY(w);
             /* Non-placeable actors must stay on this.monitor or mutter
-               reassigns them (and in workspaces-only-on-primary, sticks them). */
+               reassigns them. In workspaces-only-on-primary mutter additionally
+               auto-stickies any tiled window whose center crosses to a
+               neighbour, so cap placeable actors there too. The cap is a no-op
+               in safe positions; it only kicks in for swap and mouse-drag
+               cases where moveDone would otherwise park a window in the band
+               that crosses the boundary. */
             if (placeable) {
-                x = Math.max(stack_margin - f.width, x);
-                x = Math.min(this.width - stack_margin, x);
+                if (mutterSettings.get_boolean('workspaces-only-on-primary')) {
+                    const margin = Math.max(stack_margin, Math.ceil(f.width / 2) + 1);
+                    x = Math.max(margin - f.width, x);
+                    x = Math.min(this.width - margin, x);
+                } else {
+                    x = Math.max(stack_margin - f.width, x);
+                    x = Math.min(this.width - stack_margin, x);
+                }
             } else {
                 x = Math.max(0, Math.min(this.width - f.width, x));
             }
