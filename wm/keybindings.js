@@ -178,16 +178,8 @@ export function setupActions(settings) {
         Topbar.switchToNextOpenPositionMode);
     registerAlbumAction("open-window-position-right",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.RIGHT));
-    registerAlbumAction("open-window-position-left",
-        (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.LEFT));
-    registerAlbumAction("open-window-position-start",
-        (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.START));
-    registerAlbumAction("open-window-position-end",
-        (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.END));
     registerAlbumAction("open-window-position-down",
         (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.DOWN));
-    registerAlbumAction("open-window-position-up",
-        (_mw, _space) => Topbar.setOpenPositionMode(Settings.OpenWindowPositions.UP));
 
     registerAlbumAction("resize-h-inc",
         Tiling.resizeHInc,

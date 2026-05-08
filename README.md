@@ -22,6 +22,7 @@ Features that the fork author considered useless or harmful are dropped.
 - Dropped the window position indicator and top bar styling
 - Dropped all the remnants of X11 support
 - Dropped `user.css` and `user.js` support (the latter didn't work anyway)
+- Dropped all the open-window-position modes except RIGHT and DOWN
 
 ## Installation
 

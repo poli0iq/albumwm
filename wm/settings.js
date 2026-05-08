@@ -16,7 +16,7 @@ const RESTORE_KEYBINDS_KEY = 'restore-keybinds';
 const META_KEY_ABOVE_TAB = 0x2f7259c9;
 
 // position to open window at (e.g. to the right of current window)
-export const OpenWindowPositions = { RIGHT: 0, LEFT: 1, START: 2, END: 3, DOWN: 4, UP: 5 };
+export const OpenWindowPositions = { RIGHT: 0, DOWN: 1 };
 
 // Animation used when ensuring viewport on a window
 export const EnsureViewportAnimation = { NONE: 0, TRANSLATE: 1, FADE: 2 };
@@ -69,12 +69,6 @@ export function enable(extension) {
         'selection-border-size',
         'selection-border-radius-top',
         'selection-border-radius-bottom',
-        'open-window-position-option-right',
-        'open-window-position-option-left',
-        'open-window-position-option-start',
-        'open-window-position-option-end',
-        'open-window-position-option-down',
-        'open-window-position-option-up',
     ]
         .forEach(k => setState(null, k));
     prefs.__defineGetter__("minimum_margin", () => {

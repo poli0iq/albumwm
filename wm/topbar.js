@@ -21,36 +21,8 @@ export let panelBox = Main.layoutManager.panelBox;
 
 export let focusButton, openPositionButton;
 let signals, gsettings;
-let activeOpenWindowPositions;
 
 export function enable (extension) {
-    activeOpenWindowPositions = [
-        {
-            mode: Settings.OpenWindowPositions.RIGHT,
-            active: () => Settings.prefs.open_window_position_option_right,
-        },
-        {
-            mode: Settings.OpenWindowPositions.LEFT,
-            active: () => Settings.prefs.open_window_position_option_left,
-        },
-        {
-            mode: Settings.OpenWindowPositions.START,
-            active: () => Settings.prefs.open_window_position_option_start,
-        },
-        {
-            mode: Settings.OpenWindowPositions.END,
-            active: () => Settings.prefs.open_window_position_option_end,
-        },
-        {
-            mode: Settings.OpenWindowPositions.DOWN,
-            active: () => Settings.prefs.open_window_position_option_down,
-        },
-        {
-            mode: Settings.OpenWindowPositions.UP,
-            active: () => Settings.prefs.open_window_position_option_up,
-        },
-    ];
-
     gsettings = extension.getSettings();
 
     signals = new Utils.Signals();
@@ -93,7 +65,6 @@ export function disable() {
     focusButton = null;
     openPositionButton.destroy();
     openPositionButton = null;
-    activeOpenWindowPositions = null;
 
     gsettings = null;
 }
@@ -371,14 +342,8 @@ export const OpenPositionIcon = GObject.registerClass(
                 () => {
                     const pather = relativePath => GLib.uri_resolve_relative(import.meta.url, relativePath, GLib.UriFlags.NONE);
                     this.gIconRight = Gio.icon_new_for_string(pather('../resources/open-position-right-symbolic.svg'));
-                    this.gIconLeft = Gio.icon_new_for_string(pather('../resources/open-position-left-symbolic.svg'));
-                    this.gIconStart = Gio.icon_new_for_string(pather('../resources/open-position-start-symbolic.svg'));
-                    this.gIconEnd = Gio.icon_new_for_string(pather('../resources/open-position-end-symbolic.svg'));
                     this.gIconDown = Gio.icon_new_for_string(pather('../resources/open-position-down-symbolic.svg'));
-                    this.gIconUp = Gio.icon_new_for_string(pather('../resources/open-position-up-symbolic.svg'));
 
-
-                    // connection to update based on gsetting
                     signals.connect(gsettings, 'changed::open-window-position', (_settings, _key) => {
                         const mode = Settings.prefs.open_window_position;
                         this.setMode(mode);
@@ -387,60 +352,18 @@ export const OpenPositionIcon = GObject.registerClass(
                 mode => {
                     mode = mode ?? Settings.OpenWindowPositions.RIGHT;
                     this.mode = mode;
-
-                    switch (mode) {
-                    case Settings.OpenWindowPositions.LEFT:
-                        this.gicon = this.gIconLeft;
-                        break;
-                    case Settings.OpenWindowPositions.START:
-                        this.gicon = this.gIconStart;
-                        break;
-                    case Settings.OpenWindowPositions.END:
-                        this.gicon = this.gIconEnd;
-                        break;
-                    case Settings.OpenWindowPositions.DOWN:
-                        this.gicon = this.gIconDown;
-                        break;
-                    case Settings.OpenWindowPositions.UP:
-                        this.gicon = this.gIconUp;
-                        break;
-                    default:
-                        this.gicon = this.gIconRight;
-                        break;
-                    }
-
+                    this.gicon = mode === Settings.OpenWindowPositions.DOWN
+                        ? this.gIconDown
+                        : this.gIconRight;
                     this.updateTooltipText();
                     return this;
                 },
                 () => {
-                    const markup = mode => {
-                        const ct = this.tooltip.clutter_text;
-                        ct.set_markup(`<i>Open Window Position</i>
-Current position: <b>${mode}</b>\
-${this.getKeybindString('switch-open-window-position')}
-<span foreground="#a3a2a2" style="oblique" size="10pt">change available modes
-in advanced settings</span>`);
-                    };
-                    switch (this.mode) {
-                    case Settings.OpenWindowPositions.LEFT:
-                        markup('LEFT');
-                        return;
-                    case Settings.OpenWindowPositions.START:
-                        markup('START');
-                        break;
-                    case Settings.OpenWindowPositions.END:
-                        markup('END');
-                        break;
-                    case Settings.OpenWindowPositions.DOWN:
-                        markup('DOWN');
-                        break;
-                    case Settings.OpenWindowPositions.UP:
-                        markup('UP');
-                        break;
-                    default:
-                        markup('RIGHT');
-                        break;
-                    }
+                    const label = this.mode === Settings.OpenWindowPositions.DOWN ? 'DOWN' : 'RIGHT';
+                    const ct = this.tooltip.clutter_text;
+                    ct.set_markup(`<i>Open Window Position</i>
+Current position: <b>${label}</b>\
+${this.getKeybindString('switch-open-window-position')}`);
                 }
             );
         }
@@ -448,30 +371,13 @@ in advanced settings</span>`);
 );
 
 /**
- * Switches to the next position for opening new windows.
+ * Toggles between RIGHT and DOWN open-window positions.
  */
 export function switchToNextOpenPositionMode() {
-    const activeModes = activeOpenWindowPositions
-        .filter(m => m.active())
-        .map(m => m.mode);
-
-    // if activeModes are empty, do nothing
-    if (activeModes.length <= 0) {
-        return;
-    }
-
-    const currIndex = activeModes.indexOf(Settings.prefs.open_window_position);
-    // if current mode is -1, then set the mode to the first option
-    let nextMode;
-    if (currIndex < 0) {
-        nextMode = activeModes[0];
-    }
-    else {
-        nextMode = activeModes[(currIndex + 1) % activeModes.length];
-    }
-
-    // simply need to set gsettings and mode will be set and updated
-    gsettings.set_int('open-window-position', nextMode);
+    const next = Settings.prefs.open_window_position === Settings.OpenWindowPositions.DOWN
+        ? Settings.OpenWindowPositions.RIGHT
+        : Settings.OpenWindowPositions.DOWN;
+    gsettings.set_int('open-window-position', next);
 }
 
 /**

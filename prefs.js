@@ -222,52 +222,15 @@ class SettingsWidget {
 
         const openWindowPosition = this.builder.get_object('open-window-position');
         const owpos = this._settings.get_int('open-window-position');
-        switch (owpos) {
-        case Settings.OpenWindowPositions.LEFT:
-            openWindowPosition.set_active_id('left');
-            break;
-        case Settings.OpenWindowPositions.START:
-            openWindowPosition.set_active_id('start');
-            break;
-        case Settings.OpenWindowPositions.END:
-            openWindowPosition.set_active_id('end');
-            break;
-        case Settings.OpenWindowPositions.STACK:
-            openWindowPosition.set_active_id('stack');
-            break;
-        default:
-            openWindowPosition.set_active_id('right');
-        }
-
+        openWindowPosition.set_active_id(
+            owpos === Settings.OpenWindowPositions.DOWN ? 'down' : 'right'
+        );
         openWindowPosition.connect('changed', obj => {
-            switch (obj.get_active_id()) {
-            case 'left':
-                this._settings.set_int('open-window-position', Settings.OpenWindowPositions.LEFT);
-                break;
-            case 'start':
-                this._settings.set_int('open-window-position', Settings.OpenWindowPositions.START);
-                break;
-            case 'end':
-                this._settings.set_int('open-window-position', Settings.OpenWindowPositions.END);
-                break;
-            case 'down':
-                this._settings.set_int('open-window-position', Settings.OpenWindowPositions.DOWN);
-                break;
-            case 'up':
-                this._settings.set_int('open-window-position', Settings.OpenWindowPositions.UP);
-                break;
-            default:
-                this._settings.set_int('open-window-position', Settings.OpenWindowPositions.RIGHT);
-            }
+            const mode = obj.get_active_id() === 'down'
+                ? Settings.OpenWindowPositions.DOWN
+                : Settings.OpenWindowPositions.RIGHT;
+            this._settings.set_int('open-window-position', mode);
         });
-
-        // plug up options
-        booleanStateChanged('open-window-position-option-right');
-        booleanStateChanged('open-window-position-option-left');
-        booleanStateChanged('open-window-position-option-start');
-        booleanStateChanged('open-window-position-option-end');
-        booleanStateChanged('open-window-position-option-down');
-        booleanStateChanged('open-window-position-option-up');
 
         const scratchOverview = this.builder.get_object('scratch-in-overview');
         if (this._settings.get_boolean('only-scratch-in-overview'))

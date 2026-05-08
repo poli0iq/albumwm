@@ -77,25 +77,9 @@
       <default><![CDATA[[]]]></default>
       <summary>Create/drop windows to the right</summary>
     </key>
-    <key type="as" name="open-window-position-left">
-      <default><![CDATA[[]]]></default>
-      <summary>Create/drop windows to the left</summary>
-    </key>
     <key type="as" name="open-window-position-down">
       <default><![CDATA[[]]]></default>
       <summary>Create/drop windows in vertical stack (down)</summary>
-    </key>
-    <key type="as" name="open-window-position-up">
-      <default><![CDATA[[]]]></default>
-      <summary>Create/drop windows in vertical stack (up)</summary>
-    </key>
-    <key type="as" name="open-window-position-start">
-      <default><![CDATA[[]]]></default>
-      <summary>Create/drop windows at start position</summary>
-    </key>
-    <key type="as" name="open-window-position-end">
-      <default><![CDATA[[]]]></default>
-      <summary>Create/drop windows at end position</summary>
     </key>
 
     <key type="as" name="switch-next">
@@ -486,25 +470,7 @@
 
     <key type="i" name="open-window-position">
         <default>0</default>
-        <summary>Sets the position to open a new window (e.g right of current window). RIGHT: 0, LEFT: 1, START: 2, END: 3</summary>
-    </key>
-    <key type="b" name="open-window-position-option-right">
-        <default>true</default>
-    </key>
-    <key type="b" name="open-window-position-option-left">
-        <default>true</default>
-    </key>
-    <key type="b" name="open-window-position-option-down">
-        <default>true</default>
-    </key>
-    <key type="b" name="open-window-position-option-up">
-        <default>false</default>
-    </key>
-    <key type="b" name="open-window-position-option-start">
-        <default>false</default>
-    </key>
-    <key type="b" name="open-window-position-option-end">
-        <default>false</default>
+        <summary>Position to open new windows. RIGHT: 0, DOWN: 1</summary>
     </key>
 
     <key type="b" name="show-focus-mode-icon">

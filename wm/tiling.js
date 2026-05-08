@@ -2757,15 +2757,9 @@ Opening "${metaWindow?.title}" on current space.`);
     space.layout(false);
 
     const slurpCheck = timeout => {
-        let slurpPosition;
-        switch (Settings.prefs.open_window_position) {
-        case Settings.OpenWindowPositions.DOWN:
-            slurpPosition = SlurpInsertPosition.BELOW;
-            break;
-        case Settings.OpenWindowPositions.UP:
-            slurpPosition = SlurpInsertPosition.ABOVE;
-            break;
-        }
+        const slurpPosition = Settings.prefs.open_window_position === Settings.OpenWindowPositions.DOWN
+            ? SlurpInsertPosition.BELOW
+            : null;
 
         if (!slurpPosition) {
             dropCallback(metaWindow);
@@ -2847,27 +2841,15 @@ Opening "${metaWindow?.title}" on current space.`);
 }
 
 /**
- * Gets the window index to add a new window in the space:
- * { RIGHT: 0, LEFT: 1, START: 2, END: 3 };
+ * Gets the window index to add a new window in the space (always to the right
+ * of the selected window — DOWN position handles its placement via slurp).
  */
 export function getOpenWindowPositionIndex(space) {
-    let index = -1; // init (-1 -> at beginning)
+    let index = -1;
     if (space?.selectedWindow) {
         index = space.indexOf(space.selectedWindow);
     }
-
-    const pos = Settings.prefs.open_window_position;
-    switch (pos) {
-    case Settings.OpenWindowPositions.LEFT:
-        return index;
-    case Settings.OpenWindowPositions.START:
-        return 0;
-    case Settings.OpenWindowPositions.END:
-        // get number of columns in space
-        return space.length + 1;
-    default:
-        return index + 1;
-    }
+    return index + 1;
 }
 
 export function animateDown(metaWindow) {
@@ -3821,21 +3803,8 @@ export function slurp(metaWindow, insertAt = SlurpInsertPosition.BOTTOM) {
         return;
     }
 
-    // get current direction mode
-    const direction = Settings.prefs.open_window_position;
-    switch (direction) {
-    case Settings.OpenWindowPositions.LEFT:
-    case Settings.OpenWindowPositions.START:
-        to = index;
-        from = index - 1;
-        break;
-    case Settings.OpenWindowPositions.RIGHT:
-    case Settings.OpenWindowPositions.END:
-    default:
-        to = index;
-        from = index + 1;
-        break;
-    }
+    to = index;
+    from = index + 1;
 
     metaWindowToSlurp = space[from]?.[0];
     if (!metaWindowToSlurp) {
@@ -3906,19 +3875,7 @@ export function barf(metaWindow, expelWindow) {
     if (column.length < 2)
         return;
 
-    let to;
-    const direction = Settings.prefs.open_window_position;
-    switch (direction) {
-    case Settings.OpenWindowPositions.LEFT:
-    case Settings.OpenWindowPositions.START:
-        to = index; // if left then current index will increment
-        break;
-    case Settings.OpenWindowPositions.RIGHT:
-    case Settings.OpenWindowPositions.END:
-    default:
-        to = index + 1;
-        break;
-    }
+    const to = index + 1;
 
     // // remove metawindow from column
     if (expelWindow) {
