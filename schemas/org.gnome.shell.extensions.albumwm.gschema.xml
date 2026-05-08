@@ -512,16 +512,6 @@
         <default>false</default>
     </key>
 
-    <key type="b" name="disable-topbar-styling">
-        <default>false</default>
-        <summary>Disables all topbar styling by AlbumWM</summary>
-    </key>
-
-    <key type="b" name="show-window-position-bar">
-        <default>true</default>
-        <summary>Show the window position bar in the topbar</summary>
-    </key>
-
     <key type="b" name="show-focus-mode-icon">
         <default>true</default>
         <summary>Show the focus mode icon in the topbar</summary>

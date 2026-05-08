@@ -292,8 +292,6 @@ class SettingsWidget {
             }
         });
 
-        booleanStateChanged('show-window-position-bar');
-
         // Keybindings
         const keybindingsPane = this.builder.get_object('keybindings_pane');
         keybindingsPane.init(extension);
@@ -361,7 +359,6 @@ class SettingsWidget {
         intValueChanged('overview_min_windows_per_row_spin', 'overview-min-windows-per-row');
         booleanStateChanged('show-focus-mode-icon');
         booleanStateChanged('show-open-position-icon');
-        booleanStateChanged('disable-topbar-styling', true);
         percentValueChanged('maximize-width-percent', 'maximize-width-percent');
         booleanStateChanged('maximize-within-tiling');
         booleanStateChanged('topbar-mouse-scroll-enable');

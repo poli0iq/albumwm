@@ -274,23 +274,6 @@ export class Space extends Array {
         this.leftStack = 0; // not implemented
         this.rightStack = 0; // not implemented
 
-        this.windowPositionBarBackdrop = new St.Widget({
-            name: 'windowPositionBarBackdrop',
-            style_class: 'albumwm-window-position-bar-backdrop',
-            reactive: true,
-        });
-        signals.connect(this.windowPositionBarBackdrop, 'scroll-event', (_actor, event) => {
-            Topbar.topBarScrollAction(event);
-        });
-        this.windowPositionBar = new St.Widget({
-            name: 'windowPositionBar',
-            style_class: 'albumwm-window-position-bar tile-preview',
-        });
-        this.windowPositionBar.hide(); // default on empty space
-        Utils.actor_raise(this.windowPositionBar);
-
-        this.showPositionBar && this.enableWindowPositionBar();
-
         this.createBackground();
         this.setMonitor(monitor);
 
@@ -312,8 +295,6 @@ export class Space extends Array {
         this.addAll(prevSpace);
         saveState.prevSpaces.delete(workspace);
         this._populated = true;
-
-        this.windowPositionBarBackdrop.height = Topbar.panelBox.height;
 
         // restore focus mode (or fallback to default)
         setFocusMode(focusMode ?? getDefaultFocusMode(), this);
@@ -579,8 +560,7 @@ export class Space extends Array {
            to avoid a "flash of topbar spacing" before the next layout call resolves. */
         if (this.selectedWindow?.fullscreen) {
             workArea.y = 0;
-            this.enableWindowPositionBar(false);
-        } else if (!this.showTopBar && !this.showPositionBar) {
+        } else if (!this.showTopBar) {
             const panelBoxHeight = Topbar.panelBox.height;
             workArea.y -= panelBoxHeight;
             workArea.height += panelBoxHeight;
@@ -1379,10 +1359,9 @@ export class Space extends Array {
     initWorkspaceState() {
         this.updateName();
         this.updateShowTopBar();
-        this.updateShowPositionBar();
 
         this.signals.connect(gsettings, 'changed::default-show-top-bar',
-            this.showTopBarChanged.bind(this));
+            this.updateShowTopBar.bind(this));
     }
 
     updateShowTopBar() {
@@ -1390,93 +1369,10 @@ export class Space extends Array {
         this._populated && Topbar.fixTopBar();
     }
 
-    showTopBarChanged() {
-        this._removeAddPositionBar();
-        this.updateShowTopBar();
-    }
-
-    /**
-     * Removes the window position bar actor, and re-adds if needed.
-     */
-    _removeAddPositionBar() {
-        Utils.actor_remove_child(this.actor, this.windowPositionBarBackdrop);
-        Utils.actor_remove_child(this.actor, this.windowPositionBar);
-
-        if (Settings.prefs.show_window_position_bar) {
-            Utils.actor_add_child(this.actor, this.windowPositionBarBackdrop);
-            Utils.actor_add_child(this.actor, this.windowPositionBar);
-        }
-    }
-
-    updateShowPositionBar() {
-        this.showPositionBar = Settings.prefs.show_window_position_bar;
-        Topbar.fixStyle();
-    }
-
-    showPositionBarChanged() {
-        this._removeAddPositionBar();
-        this.updateShowPositionBar();
-    }
-
     updateName() {
         const name = `Workspace ${this.index + 1}`;
         Meta.prefs_change_workspace_name(this.index, name);
         this.name = name;
-    }
-
-    /**
-     * Enables or disables this space's window position bar.
-     * @param {boolean} enable
-     */
-    enableWindowPositionBar(enable = true) {
-        const add = enable && this.showPositionBar;
-        if (add) {
-            // [this.windowPositionBarBackdrop, this.windowPositionBar]
-            //     .forEach(i => {
-            //         if (!i.get_parent()) {
-            //             this.actor.add_child(i);
-            //         }
-            //     });
-            Utils.actor_add_child(this.actor, this.windowPositionBarBackdrop);
-            Utils.actor_add_child(this.actor, this.windowPositionBar);
-            this.updateWindowPositionBar();
-        }
-        else {
-            // [this.windowPositionBarBackdrop, this.windowPositionBar]
-            //     .forEach(i => {
-            //         if (i.get_parent()) {
-            //             this.actor.remove_child(i);
-            //         }
-            //     });
-            Utils.actor_remove_child(this.actor, this.windowPositionBarBackdrop);
-            Utils.actor_remove_child(this.actor, this.windowPositionBar);
-        }
-    }
-
-    updateWindowPositionBar() {
-        // if pref show-window-position-bar, exit
-        if (!this.showPositionBar) {
-            return;
-        }
-
-        // number of columns (a column have one or more windows)
-        let cols = this.length;
-        if (cols <= 1) {
-            this.windowPositionBar.hide();
-            return;
-        } else {
-            this.windowPositionBar.show();
-        }
-
-        let width = this.monitor.width;
-        this.windowPositionBarBackdrop.width = width;
-        let segments = width / cols;
-        this.windowPositionBar.width = segments;
-        this.windowPositionBar.height = Topbar.panelBox.height;
-
-        // index of currently selected window
-        let windex = this.indexOf(this.selectedWindow);
-        this.windowPositionBar.x = windex * segments;
     }
 
     createBackground() {
@@ -1547,7 +1443,6 @@ export class Space extends Array {
         this.monitor = monitor;
         this.width = monitor.width;
         this.height = monitor.height;
-        this.windowPositionBarBackdrop.width = monitor.width;
 
         this.actor.set_position(0, 0);
         this.actor.set_scale(1, 1);
@@ -1935,12 +1830,6 @@ export const Spaces = class Spaces extends Map {
     }
 
     animateToSpace(to, from, animate = true, callback) {
-        if (to.showPositionBar) {
-            Topbar.setNoBackgroundStyle();
-        } else {
-            Topbar.setTransparentStyle();
-        }
-
         this.selectedSpace = to;
         to.show();
         let selected = to.selectedWindow;
@@ -2297,8 +2186,6 @@ export function registerWindow(metaWindow) {
             }
             delete metaWindow._fullscreen_above;
         }
-
-        spaces.spaceOfWindow(metaWindow)?.enableWindowPositionBar(!metaWindow.fullscreen);
     });
     signals.connect(metaWindow, 'notify::minimized', metaWindow => {
         minimizeHandler(metaWindow);
@@ -2544,7 +2431,6 @@ export function resizeHandler(metaWindow) {
 
     // if pwm fullscreen previously
     if (metaWindow._fullscreen_lock) {
-        space.enableWindowPositionBar();
         delete metaWindow._fullscreen_lock;
         needLayout = true;
         addCallback = true;
@@ -2721,7 +2607,6 @@ export function remove_handler(workspace, meta_window) {
 
     let space = spaces.spaceOf(workspace);
     space.removeWindow(meta_window);
-    space.enableWindowPositionBar();
 
     let actor = meta_window.get_compositor_private();
     if (!actor) {
@@ -3190,8 +3075,6 @@ export function updateSelection(space, metaWindow) {
         space.setSelectionActive();
     }
 
-    space.updateWindowPositionBar();
-
     if (space.selection.get_parent() === clone)
         return;
     Utils.actor_reparent(space.selection, clone);
@@ -3384,7 +3267,6 @@ export function focus_handler(metaWindow) {
     }
 
     if (metaWindow.fullscreen) {
-        space.enableWindowPositionBar(false);
         space.hideSelection();
         if (!metaWindow.is_above()) {
             metaWindow.make_above();
@@ -3424,7 +3306,6 @@ export function focus_handler(metaWindow) {
             space.layout(false);
         }
 
-        space.enableWindowPositionBar(true);
         space.showSelection();
     }
     space.monitor.clickOverlay.show();

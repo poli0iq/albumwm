@@ -1,13 +1,5 @@
-/*
-NOTE: please update `./config/users.css` with any new styles added here.
-*/
 .background-clear {
     background-color: rgba(0, 0, 0, 0);
-}
-
-.topbar-transparent-background {
-    background-color: rgba(0, 0, 0, 0.35);
-    box-shadow: none;
 }
 
 .space-workspace-indicator {
@@ -55,13 +47,4 @@ NOTE: please update `./config/users.css` with any new styles added here.
 .albumwm-clone-shade {
     background-color: rgba(0, 0, 0, 0.7);
     border-radius: 7px 7px 0px 0px;
-}
-
-.albumwm-window-position-bar-backdrop {
-    background-color: rgba(0, 0, 0, 0.35);
-}
-
-.albumwm-window-position-bar {
-    border: 0; /* disable border to calm it down a bit */
-    border-radius: 1px;
 }

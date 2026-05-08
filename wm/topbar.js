@@ -63,26 +63,10 @@ export function enable (extension) {
 
     fixFocusModeIcon();
     fixOpenPositionIcon();
-    fixStyle();
 
     signals.connect(Main.overview, 'showing', fixTopBar);
     signals.connect(Main.overview, 'hidden', () => {
         fixTopBar();
-    });
-
-    signals.connect(gsettings, 'changed::disable-topbar-styling', (_settings, _key) => {
-        if (Settings.prefs.disable_topbar_styling) {
-            removeStyles();
-        }
-        else {
-            fixStyle();
-        }
-    });
-
-    signals.connect(gsettings, 'changed::show-window-position-bar', (_settings, _key) => {
-        const spaces = Tiling.spaces;
-        spaces.forEach(s => s.showPositionBarChanged());
-        fixStyle();
     });
 
     signals.connect(gsettings, 'changed::show-focus-mode-icon', (_settings, _key) => {
@@ -100,10 +84,6 @@ export function enable (extension) {
     signals.connect(Main.panel, 'scroll-event', (_actor, event) => {
         topBarScrollAction(event);
     });
-
-    signals.connect(Main.overview, 'hiding', () => {
-        fixStyle();
-    });
 }
 
 export function disable() {
@@ -114,7 +94,6 @@ export function disable() {
     openPositionButton.destroy();
     openPositionButton = null;
     activeOpenWindowPositions = null;
-    removeStyles();
 
     gsettings = null;
 }
@@ -533,46 +512,6 @@ export const OpenPositionButton = GObject.registerClass(
         }
     }
 );
-
-export function setNoBackgroundStyle() {
-    if (Settings.prefs.disable_topbar_styling) {
-        return;
-    }
-
-    removeStyles();
-    Main.panel.add_style_class_name('background-clear');
-}
-
-export function setTransparentStyle() {
-    if (Settings.prefs.disable_topbar_styling) {
-        return;
-    }
-
-    removeStyles();
-    Main.panel.add_style_class_name('topbar-transparent-background');
-}
-
-export function removeStyles() {
-    ['background-clear', 'topbar-transparent-background'].forEach(s => {
-        Main.panel.remove_style_class_name(s);
-    });
-}
-
-/**
- * Applies correct style based on whether we use the windowPositionBar or not.
- */
-export function fixStyle() {
-    const space = Tiling?.spaces?.activeSpace;
-    if (
-        Settings.prefs.show_window_position_bar &&
-        (space?.showPositionBar ?? true)
-    ) {
-        setNoBackgroundStyle();
-    }
-    else {
-        setTransparentStyle();
-    }
-}
 
 export function fixTopBar() {
     const space = Tiling?.spaces?.activeSpace;
