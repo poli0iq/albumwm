@@ -336,7 +336,7 @@ export function mkFmt({ nameOnly } = { nameOnly: false }) {
         const extraStr = extra.join(' | ');
         let actorId = '';
         if (nameOnly) {
-            // eslint-disable-next-line no-nested-ternary, eqeqeq
+            // eslint-disable-next-line eqeqeq
             actorId = actor.name ? actor.name : prefix.length == 0 ? '' : '#';
         } else {
             actorId = actor.toString();

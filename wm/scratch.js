@@ -198,7 +198,7 @@ export function show(top) {
     windows
         .slice()
         .reverse()
-        .map(function (meta_window) {
+        .map(meta_window => {
             meta_window.unminimize();
             meta_window.make_above();
             meta_window.get_compositor_private().show();
@@ -210,7 +210,7 @@ export function show(top) {
 
 export function hide() {
     let windows = getScratchWindows();
-    windows.map(function (meta_window) {
+    windows.map(meta_window => {
         meta_window.minimize();
     });
 }

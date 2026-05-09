@@ -1,5 +1,3 @@
-/* eslint-disable no-undef */
-/* eslint-disable no-invalid-this */
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import St from 'gi://St';

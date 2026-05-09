@@ -1326,7 +1326,7 @@ export class Space extends Array {
             this.selectedWindow === display.focus_window
         ) {
             let index = this.indexOf(this.selectedWindow);
-            // eslint-disable-next-line no-return-assign
+
             this[index].forEach(w => (w.lastFrame = w.get_frame_rect()));
 
             // callback on display.focusWindow window
@@ -1594,13 +1594,11 @@ export class Space extends Array {
                     if (metaWindow.get_compositor_private()) {
                         this.addWindow(metaWindow, i, j);
                     } else {
-                        // eslint-disable-next-line max-statements-per-line
                         column.splice(j, 1);
                         j--;
                     }
                 }
                 if (column.length === 0) {
-                    // eslint-disable-next-line max-statements-per-line
                     prevSpace.splice(i, 1);
                     i--;
                 }

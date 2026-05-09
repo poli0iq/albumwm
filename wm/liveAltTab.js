@@ -174,7 +174,6 @@ export const LiveAltTab = GObject.registerClass(
             // accepted. This can cause _select to run on the item below the pointer
             // ensuring the wrong window.
             if (!this.was_accepted) {
-                // eslint-disable-next-line prefer-rest-params
                 super._itemEnteredHandler.apply(this, arguments);
             }
         }
