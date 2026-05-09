@@ -198,10 +198,10 @@ export function show(top) {
     windows
         .slice()
         .reverse()
-        .map(meta_window => {
-            meta_window.unminimize();
-            meta_window.make_above();
-            meta_window.get_compositor_private().show();
+        .forEach(metaWindow => {
+            metaWindow.unminimize();
+            metaWindow.make_above();
+            metaWindow.get_compositor_private().show();
         });
     windows[0].activate(global.get_current_time());
 
@@ -210,8 +210,8 @@ export function show(top) {
 
 export function hide() {
     let windows = getScratchWindows();
-    windows.map(meta_window => {
-        meta_window.minimize();
+    windows.forEach(metaWindow => {
+        metaWindow.minimize();
     });
 }
 
@@ -221,7 +221,7 @@ export function animateWindows() {
     for (let w of ws) {
         // let parent = w.clone.get_parent();
         // parent && parent.remove_child(w.clone);
-        Utils.actor_remove_parent(w.clone);
+        Utils.actorRemoveParent(w.clone);
 
         Main.uiGroup.insert_child_above(w.clone, global.window_group);
         let f = w.get_frame_rect();

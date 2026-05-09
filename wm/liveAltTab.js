@@ -20,28 +20,6 @@ export function disable() {
     switcherSettings = null;
 }
 
-export function liveAltTab(meta_window, space, { _display, _screen, binding }) {
-    let tabPopup = new LiveAltTab(binding.is_reversed(), false);
-    tabPopup.show(
-        binding.is_reversed(),
-        binding.get_name(),
-        binding.get_mask()
-    );
-}
-
-export function liveAltTabScratch(
-    meta_window,
-    space,
-    { _display, _screen, binding }
-) {
-    let tabPopup = new LiveAltTab(binding.is_reversed(), true);
-    tabPopup.show(
-        binding.is_reversed(),
-        binding.get_name(),
-        binding.get_mask()
-    );
-}
-
 export const LiveAltTab = GObject.registerClass(
     class LiveAltTab extends AltTab.WindowSwitcherPopup {
         _init(reverse, scratchOnly) {
@@ -85,7 +63,7 @@ export const LiveAltTab = GObject.registerClass(
                 width: workArea.width,
                 height: workArea.height,
                 opacity: 0,
-                background_color: Utils.color_from_string('black')[1],
+                background_color: Utils.colorFromString('black')[1],
             });
 
             // this.blur = new Clutter.BlurEffect();
@@ -195,7 +173,7 @@ export const LiveAltTab = GObject.registerClass(
             });
             let index = this.was_accepted ? this._selectedIndex : 0;
             let to = this._switcherList.windows[index];
-            Tiling.focus_handler(to);
+            Tiling.focusHandler(to);
             let actor = to.get_compositor_private();
             if (this.was_accepted) {
                 actor.x = this.clone.x;
@@ -205,3 +183,25 @@ export const LiveAltTab = GObject.registerClass(
         }
     }
 );
+
+export function liveAltTab(metaWindow, space, { _display, _screen, binding }) {
+    let tabPopup = new LiveAltTab(binding.is_reversed(), false);
+    tabPopup.show(
+        binding.is_reversed(),
+        binding.get_name(),
+        binding.get_mask()
+    );
+}
+
+export function liveAltTabScratch(
+    metaWindow,
+    space,
+    { _display, _screen, binding }
+) {
+    let tabPopup = new LiveAltTab(binding.is_reversed(), true);
+    tabPopup.show(
+        binding.is_reversed(),
+        binding.get_name(),
+        binding.get_mask()
+    );
+}

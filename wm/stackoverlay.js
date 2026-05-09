@@ -66,43 +66,6 @@ export function createAppIcon(metaWindow, size) {
     return appIcon;
 }
 
-export class ClickOverlay {
-    constructor(monitor) {
-        this.monitor = monitor;
-        this.left = new StackOverlay(Meta.MotionDirection.LEFT, monitor);
-        this.right = new StackOverlay(Meta.MotionDirection.RIGHT, monitor);
-    }
-
-    reset() {
-        this.left.setTarget(null);
-        this.right.setTarget(null);
-    }
-
-    hide() {
-        this.left.overlay.hide();
-        this.right.overlay.hide();
-    }
-
-    show() {
-        if (Main.overview.visible) return;
-        this.left.overlay.show();
-        this.right.overlay.show();
-    }
-
-    destroy() {
-        for (let overlay of [this.left, this.right]) {
-            let actor = overlay.overlay;
-            overlay.signals.destroy();
-            overlay.signals = null;
-            if (overlay.clone) {
-                overlay.clone.destroy();
-                overlay.clone = null;
-            }
-            actor.destroy();
-        }
-    }
-}
-
 export class StackOverlay {
     constructor(direction, monitor) {
         this.SHOW_DELAY = 100;
@@ -126,7 +89,7 @@ export class StackOverlay {
             this.monitor.height -
             panelBox.height -
             Settings.prefs.vertical_margin;
-        overlay.width = Tiling.stack_margin;
+        overlay.width = Tiling.stackMargin;
 
         this.signals = new Utils.Signals();
 
@@ -254,7 +217,7 @@ export class StackOverlay {
                     ) {
                         // check have a target
                         if (!this.target) {
-                            return;
+                            return GLib.SOURCE_REMOVE;
                         }
 
                         // push pointer back
@@ -273,7 +236,7 @@ export class StackOverlay {
                                 break;
                         }
                         Utils.warpPointer(x, py, false);
-                        return;
+                        return GLib.SOURCE_REMOVE;
                     }
 
                     this.activatePreviewTimeout = GLib.timeout_add(
@@ -284,18 +247,19 @@ export class StackOverlay {
                             if (this._pointerIsAtEdge()) {
                                 this._activateTarget();
                             }
+                            return GLib.SOURCE_REMOVE;
                         }
                     );
                 }
 
-                return false; // on return false destroys timeout
+                return GLib.SOURCE_REMOVE; // on return false destroys timeout
             }
         );
     }
 
     removePreview() {
         if (this.showPreviewTimeout) {
-            Utils.timeout_remove(this.showPreviewTimeout);
+            Utils.timeoutRemove(this.showPreviewTimeout);
             this.showPreviewTimeout = null;
         }
 
@@ -331,7 +295,7 @@ export class StackOverlay {
             return;
         }
 
-        let [x, y] = global.get_pointer();
+        let [_, y] = global.get_pointer();
         const actor = this.target.get_compositor_private();
         const clone = new Clutter.Clone({ source: actor });
         this.clone = clone;
@@ -349,11 +313,10 @@ export class StackOverlay {
         const monitor = this.monitor;
         const scaleWidth = scale * clone.width;
         const scaleHeight = scale * clone.height;
-        if (this._direction === Meta.MotionDirection.RIGHT) {
-            x = monitor.x + monitor.width - scaleWidth;
-        } else {
-            x = monitor.x;
-        }
+        let x =
+            this._direction === Meta.MotionDirection.RIGHT
+                ? monitor.x + monitor.width - scaleWidth
+                : monitor.x;
 
         // calculate y position - center of mouse
         y -= (scale * clone.height) / 2;
@@ -387,7 +350,7 @@ export class StackOverlay {
         let column = space[index];
         this.target = mru.filter(w => column.includes(w))[0];
         let metaWindow = this.target;
-        if (!metaWindow) return;
+        if (!metaWindow) return false;
 
         let overlay = this.overlay;
         overlay.y =
@@ -405,7 +368,7 @@ export class StackOverlay {
             if (!neighbour) return bail(); // Should normally have a neighbour. Bail!
 
             overlay.x = this.monitor.x;
-            Utils.actor_raise(overlay, neighbour.get_compositor_private());
+            Utils.actorRaise(overlay, neighbour.get_compositor_private());
         } else {
             let column = space[space.indexOf(metaWindow) - 1];
             let neighbour =
@@ -414,7 +377,7 @@ export class StackOverlay {
             if (!neighbour) return bail(); // Should normally have a neighbour. Bail!
 
             overlay.x = this.monitor.x + this.monitor.width - overlay.width;
-            Utils.actor_raise(overlay, neighbour.get_compositor_private());
+            Utils.actorRaise(overlay, neighbour.get_compositor_private());
         }
 
         if (
@@ -428,13 +391,13 @@ export class StackOverlay {
     }
 
     destroy() {
-        Utils.timeout_remove(this.triggerPreviewTimeout);
+        Utils.timeoutRemove(this.triggerPreviewTimeout);
         this.triggerPreviewTimeout = null;
 
-        Utils.timeout_remove(this.showPreviewTimeout);
+        Utils.timeoutRemove(this.showPreviewTimeout);
         this.showPreviewTimeout = null;
 
-        Utils.timeout_remove(this.activatePreviewTimeout);
+        Utils.timeoutRemove(this.activatePreviewTimeout);
         this.activatePreviewTimeout = null;
 
         this.signals.destroy();
@@ -451,5 +414,42 @@ export class StackOverlay {
      */
     getWorkArea() {
         return Main.layoutManager.getWorkAreaForMonitor(this.monitor.index);
+    }
+}
+
+export class ClickOverlay {
+    constructor(monitor) {
+        this.monitor = monitor;
+        this.left = new StackOverlay(Meta.MotionDirection.LEFT, monitor);
+        this.right = new StackOverlay(Meta.MotionDirection.RIGHT, monitor);
+    }
+
+    reset() {
+        this.left.setTarget(null);
+        this.right.setTarget(null);
+    }
+
+    hide() {
+        this.left.overlay.hide();
+        this.right.overlay.hide();
+    }
+
+    show() {
+        if (Main.overview.visible) return;
+        this.left.overlay.show();
+        this.right.overlay.show();
+    }
+
+    destroy() {
+        for (let overlay of [this.left, this.right]) {
+            let actor = overlay.overlay;
+            overlay.signals.destroy();
+            overlay.signals = null;
+            if (overlay.clone) {
+                overlay.clone.destroy();
+                overlay.clone = null;
+            }
+            actor.destroy();
+        }
     }
 }

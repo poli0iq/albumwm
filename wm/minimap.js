@@ -10,9 +10,9 @@ import { Easer } from './utils.js';
 export function calcOffset(metaWindow) {
     let buffer = metaWindow.get_buffer_rect();
     let frame = metaWindow.get_frame_rect();
-    let x_offset = frame.x - buffer.x;
-    let y_offset = frame.y - buffer.y;
-    return [x_offset, y_offset];
+    let offsetX = frame.x - buffer.x;
+    let offsetY = frame.y - buffer.y;
+    return [offsetX, offsetY];
 }
 
 export class Minimap extends Array {
@@ -99,7 +99,6 @@ export class Minimap extends Array {
             let column = this[index];
             column.splice(row, 0, clone);
         } else {
-            row = row || 0;
             this.splice(index, 0, [clone]);
         }
         this.layout();
@@ -111,7 +110,7 @@ export class Minimap extends Array {
         column.splice(row, 1);
         if (column.length === 0) this.splice(index, 1);
         // this.container.remove_child(clone);
-        Utils.actor_remove_child(this.container, clone);
+        Utils.actorRemoveChild(this.container, clone);
         this.layout();
     }
 
@@ -174,9 +173,9 @@ export class Minimap extends Array {
 
     _allocateClone(container) {
         let clone = container.clone;
-        let meta_window = clone.meta_window;
-        let buffer = meta_window.get_buffer_rect();
-        let frame = meta_window.get_frame_rect();
+        let metaWindow = clone.meta_window;
+        let buffer = metaWindow.get_buffer_rect();
+        let frame = metaWindow.get_frame_rect();
         let scale = Settings.prefs.minimap_scale;
         clone.set_size(
             buffer.width * scale,

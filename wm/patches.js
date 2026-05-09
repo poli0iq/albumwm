@@ -19,37 +19,7 @@ import { Utils, Tiling, Scratch, Settings, OverviewLayout } from './imports.js';
   around these problems and facilitates new features.
  */
 
-let savedProps, signals;
-let gsettings, mutterSettings;
-export function enable(extension) {
-    savedProps = new Map();
-    gsettings = extension.getSettings();
-
-    mutterSettings = new Gio.Settings({ schema_id: 'org.gnome.mutter' });
-    signals = new Utils.Signals();
-    setupSwipeTrackers();
-    setupOverrides();
-    enableOverrides();
-    setupRuntimeDisables();
-    setupActions();
-}
-
-export function disable() {
-    disableOverrides();
-    restoreRuntimeDisables();
-    actions.forEach(a => global.stage.add_action(a));
-    actions = null;
-
-    signals.destroy();
-    signals = null;
-
-    savedProps = null;
-    swipeTrackers = null;
-    gsettings = null;
-    mutterSettings = null;
-    actions = null;
-}
-
+let savedProps;
 export function registerOverrideProp(obj, name, override, warn = true) {
     if (!obj) return;
 
@@ -127,6 +97,7 @@ export function enableOverride(obj, name) {
  * Sets up AlbumWM overrides (needed for operations).  These overrides are registered and restored
  * on AlbumWM disable.
  */
+let gsettings;
 export function setupOverrides() {
     /**
      * Used on overview layout.  UnalignedLayoutStrategy is not exported in Gnome 45, and hence
@@ -450,6 +421,7 @@ export function saveRuntimeDisable(schemaSettings, key, disableValue) {
  * purposes (we save to AlbumWM's setting just in gnome terminates before AlbumWM can
  * restore the original user settings).  These settings are then restored on disable().
  */
+let mutterSettings;
 export function setupRuntimeDisables() {
     saveRuntimeDisable(mutterSettings, 'attach-modal-dialogs', false);
     saveRuntimeDisable(mutterSettings, 'edge-tiling', false);
@@ -500,7 +472,39 @@ export function setupActions() {
         switch (a.constructor) {
             case WindowManager.AppSwitchAction:
                 return true;
+            default:
+                return false;
         }
     });
     actions.forEach(a => global.stage.remove_action(a));
+}
+
+let signals;
+export function enable(extension) {
+    savedProps = new Map();
+    gsettings = extension.getSettings();
+
+    mutterSettings = new Gio.Settings({ schema_id: 'org.gnome.mutter' });
+    signals = new Utils.Signals();
+    setupSwipeTrackers();
+    setupOverrides();
+    enableOverrides();
+    setupRuntimeDisables();
+    setupActions();
+}
+
+export function disable() {
+    disableOverrides();
+    restoreRuntimeDisables();
+    actions.forEach(a => global.stage.add_action(a));
+    actions = null;
+
+    signals.destroy();
+    signals = null;
+
+    savedProps = null;
+    swipeTrackers = null;
+    gsettings = null;
+    mutterSettings = null;
+    actions = null;
 }

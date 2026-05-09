@@ -170,6 +170,8 @@ export function horizontalScroll(space, _actor, event) {
             dts = [];
             direction = undefined;
             return Clutter.EVENT_STOP;
+        default:
+            return Clutter.EVENT_PROPAGATE;
     }
 }
 
@@ -225,6 +227,8 @@ export function horizontalTouchScroll(_actor, event) {
             if (walk < 20)
                 return Clutter.EVENT_PROPAGATE; // Don't steal non-swipe events
             else return Clutter.EVENT_STOP;
+        default:
+            return Clutter.EVENT_PROPAGATE;
     }
 }
 
@@ -262,7 +266,7 @@ export function done(space) {
     if (!Number.isFinite(space.vx) || space.length === 0) {
         navigator?.finish();
         space.hState = -1;
-        return Clutter.EVENT_STOP;
+        return;
     }
 
     let startGlide = space.targetX;
@@ -345,7 +349,7 @@ export function done(space) {
 export function findTargetWindow(space, direction) {
     let selected = space.selectedWindow?.clone;
     if (!selected) {
-        return;
+        return false;
     }
 
     if (
@@ -354,7 +358,6 @@ export function findTargetWindow(space, direction) {
     ) {
         return selected.meta_window;
     }
-    selected = selected && space.selectedWindow;
     let workArea = space.workArea();
     let min = workArea.x;
 

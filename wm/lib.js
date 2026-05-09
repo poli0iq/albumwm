@@ -31,12 +31,12 @@ export function findPrev(cur, values, slack = 0) {
             break;
         }
     }
-    let target_i = i - 1;
-    if (target_i < 0) {
-        target_i = values.length - 1;
+    let target = i - 1;
+    if (target < 0) {
+        target = values.length - 1;
     }
 
-    return values[target_i];
+    return values[target];
 }
 
 export function arrayEqual(a, b) {
@@ -60,7 +60,7 @@ export function swap(array, i, j) {
     array[j] = temp;
 }
 
-export function in_bounds(array, i) {
+export function inBounds(array, i) {
     return i >= 0 && i < array.length;
 }
 

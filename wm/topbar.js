@@ -27,7 +27,9 @@ export function enable(extension) {
 
     signals = new Utils.Signals();
 
+    // eslint-disable-next-line no-use-before-define
     focusButton = new FocusButton();
+    // eslint-disable-next-line no-use-before-define
     openPositionButton = new OpenPositionButton();
 
     Main.panel.addToStatusArea('FocusButton', focusButton, 2, 'left');
@@ -82,58 +84,6 @@ export function disable() {
     gsettings = null;
 }
 
-/**
- * Action when mouse scrolling on topbar.
- * @param {Clutter.event} event
- * @returns
- */
-export function topBarScrollAction(event) {
-    if (!Settings.prefs.topbar_mouse_scroll_enable) {
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    // if gnome pill has pointer, exit
-    const pill = Main.panel?.statusArea?.activities;
-    if (pill && pill.has_pointer) {
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    let direction = event.get_scroll_direction();
-    switch (direction) {
-        case Clutter.ScrollDirection.DOWN:
-            Tiling.spaces?.activeSpace.switchRight(false);
-            break;
-        case Clutter.ScrollDirection.UP:
-            Tiling.spaces?.activeSpace.switchLeft(false);
-            break;
-    }
-    const selected = Tiling.spaces?.activeSpace?.selectedWindow;
-    if (selected) {
-        let hasFocus = selected.has_focus();
-        selected.foreach_transient(mw => {
-            hasFocus = mw.has_focus() || hasFocus;
-        });
-        if (hasFocus) {
-            Tiling.focus_handler(selected);
-        } else {
-            Main.activateWindow(selected);
-        }
-    }
-
-    return Clutter.EVENT_PROPAGATE;
-}
-
-export function createButton(icon_name, accessible_name) {
-    return new St.Button({
-        reactive: true,
-        can_focus: true,
-        track_hover: true,
-        accessible_name,
-        style_class: 'button workspace-icon-button',
-        child: new St.Icon({ icon_name }),
-    });
-}
-
 const BaseIcon = GObject.registerClass(
     class BaseIcon extends St.Icon {
         _init(
@@ -171,7 +121,7 @@ const BaseIcon = GObject.registerClass(
             const tt = new St.Label({ style_class: 'focus-button-tooltip' });
             tt.hide();
             // global.stage.add_child(tt);
-            Utils.actor_add_child(global.stage, tt);
+            Utils.actorAddChild(global.stage, tt);
             this.tooltip_parent.connect('enter-event', _icon => {
                 this._updateTooltipPosition(this.tooltip_x_point);
                 this.updateTooltipText();
@@ -236,7 +186,7 @@ const BaseIcon = GObject.registerClass(
                     return '';
                 }
                 return `\n<i>(${kb})</i>`;
-            } catch (error) {
+            } catch {
                 return '';
             }
         }
@@ -413,25 +363,6 @@ ${this.getKeybindString('switch-open-window-position')}`);
     }
 );
 
-/**
- * Toggles between RIGHT and DOWN open-window positions.
- */
-export function switchToNextOpenPositionMode() {
-    const next =
-        Settings.prefs.open_window_position ===
-        Settings.OpenWindowPositions.DOWN
-            ? Settings.OpenWindowPositions.RIGHT
-            : Settings.OpenWindowPositions.DOWN;
-    gsettings.set_int('open-window-position', next);
-}
-
-/**
- * Switches to the next position for opening new windows.
- */
-export function setOpenPositionMode(mode) {
-    gsettings.set_int('open-window-position', mode);
-}
-
 export const OpenPositionButton = GObject.registerClass(
     class OpenPositionButton extends panelMenu.Button {
         _init() {
@@ -466,6 +397,77 @@ export const OpenPositionButton = GObject.registerClass(
         }
     }
 );
+
+/**
+ * Action when mouse scrolling on topbar.
+ * @param {Clutter.event} event
+ * @returns
+ */
+export function topBarScrollAction(event) {
+    if (!Settings.prefs.topbar_mouse_scroll_enable) {
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    // if gnome pill has pointer, exit
+    const pill = Main.panel?.statusArea?.activities;
+    if (pill && pill.has_pointer) {
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    let direction = event.get_scroll_direction();
+    switch (direction) {
+        case Clutter.ScrollDirection.DOWN:
+            Tiling.spaces?.activeSpace.switchRight(false);
+            break;
+        case Clutter.ScrollDirection.UP:
+            Tiling.spaces?.activeSpace.switchLeft(false);
+            break;
+    }
+    const selected = Tiling.spaces?.activeSpace?.selectedWindow;
+    if (selected) {
+        let hasFocus = selected.has_focus();
+        selected.foreach_transient(mw => {
+            hasFocus = mw.has_focus() || hasFocus;
+        });
+        if (hasFocus) {
+            Tiling.focusHandler(selected);
+        } else {
+            Main.activateWindow(selected);
+        }
+    }
+
+    return Clutter.EVENT_PROPAGATE;
+}
+
+export function createButton(iconName, accessibleName) {
+    return new St.Button({
+        reactive: true,
+        can_focus: true,
+        track_hover: true,
+        accessible_name: accessibleName,
+        style_class: 'button workspace-icon-button',
+        child: new St.Icon({ icon_name: iconName }),
+    });
+}
+
+/**
+ * Toggles between RIGHT and DOWN open-window positions.
+ */
+export function switchToNextOpenPositionMode() {
+    const next =
+        Settings.prefs.open_window_position ===
+        Settings.OpenWindowPositions.DOWN
+            ? Settings.OpenWindowPositions.RIGHT
+            : Settings.OpenWindowPositions.DOWN;
+    gsettings.set_int('open-window-position', next);
+}
+
+/**
+ * Switches to the next position for opening new windows.
+ */
+export function setOpenPositionMode(mode) {
+    gsettings.set_int('open-window-position', mode);
+}
 
 export function fixTopBar() {
     const space = Tiling?.spaces?.activeSpace;

@@ -44,7 +44,7 @@ export function enable() {}
 
 export function disable() {
     grabbed = null;
-    Utils.timeout_remove(dragDriftTimeout);
+    Utils.timeoutRemove(dragDriftTimeout);
     dragDriftTimeout = null;
 }
 
@@ -168,7 +168,7 @@ export class MoveGrab {
         this.dnd = true;
         console.debug('#grab', 'begin DnD');
         Navigator.getNavigator().minimaps.forEach(m =>
-            typeof m === 'number' ? Utils.timeout_remove(m) : m.hide()
+            typeof m === 'number' ? Utils.timeoutRemove(m) : m.hide()
         );
         setCursorGrabbing(true);
         let metaWindow = this.window;
@@ -195,7 +195,7 @@ export class MoveGrab {
         let i = space.indexOf(metaWindow);
         let single = i !== -1 && space[i].length === 1;
         space.removeWindow(metaWindow);
-        Utils.actor_reparent(clone, Main.uiGroup);
+        Utils.actorReparent(clone, Main.uiGroup);
         clone.x = Math.round(point.x);
         clone.y = Math.round(point.y);
         let newScale = clone.scale_x * space.actor.scale_x;
@@ -228,11 +228,11 @@ export class MoveGrab {
 
         let [x] = space.globalToViewport(gx, gy);
         if (!this.center && onSame && single && space[i]) {
-            Tiling.move_to(space, space[i][0], {
+            Tiling.moveTo(space, space[i][0], {
                 x: x + Settings.prefs.window_gap / 2,
             });
         } else if (!this.center && onSame && single && space[i - 1]) {
-            Tiling.move_to(space, space[i - 1][0], {
+            Tiling.moveTo(space, space[i - 1][0], {
                 x:
                     x -
                     space[i - 1][0].clone.width -
@@ -398,7 +398,7 @@ export class MoveGrab {
             return;
         }
 
-        Utils.timeout_remove(dragDriftTimeout);
+        Utils.timeoutRemove(dragDriftTimeout);
         dragDriftTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1, () => {
             const [px] = global.get_pointer();
             if (xfunc(px)) {
@@ -503,7 +503,7 @@ export class MoveGrab {
 
     end() {
         grabbed = null;
-        Utils.timeout_remove(dragDriftTimeout);
+        Utils.timeoutRemove(dragDriftTimeout);
         console.debug('#grab', 'end');
         this.signals.destroy();
         this.signals = null;
@@ -562,10 +562,10 @@ export class MoveGrab {
                 } else {
                     space.layout();
                 }
-                Tiling.move_to(space, metaWindow, { x: x - space.monitor.x });
+                Tiling.moveTo(space, metaWindow, { x: x - space.monitor.x });
                 Tiling.ensureViewport(metaWindow, space);
 
-                Utils.actor_raise(clone);
+                Utils.actorRaise(clone);
             } else if (clone) {
                 metaWindow.move_frame(true, clone.x, clone.y);
                 Scratch.makeScratch(metaWindow);
@@ -620,7 +620,7 @@ export class MoveGrab {
 
         this.initialSpace.layout();
         // ensure window is properly activated after layout/ensureViewport tweens
-        Utils.later_add(Meta.LaterType.IDLE, () => {
+        Utils.laterAdd(Meta.LaterType.IDLE, () => {
             metaWindow?.get_workspace() && Main.activateWindow(metaWindow);
         });
 
@@ -640,7 +640,7 @@ export class MoveGrab {
          * may still be in progress, which is okay, but won't be ended
          * until we "click out".  We do this here if needed.
          */
-        Utils.later_add(Meta.LaterType.IDLE, () => {
+        Utils.laterAdd(Meta.LaterType.IDLE, () => {
             if (!global.display.end_grab_op && this.wasTiled) {
                 // move to current cursor position
                 let [x, y] = global.get_pointer();
@@ -687,7 +687,7 @@ export class MoveGrab {
 
         this.dndTarget = zone;
         this.zoneActors.add(zone.actor);
-        const raise = () => Utils.actor_raise(zone.actor);
+        const raise = () => Utils.actorRaise(zone.actor);
 
         let params = {
             time: Settings.prefs.animation_time,
@@ -713,7 +713,7 @@ export class MoveGrab {
         }
 
         // zone.space.cloneContainer.add_child(zone.actor);
-        Utils.actor_add_child(zone.space.cloneContainer, zone.actor);
+        Utils.actorAddChild(zone.space.cloneContainer, zone.actor);
         zone.actor.show();
         raise();
         Easer.addEase(zone.actor, params);

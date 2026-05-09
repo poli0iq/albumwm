@@ -19,6 +19,59 @@ let warpRipple;
 let signals, touchCoords;
 let inTouch = false;
 
+export class Signals extends Map {
+    static get [Symbol.species]() {
+        return Map;
+    }
+
+    _getOrCreateSignals(object) {
+        let signals = this.get(object);
+        if (!signals) {
+            signals = [];
+            this.set(object, signals);
+        }
+        return signals;
+    }
+
+    connectOneShot(object, signal, handler) {
+        let id = this.connect(object, signal, (...args) => {
+            this.disconnect(object, id);
+            return handler(...args);
+        });
+    }
+
+    connect(object, signal, handler) {
+        let id = object.connect(signal, handler);
+        let signals = this._getOrCreateSignals(object);
+        signals.push(id);
+        return id;
+    }
+
+    disconnect(object, id = null) {
+        let ids = this.get(object);
+        if (ids) {
+            if (id === null) {
+                ids.forEach(id => object.disconnect(id));
+                ids = [];
+            } else {
+                object.disconnect(id);
+                let i = ids.indexOf(id);
+                if (i > -1) {
+                    ids.splice(i, 1);
+                }
+            }
+            if (ids.length === 0) this.delete(object);
+        }
+    }
+
+    destroy() {
+        for (let [object, signals] of this) {
+            signals.forEach(id => object.disconnect(id));
+            this.delete(object);
+        }
+    }
+}
+
 export function enable() {
     warpRipple = new Ripples.Ripples(0.5, 0.5, 'ripple-pointer-location');
     warpRipple.addTo(Main.uiGroup);
@@ -44,6 +97,7 @@ export function enable() {
     });
 }
 
+let markNewClonesSignalId = null;
 export function disable() {
     warpRipple?.destroy();
     warpRipple = null;
@@ -59,7 +113,7 @@ export function assert(condition, message, ...dump) {
     }
 }
 
-export function print_stacktrace(error) {
+export function printStacktrace(error) {
     let trace;
     if (!error) {
         trace = new Error().stack.split('\n');
@@ -92,11 +146,11 @@ export function isPointInsideActor(actor, x, y) {
     );
 }
 
-export function setBackgroundImage(actor, resource_path) {
+export function setBackgroundImage(actor, resourcePath) {
     // resource://{resource_path}
     let image = new Clutter.Image();
 
-    let pixbuf = GdkPixbuf.Pixbuf.new_from_resource(resource_path);
+    let pixbuf = GdkPixbuf.Pixbuf.new_from_resource(resourcePath);
 
     image.set_data(
         pixbuf.get_pixels(),
@@ -123,14 +177,8 @@ export const DispatcherMode = { NONE: 0, POINTER: 1, KEYBOARD: 2 };
  * to Clutter.Color.
  * @param {String} colorString
  */
-export function color_from_string(colorString) {
-    try {
-        // Gnome 47+ merged Clutter.Color into Cogl.Color
-        return Cogl.Color.from_string(colorString);
-    } catch (error) {
-        // fallback for Gnome 45, 46
-        return Clutter.Color.from_string(colorString);
-    }
+export function colorFromString(colorString) {
+    return Cogl.Color.from_string(colorString);
 }
 
 // // Debug and development utils
@@ -179,7 +227,6 @@ export function toggleWindowBoxes(metaWindow) {
     return boxes;
 }
 
-let markNewClonesSignalId = null;
 export function toggleCloneMarks() {
     // NB: doesn't clean up signal on disable
 
@@ -187,7 +234,7 @@ export function toggleCloneMarks() {
         if (metaWindow.clone) {
             metaWindow.clone.opacity = 190;
             metaWindow.clone.__oldOpacity = 190;
-            metaWindow.clone.background_color = color_from_string('red')[1];
+            metaWindow.clone.background_color = colorFromString('red')[1];
         }
     }
     function unmarkCloneOf(metaWindow) {
@@ -266,8 +313,6 @@ export function warpPointerToMonitor(
 
     let [x, y] = global.get_pointer();
     if (center) {
-        x -= monitor.x;
-        y -= monitor.y;
         warpPointer(
             monitor.x + Math.floor(monitor.width / 2),
             monitor.y + Math.floor(monitor.height / 2),
@@ -334,14 +379,14 @@ export function mkFmt({ nameOnly } = { nameOnly: false }) {
             extra.push(metaWindow);
         }
         const extraStr = extra.join(' | ');
-        let actorId = '';
-        if (nameOnly) {
-            // eslint-disable-next-line eqeqeq
-            actorId = actor.name ? actor.name : prefix.length == 0 ? '' : '#';
-        } else {
-            actorId = actor.toString();
-        }
-        actorId = prefix + actorId;
+        let actorId =
+            prefix + nameOnly
+                ? actor.name
+                    ? actor.name
+                    : prefix.length === 0
+                      ? ''
+                      : '#'
+                : actor.toString();
         let spacing = actorId.length > 0 ? ' ' : '';
         return `*${spacing}${actorId} ${extraStr}`;
     }
@@ -405,7 +450,7 @@ export function isMetaWindow(obj) {
     return obj && obj.window_type && obj.get_compositor_private;
 }
 
-export function actor_raise(actor, above) {
+export function actorRaise(actor, above) {
     const parent = actor.get_parent();
     if (!parent) {
         return;
@@ -415,8 +460,8 @@ export function actor_raise(actor, above) {
     parent.set_child_above_sibling(actor, above);
 }
 
-export function actor_reparent(actor, newParent) {
-    actor_remove_parent(actor);
+export function actorReparent(actor, newParent) {
+    actorRemoveParent(actor);
     newParent.add_child(actor);
 }
 
@@ -426,7 +471,7 @@ export function actor_reparent(actor, newParent) {
  * @param {Clutter.Actor} parent
  * @param {Clutter.Actor} child
  */
-export function actor_remove_child(parent, child) {
+export function actorRemoveChild(parent, child) {
     if (parent.get_children().includes(child)) {
         parent.remove_child(child);
     }
@@ -436,7 +481,7 @@ export function actor_remove_child(parent, child) {
  * Removes the parent from this actor (if it has one).
  * @param {Clutter.Actor} actor
  */
-export function actor_remove_parent(actor) {
+export function actorRemoveParent(actor) {
     const parent = actor.get_parent();
     if (parent) {
         parent.remove_child(actor);
@@ -449,27 +494,27 @@ export function actor_remove_parent(actor) {
  * @param {Clutter.Actor} parent
  * @param {Clutter.Actor} child
  */
-export function actor_add_child(parent, child) {
+export function actorAddChild(parent, child) {
     // check if already a child of this parent
     if (parent.get_children().includes(child)) {
         return;
     }
 
-    actor_remove_parent(child);
+    actorRemoveParent(child);
     parent.add_child(child);
 }
 
 /**
  * Backwards compatible later_add function.
  */
-export function later_add(...args) {
+export function laterAdd(...args) {
     global.compositor.get_laters().add(...args);
 }
 
 /**
  * Backwards compatible Display.grab_accelerator function.
  */
-export function grab_accelerator(
+export function grabAccelerator(
     keystr,
     keyBindingFlags = Meta.KeyBindingFlags.NONE
 ) {
@@ -483,7 +528,7 @@ export function grab_accelerator(
 /**
  * Convenience method for removing timeout source(s) from Mainloop.
  */
-export function timeout_remove(...timeouts) {
+export function timeoutRemove(...timeouts) {
     timeouts.forEach(t => {
         if (t) {
             GLib.source_remove(t);
@@ -504,7 +549,7 @@ export function timeout_remove(...timeouts) {
  * @param {Function} options.onComplete
  * @returns GLib timeout id
  */
-export function periodic_timeout(options = {}) {
+export function periodicTimeout(options = {}) {
     const operiod = options?.period_ms ?? 1000;
     const ocount = options?.count ?? 1;
     const oinit = options?.init ?? function () {};
@@ -530,59 +575,6 @@ export function periodic_timeout(options = {}) {
         ocomplete();
         return false; // on return false destroys timeout
     });
-}
-
-export class Signals extends Map {
-    static get [Symbol.species]() {
-        return Map;
-    }
-
-    _getOrCreateSignals(object) {
-        let signals = this.get(object);
-        if (!signals) {
-            signals = [];
-            this.set(object, signals);
-        }
-        return signals;
-    }
-
-    connectOneShot(object, signal, handler) {
-        let id = this.connect(object, signal, (...args) => {
-            this.disconnect(object, id);
-            return handler(...args);
-        });
-    }
-
-    connect(object, signal, handler) {
-        let id = object.connect(signal, handler);
-        let signals = this._getOrCreateSignals(object);
-        signals.push(id);
-        return id;
-    }
-
-    disconnect(object, id = null) {
-        let ids = this.get(object);
-        if (ids) {
-            if (id === null) {
-                ids.forEach(id => object.disconnect(id));
-                ids = [];
-            } else {
-                object.disconnect(id);
-                let i = ids.indexOf(id);
-                if (i > -1) {
-                    ids.splice(i, 1);
-                }
-            }
-            if (ids.length === 0) this.delete(object);
-        }
-    }
-
-    destroy() {
-        for (let [object, signals] of this) {
-            signals.forEach(id => object.disconnect(id));
-            this.delete(object);
-        }
-    }
 }
 
 /**

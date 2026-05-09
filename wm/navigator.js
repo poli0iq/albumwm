@@ -27,8 +27,11 @@ import {
 const { signals: Signals } = imports;
 const display = global.display;
 
-export let navigating; // exported
-let grab, dispatcher, signals;
+let index = 0,
+    grab;
+let dispatcher, signals;
+export let navigator, navigating;
+
 export function enable() {
     navigating = false;
 
@@ -50,6 +53,177 @@ export function disable() {
     signals = null;
     index = null;
 }
+
+class NavigatorClass {
+    constructor() {
+        console.debug('#navigator', 'nav created');
+
+        /**
+         * Hint for using take window mode (used in `takeWindow`).
+         */
+        this.takeHint = new St.Label({ style_class: 'take-window-hint' });
+        this.takeHint.clutter_text.set_markup(
+            `<i>• press <span foreground="#6be67b">spacebar</span> to return the last taken window</i>
+<i>• press <span foreground="#6be67b">tab</span> to cycle forward through taken windows</i>
+<i>• press <span foreground="#6be67b">shift+tab</span> to cycle backward through taken windows</i>
+<i>• press <span foreground="#6be67b">q</span> to close all taken windows</i>`
+        );
+
+        navigating = true;
+
+        this.was_accepted = false;
+        this.index = index++;
+
+        this._block = Main.wm._blockAnimations;
+        Main.wm._blockAnimations = true;
+        // Meta.disable_unredirect_for_screen(screen);
+        this.space = Tiling.spaces.activeSpace;
+
+        this._startWindow = this.space.selectedWindow;
+        this.from = this.space;
+        this.monitor = this.space.monitor;
+        this.monitor.clickOverlay.hide();
+        this.minimaps = new Map();
+
+        Topbar.fixTopBar();
+
+        Scratch.animateWindows();
+        this.space.startAnimate();
+    }
+
+    showMinimap(space) {
+        let minimap = this.minimaps.get(space);
+        if (!minimap) {
+            let minimapId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
+                minimap = new Minimap.Minimap(space, this.monitor);
+                space.startAnimate();
+                minimap.show(false);
+                this.minimaps.set(space, minimap);
+                return false; // on return false destroys timeout
+            });
+            this.minimaps.set(space, minimapId);
+        } else {
+            typeof minimap !== 'number' && minimap.show();
+        }
+    }
+
+    /**
+     * Shows the "take window" hint.
+     * @param {Boolean} show
+     */
+    showTakeHint(show = true) {
+        if (show) {
+            // set position on stage, take into account monitor
+            const monitor = this.space.monitor;
+            const x = monitor.x + monitor.width - 402;
+            const y = monitor.height - 100;
+
+            this.takeHint.opacity = 0;
+            // global.stage.add_child(this.takeHint);
+            Utils.actorAddChild(global.stage, this.takeHint);
+            this.takeHint.set_position(x, y);
+
+            Utils.Easer.addEase(this.takeHint, {
+                time: Settings.prefs.animation_time,
+                opacity: 255,
+            });
+        } else {
+            this.takeHint.opacity = 255;
+            // global.stage.add_child(this.takeHint);
+            Utils.actorAddChild(global.stage, this.takeHint);
+            Utils.Easer.addEase(this.takeHint, {
+                time: Settings.prefs.animation_time,
+                opacity: 0,
+                onComplete: () => {
+                    // global.stage.remove_child(this.takeHint);
+                    Utils.actorRemoveChild(global.stage, this.takeHint);
+                },
+            });
+        }
+    }
+
+    accept() {
+        this.was_accepted = true;
+    }
+
+    finish(force = false) {
+        if (!force && grab) {
+            return;
+        }
+
+        this.accept();
+        this.destroy();
+    }
+
+    destroy() {
+        this.minimaps.forEach(m => {
+            if (typeof m === 'number') {
+                Utils.timeoutRemove(m);
+            } else {
+                m.destroy();
+            }
+        });
+
+        if (Tiling.inGrab && !Tiling.inGrab.dnd) {
+            Tiling.inGrab?.beginDnD();
+        }
+
+        navigating = false;
+
+        let space = Tiling.spaces.selectedSpace;
+        this.space = space;
+
+        let from = this.from;
+        let selected = this.space.selectedWindow;
+        if (!this.was_accepted) {
+            // Abort the navigation
+            this.space = from;
+            if (this.startWindow && this._startWindow.get_compositor_private())
+                selected = this._startWindow;
+            else selected = display.focus_window;
+        }
+
+        if (this.space !== from) {
+            if (Tiling.inGrab && Tiling.inGrab.window) {
+                this.space.activateWithFocus(Tiling.inGrab.window);
+            } else {
+                this.space.activate();
+            }
+        }
+
+        selected =
+            this.space.indexOf(selected) !== -1
+                ? selected
+                : this.space.selectedWindow;
+
+        if (selected && !Tiling.inGrab) {
+            let hasFocus = selected && selected.has_focus();
+            selected.foreach_transient(mw => {
+                hasFocus = mw.has_focus() || hasFocus;
+            });
+            if (hasFocus) {
+                Tiling.focusHandler(selected);
+            } else {
+                Main.activateWindow(selected);
+            }
+        }
+        if (selected && Tiling.inGrab && !this.was_accepted) {
+            Tiling.focusHandler(selected);
+        }
+
+        if (!Tiling.inGrab) Scratch.showWindows();
+
+        Topbar.fixTopBar();
+
+        Main.wm._blockAnimations = this._block;
+        this.space.moveDone();
+
+        this.emit('destroy', this.was_accepted);
+        navigator = false;
+    }
+}
+export let Navigator = NavigatorClass;
+Signals.addSignalMethods(Navigator.prototype);
 
 export function primaryModifier(mask) {
     if (mask === 0) return 0;
@@ -135,7 +309,7 @@ class ActionDispatcher {
                 // Check for built-in actions
                 actionId = Meta.prefs_get_keybinding_action(binding);
             } catch (e) {
-                console.debug("Couldn't resolve action name");
+                console.debug("Couldn't resolve action name: ", e);
                 return false;
             }
         }
@@ -160,7 +334,7 @@ class ActionDispatcher {
     }
 
     _resetNoModsTimeout() {
-        Utils.timeout_remove(this._noModsTimeoutId);
+        Utils.timeoutRemove(this._noModsTimeoutId);
         this._noModsTimeoutId = GLib.timeout_add(
             GLib.PRIORITY_DEFAULT,
             0,
@@ -249,7 +423,7 @@ class ActionDispatcher {
             action.handler(metaWindow, space, { navigator: this.navigator });
             if (space !== Tiling.spaces.selectedSpace) {
                 this.navigator.minimaps.forEach(m =>
-                    typeof m === 'number' ? Utils.timeout_remove(m) : m.hide()
+                    typeof m === 'number' ? Utils.timeoutRemove(m) : m.hide()
                 );
             }
             if (Tiling.inGrab && !Tiling.inGrab.dnd && Tiling.inGrab.window) {
@@ -279,9 +453,9 @@ class ActionDispatcher {
     }
 
     destroy() {
-        Utils.timeout_remove(this._noModsTimeoutId);
+        Utils.timeoutRemove(this._noModsTimeoutId);
         this._noModsTimeoutId = null;
-        Utils.timeout_remove(this._doActionTimeout);
+        Utils.timeoutRemove(this._doActionTimeout);
         this._doActionTimeout = null;
 
         try {
@@ -301,179 +475,6 @@ class ActionDispatcher {
         dispatcher = null;
     }
 }
-
-let index = 0;
-export let navigator;
-class NavigatorClass {
-    constructor() {
-        console.debug('#navigator', 'nav created');
-
-        /**
-         * Hint for using take window mode (used in `takeWindow`).
-         */
-        this.takeHint = new St.Label({ style_class: 'take-window-hint' });
-        this.takeHint.clutter_text.set_markup(
-            `<i>• press <span foreground="#6be67b">spacebar</span> to return the last taken window</i>
-<i>• press <span foreground="#6be67b">tab</span> to cycle forward through taken windows</i>
-<i>• press <span foreground="#6be67b">shift+tab</span> to cycle backward through taken windows</i>
-<i>• press <span foreground="#6be67b">q</span> to close all taken windows</i>`
-        );
-
-        navigating = true;
-
-        this.was_accepted = false;
-        this.index = index++;
-
-        this._block = Main.wm._blockAnimations;
-        Main.wm._blockAnimations = true;
-        // Meta.disable_unredirect_for_screen(screen);
-        this.space = Tiling.spaces.activeSpace;
-
-        this._startWindow = this.space.selectedWindow;
-        this.from = this.space;
-        this.monitor = this.space.monitor;
-        this.monitor.clickOverlay.hide();
-        this.minimaps = new Map();
-
-        Topbar.fixTopBar();
-
-        Scratch.animateWindows();
-        this.space.startAnimate();
-    }
-
-    showMinimap(space) {
-        let minimap = this.minimaps.get(space);
-        if (!minimap) {
-            let minimapId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
-                minimap = new Minimap.Minimap(space, this.monitor);
-                space.startAnimate();
-                minimap.show(false);
-                this.minimaps.set(space, minimap);
-                return false; // on return false destroys timeout
-            });
-            this.minimaps.set(space, minimapId);
-        } else {
-            typeof minimap !== 'number' && minimap.show();
-        }
-    }
-
-    /**
-     * Shows the "take window" hint.
-     * @param {Boolean} show
-     */
-    showTakeHint(show = true) {
-        if (show) {
-            // set position on stage, take into account monitor
-            const monitor = this.space.monitor;
-            const x = monitor.x + monitor.width - 402;
-            const y = monitor.height - 100;
-
-            this.takeHint.opacity = 0;
-            // global.stage.add_child(this.takeHint);
-            Utils.actor_add_child(global.stage, this.takeHint);
-            this.takeHint.set_position(x, y);
-
-            Utils.Easer.addEase(this.takeHint, {
-                time: Settings.prefs.animation_time,
-                opacity: 255,
-            });
-        } else {
-            this.takeHint.opacity = 255;
-            // global.stage.add_child(this.takeHint);
-            Utils.actor_add_child(global.stage, this.takeHint);
-            Utils.Easer.addEase(this.takeHint, {
-                time: Settings.prefs.animation_time,
-                opacity: 0,
-                onComplete: () => {
-                    // global.stage.remove_child(this.takeHint);
-                    Utils.actor_remove_child(global.stage, this.takeHint);
-                },
-            });
-        }
-    }
-
-    accept() {
-        this.was_accepted = true;
-    }
-
-    finish(force = false) {
-        if (!force && grab) {
-            return;
-        }
-
-        this.accept();
-        this.destroy();
-    }
-
-    destroy() {
-        this.minimaps.forEach(m => {
-            if (typeof m === 'number') {
-                Utils.timeout_remove(m);
-            } else {
-                m.destroy();
-            }
-        });
-
-        if (Tiling.inGrab && !Tiling.inGrab.dnd) {
-            Tiling.inGrab?.beginDnD();
-        }
-
-        navigating = false;
-
-        let space = Tiling.spaces.selectedSpace;
-        this.space = space;
-
-        let from = this.from;
-        let selected = this.space.selectedWindow;
-        if (!this.was_accepted) {
-            // Abort the navigation
-            this.space = from;
-            if (this.startWindow && this._startWindow.get_compositor_private())
-                selected = this._startWindow;
-            else selected = display.focus_window;
-        }
-
-        if (this.space !== from) {
-            if (Tiling.inGrab && Tiling.inGrab.window) {
-                this.space.activateWithFocus(Tiling.inGrab.window);
-            } else {
-                this.space.activate();
-            }
-        }
-
-        selected =
-            this.space.indexOf(selected) !== -1
-                ? selected
-                : this.space.selectedWindow;
-
-        if (selected && !Tiling.inGrab) {
-            let hasFocus = selected && selected.has_focus();
-            selected.foreach_transient(mw => {
-                hasFocus = mw.has_focus() || hasFocus;
-            });
-            if (hasFocus) {
-                Tiling.focus_handler(selected);
-            } else {
-                Main.activateWindow(selected);
-            }
-        }
-        if (selected && Tiling.inGrab && !this.was_accepted) {
-            Tiling.focus_handler(selected);
-        }
-
-        if (!Tiling.inGrab) Scratch.showWindows();
-
-        Topbar.fixTopBar();
-
-        Main.wm._blockAnimations = this._block;
-        this.space.moveDone();
-
-        this.emit('destroy', this.was_accepted);
-        navigator = false;
-    }
-}
-export let Navigator = NavigatorClass;
-Signals.addSignalMethods(Navigator.prototype);
 
 export function getNavigator() {
     if (navigator) return navigator;
@@ -526,8 +527,8 @@ export function dismissDispatcher(mode) {
     }
 }
 
-export function preview_navigate(
-    meta_window,
+export function previewNavigate(
+    metaWindow,
     space,
     { _display, _screen, binding }
 ) {

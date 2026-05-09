@@ -90,6 +90,7 @@ export function enable(extension) {
     addWinpropsFromGSettings();
 }
 
+export let conflictSettings; // exported
 export function disable() {
     gsettings = null;
     acceleratorParse = null;
@@ -104,7 +105,6 @@ export function setState($, key) {
     prefs[name] = value.deep_unpack();
 }
 
-export let conflictSettings; // exported
 export function getConflictSettings() {
     if (!conflictSettings) {
         // Schemas that may contain conflicting keybindings
@@ -139,7 +139,7 @@ export function addSchemaToConflictSettings(schemaId, warn = true) {
     } catch (e) {
         if (warn) {
             console.warn(
-                `Invalid schema_id '${schemaId}': could not add to keybind conflict checks`
+                `Invalid schema_id '${schemaId}': could not add to keybind conflict checks: ${e}`
             );
         }
     }
@@ -147,7 +147,7 @@ export function addSchemaToConflictSettings(schemaId, warn = true) {
 
 // / Keybindings
 
-export function accelerator_parse(keystr) {
+export function parseAccelerator(keystr) {
     return acceleratorParse.accelerator_parse(keystr);
 }
 
@@ -162,7 +162,7 @@ export function keystrToKeycombo(keystr) {
         aboveTab = true;
     }
 
-    let [, key, mask] = accelerator_parse(keystr);
+    let [, key, mask] = parseAccelerator(keystr);
     if (aboveTab) key = META_KEY_ABOVE_TAB;
     return `${key}|${mask}`; // Since js doesn't have a mapable tuple type
 }
@@ -214,7 +214,7 @@ export function getSavedOverrides() {
     let saveList;
     try {
         saveList = new Map(Object.entries(JSON.parse(saveListJson)));
-    } catch (error) {
+    } catch {
         saveList = new Map();
     }
     return saveList;
@@ -232,12 +232,12 @@ export function saveOverrides(overrides) {
 
 export function conflictKeyChanged(settings, key) {
     if (_overriddingConflicts) {
-        return;
+        return false;
     }
 
     const newKeybind = settings.get_value(key).deep_unpack();
     if (Array.isArray(newKeybind) && newKeybind.length === 0) {
-        return;
+        return false;
     }
 
     const saveList = getSavedOverrides();
@@ -253,7 +253,7 @@ export function conflictKeyChanged(settings, key) {
  */
 export function overrideConflicts(checkKey = null) {
     if (_overriddingConflicts) {
-        return;
+        return false;
     }
 
     _overriddingConflicts = true;
@@ -360,13 +360,13 @@ export function restoreConflicts() {
    })
 */
 export let winprops = [];
-export function winprop_match_p(meta_window, prop) {
-    let wm_class = meta_window.wm_class || '';
-    let title = meta_window.title;
+export function winpropMatches(metaWindow, prop) {
+    let wmClass = metaWindow.wm_class || '';
+    let title = metaWindow.title;
     if (prop.wm_class) {
         if (prop.wm_class instanceof RegExp) {
-            if (!wm_class.match(prop.wm_class)) return false;
-        } else if (prop.wm_class !== wm_class) {
+            if (!wmClass.match(prop.wm_class)) return false;
+        } else if (prop.wm_class !== wmClass) {
             return false;
         }
     }
@@ -379,9 +379,9 @@ export function winprop_match_p(meta_window, prop) {
     return true;
 }
 
-export function find_winprop(meta_window) {
+export function findWinprop(metaWindow) {
     // sort by title first (prioritise title over wm_class)
-    let props = winprops.filter(winprop_match_p.bind(null, meta_window));
+    let props = winprops.filter(winpropMatches.bind(null, metaWindow));
 
     // if matching props found, return first one
     if (props.length > 0) {
@@ -470,7 +470,7 @@ export function addWinpropsFromGSettings() {
  * Removes winprops with the `gsetting:true` property from the winprops array.
  */
 export function removeGSettingWinpropsFromArray() {
-    winprops = winprops.filter(prop => !prop.gsetting ?? true);
+    winprops = winprops.filter(prop => !prop.gsetting);
 }
 
 /**

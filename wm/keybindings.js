@@ -20,7 +20,9 @@ const display = global.display;
 
 const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
+let signals, actions, nameMap, actionIdMap, keycomboMap;
 let keybindSettings;
+
 export function enable(extension) {
     // restore previous keybinds (in case failed to restore last time, e.g. gnome crash etc)
     Settings.updateOverrides();
@@ -43,8 +45,8 @@ export function enable(extension) {
     ];
     schemas.forEach(schema => {
         signals.connect(schema, 'changed', (settings, key) => {
-            const numConflicts = Settings.conflictKeyChanged(settings, key);
-            if (numConflicts > 0) {
+            const overrode = Settings.conflictKeyChanged(settings, key);
+            if (overrode) {
                 Main.notifyError(
                     `AlbumWM: overriding '${key}' keybind`,
                     `this Gnome Keybind will be restored when AlbumWM is disabled`
@@ -91,7 +93,6 @@ export function registerMinimapAction(name, handler) {
     });
 }
 
-let signals, actions, nameMap, actionIdMap, keycomboMap;
 export function setupActions(settings) {
     signals = new Utils.Signals();
     actions = [];
@@ -423,7 +424,7 @@ export function asKeyHandler(actionHandler) {
 }
 
 export function impliedOptions(options) {
-    options = options = Object.assign(
+    options = Object.assign(
         { mutterFlags: Meta.KeyBindingFlags.NONE },
         options
     );
@@ -454,7 +455,7 @@ export function registerAction(actionName, handler, options) {
         Utils.assert(actionName, 'Schema action must have a name');
         mutterName = actionName;
         keyHandler = opensNavigator
-            ? asKeyHandler(Navigator.preview_navigate)
+            ? asKeyHandler(Navigator.previewNavigate)
             : asKeyHandler(handler);
     } else {
         // actionId, mutterName and keyHandler will be set if/when the action is bound
@@ -573,7 +574,7 @@ export function devirtualizeMask(gdkVirtualMask) {
 }
 
 export function rawMaskOfKeystr(keystr) {
-    let [, , mask] = Settings.accelerator_parse(keystr);
+    let [, , mask] = Settings.parseAccelerator(keystr);
     return devirtualizeMask(mask);
 }
 
@@ -586,7 +587,7 @@ export function openNavigatorHandler(actionName, keystr) {
         is_reversed: () => false,
     };
     return function (display, screen, metaWindow) {
-        return Navigator.preview_navigate(metaWindow, null, {
+        return Navigator.previewNavigate(metaWindow, null, {
             screen,
             display,
             binding,
@@ -595,7 +596,7 @@ export function openNavigatorHandler(actionName, keystr) {
 }
 
 export function getBoundActionId(keystr) {
-    let [, keycodes, mask] = Settings.accelerator_parse(keystr);
+    let [, keycodes, mask] = Settings.parseAccelerator(keystr);
     if (keycodes.length > 1) {
         throw new Error(`Multiple keycodes ${keycodes} ${keystr}`);
     }
@@ -653,8 +654,10 @@ export function enableAction(action) {
         if (actionId !== Meta.KeyBindingAction.NONE) {
             action.id = actionId;
             actionIdMap[actionId] = action;
+            return action.id;
         } else {
             console.warn('Could not enable action', action.name);
+            return null;
         }
     } else {
         if (keycomboMap[action.keycombo]) {
@@ -666,7 +669,7 @@ export function enableAction(action) {
             return Meta.KeyBindingAction.NONE;
         }
 
-        let actionId = Utils.grab_accelerator(action.keystr);
+        let actionId = Utils.grabAccelerator(action.keystr);
         if (actionId === Meta.KeyBindingAction.NONE) {
             console.warn('Failed to grab. Binding probably already taken');
             return Meta.KeyBindingAction.NONE;
