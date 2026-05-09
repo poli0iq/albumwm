@@ -116,17 +116,6 @@ export function enable(extension) {
     gsettings.connect('changed::vertical-margin', marginsGapChanged);
     gsettings.connect('changed::vertical-margin-bottom', marginsGapChanged);
     gsettings.connect('changed::window-gap', marginsGapChanged);
-    const changedBorder = () => {
-        spaces.forEach(s => {
-            Settings.prefs.selection_border_size <= 0 ? s.hideSelection() : s.showSelection();
-            if (s.selectedWindow) {
-                allocateClone(s.selectedWindow);
-            }
-        });
-    };
-    gsettings.connect('changed::selection-border-size', changedBorder);
-    gsettings.connect('changed::selection-border-radius-top', changedBorder);
-    gsettings.connect('changed::selection-border-radius-bottom', changedBorder);
 
     spaces = new Spaces();
     let initWorkspaces = () => {
@@ -245,16 +234,6 @@ export class Space extends Array {
         this.cloneClip = cloneClip;
         let cloneContainer = new St.Widget({ name: "clone-container" });
         this.cloneContainer = cloneContainer;
-
-        const selection = new St.Widget({
-            name: 'selection',
-            style_class: 'albumwm-selection tile-preview',
-        });
-        this.selection = selection;
-        // initial state is shown (unless border-size is 0)
-        if (Settings.prefs.selection_border_size <= 0) {
-            this.hideSelection();
-        }
 
         clip.space = this;
         cloneContainer.space = this;
@@ -824,12 +803,6 @@ export class Space extends Array {
         // this.cloneContainer.remove_child(clone);
         Utils.actor_remove_child(this.cloneContainer, clone);
 
-        // Don't destroy the selection highlight widget
-        if (clone.first_child.name === 'selection') {
-            // clone.remove_child(clone.first_child);
-            Utils.actor_remove_child(clone, clone.first_child);
-        }
-
         const actor = metaWindow.get_compositor_private();
         if (actor)
             actor.remove_clip();
@@ -1311,25 +1284,6 @@ export class Space extends Array {
                 break;
             }
         }
-    }
-
-    hideSelection() {
-        this.selection.set_style_class_name('background-clear');
-    }
-
-    showSelection() {
-        if (Settings.prefs.selection_border_size <= 0) {
-            return;
-        }
-        this.selection.set_style_class_name('albumwm-selection tile-preview');
-    }
-
-    setSelectionActive() {
-        this.selection.opacity = 255;
-    }
-
-    setSelectionInactive() {
-        this.selection.opacity = 140;
     }
 
     initWorkspaceState() {
@@ -2200,28 +2154,6 @@ export function allocateClone(metaWindow) {
     const [width, height] = clone.get_size();
     metaWindow.clone.shade.set_position(-1, -1);
     metaWindow.clone.shade.set_size(width + 2, height + 2);
-
-    if (metaWindow.clone.first_child.name === 'selection') {
-        let selection = metaWindow.clone.first_child;
-        let vMax = metaWindow.maximized_vertically;
-        let hMax = metaWindow.maximized_horizontally;
-
-        const protrusion = Math.min(
-            Settings.prefs.selection_border_size,
-            Settings.prefs.vertical_margin,
-            Settings.prefs.window_gap
-        );
-
-        selection.x = hMax ? 0 : -protrusion;
-        selection.y = vMax ? 0 : -protrusion;
-        selection.set_size(
-            frame.width + (hMax ? 0 : protrusion * 2),
-            frame.height + (vMax ? 0 : protrusion * 2));
-
-        const rtop = Settings.prefs.selection_border_radius_top;
-        const rbottom = Settings.prefs.selection_border_radius_bottom;
-        selection.style = `border-radius: ${rtop}px ${rtop}px ${rbottom}px ${rbottom}px`;
-    }
 }
 
 export function destroyHandler(actor) {
@@ -2324,12 +2256,10 @@ export function resizeHandler(metaWindow) {
     // if window is fullscreened, then don't animate background space.container animation etc.
     if (metaWindow.fullscreen) {
         metaWindow._fullscreen_lock = true;
-        space.hideSelection();
         space.layout(false, { callback: moveTo(0, false), centerIfOne: false });
         return;
     }
 
-    space.showSelection();
     x = metaWindow?._fullscreen_frame?.x ?? f.x;
     x -= space.monitor.x;
 
@@ -2951,36 +2881,7 @@ export function ensureViewport(meta_window, space, options = {}) {
 
     selected.raise();
     Utils.actor_raise(selected.clone);
-    updateSelection(space, meta_window);
     space.emit('select');
-}
-
-export function updateSelection(space, metaWindow) {
-    if (!metaWindow) {
-        return;
-    }
-    let clone = metaWindow.clone;
-    let cloneActor = clone.cloneActor;
-
-    // first set all selections inactive
-    // this means not active workspaces are shown as inactive
-    setAllWorkspacesInactive();
-
-    // if metawindow has transient window(s) and it's NOT focused,
-    // don't update visual selection (since transient is actually focused)
-    if (hasTransient(metaWindow) && metaWindow !== display.focus_window) {
-        space.setSelectionInactive();
-    }
-    else {
-        // then set the new selection active
-        space.setSelectionActive();
-    }
-
-    if (space.selection.get_parent() === clone)
-        return;
-    Utils.actor_reparent(space.selection, clone);
-    clone.set_child_below_sibling(space.selection, cloneActor);
-    allocateClone(metaWindow);
 }
 
 /**
@@ -3114,14 +3015,6 @@ export function grabEnd(_metaWindow, _type) {
 }
 
 /**
- * Sets the selected window on other workspaces inactive.
- * Particularly noticable with multi-monitor setups.
- */
-export function setAllWorkspacesInactive() {
-    spaces.forEach(s => s.setSelectionInactive());
-}
-
-/**
  * Returns the default focus mode (can be user-defined).
  */
 export function getDefaultFocusMode() {
@@ -3147,15 +3040,12 @@ export function getDefaultFocusMode() {
 export function focus_handler(metaWindow) {
     console.debug("focus:", metaWindow?.title);
     if (Scratch.isScratchWindow(metaWindow)) {
-        setAllWorkspacesInactive();
         Scratch.makeScratch(metaWindow);
         Topbar.fixTopBar();
         return;
     }
 
-    // If metaWindow is a transient window, return (after deselecting tiled focus indicators)
     if (isTransient(metaWindow)) {
-        setAllWorkspacesInactive();
         return;
     }
 
@@ -3168,7 +3058,6 @@ export function focus_handler(metaWindow) {
     }
 
     if (metaWindow.fullscreen) {
-        space.hideSelection();
         if (!metaWindow.is_above()) {
             metaWindow.make_above();
         }
@@ -3206,8 +3095,6 @@ export function focus_handler(metaWindow) {
         if (needLayout) {
             space.layout(false);
         }
-
-        space.showSelection();
     }
     space.monitor.clickOverlay.show();
 

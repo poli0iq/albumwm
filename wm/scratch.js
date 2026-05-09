@@ -147,11 +147,6 @@ export function toggle(metaWindow) {
         unmakeScratch(metaWindow);
     } else {
         makeScratch(metaWindow);
-
-        if (metaWindow.has_focus) {
-            let space = Tiling.spaces.activeSpace;
-            space.setSelectionInactive();
-        }
     }
 }
 

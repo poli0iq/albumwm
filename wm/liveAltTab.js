@@ -71,7 +71,6 @@ export const LiveAltTab = GObject.registerClass(
 
             // this.blur = new Clutter.BlurEffect();
             // this.space.cloneContainer.add_effect(this.blur);
-            this.space.setSelectionInactive();
 
             Main.uiGroup.insert_child_above(fog, global.window_group);
             Easer.addEase(fog, {

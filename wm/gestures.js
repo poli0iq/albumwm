@@ -254,7 +254,6 @@ export function update(space, dx, t) {
     space.targetX = target;
     const selected = findTargetWindow(space, start - space.targetX > 0);
     space.targetX = space.cloneContainer.x;
-    Tiling.updateSelection(space, selected);
     space.selectedWindow = selected;
     space.emit('select');
 
@@ -318,7 +317,6 @@ export function done(space) {
     }
     space.targetX = target;
 
-    Tiling.updateSelection(space, selected);
     space.selectedWindow = selected;
     space.emit('select');
     gliding = true;

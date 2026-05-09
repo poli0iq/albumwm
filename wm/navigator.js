@@ -252,13 +252,6 @@ class ActionDispatcher {
         nav.accept();
         !this._destroy && nav.destroy();
         dismissDispatcher(DispatcherMode.KEYBOARD);
-        let space = Tiling.spaces.selectedSpace;
-        let metaWindow = space.selectedWindow;
-        if (metaWindow) {
-            if (!metaWindow.appears_focused) {
-                space.setSelectionInactive();
-            }
-        }
     }
 
     destroy() {

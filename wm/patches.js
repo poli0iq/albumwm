@@ -7,7 +7,6 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Workspace from 'resource:///org/gnome/shell/ui/workspace.js';
 import * as WorkspaceThumbnail from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
-import * as WorkspaceAnimation from 'resource:///org/gnome/shell/ui/workspaceAnimation.js';
 import * as AltTab from 'resource:///org/gnome/shell/ui/altTab.js';
 import * as WindowManager from 'resource:///org/gnome/shell/ui/windowManager.js';
 import * as WindowPreview from 'resource:///org/gnome/shell/ui/windowPreview.js';
@@ -133,23 +132,6 @@ export function enableOverride(obj, name) {
  * on AlbumWM disable.
  */
 export function setupOverrides() {
-    registerOverridePrototype(WorkspaceAnimation.WorkspaceAnimationController, '_prepareWorkspaceSwitch',
-        function (workspaceIndices) {
-            const saved = getSavedPrototype(WorkspaceAnimation.WorkspaceAnimationController, '_prepareWorkspaceSwitch');
-            /* hide selection during workspace switch */
-            Tiling.spaces.forEach(s => s.hideSelection());
-            saved.call(this, workspaceIndices);
-        });
-
-    registerOverridePrototype(WorkspaceAnimation.WorkspaceAnimationController, '_finishWorkspaceSwitch',
-        function (switchData) {
-            const saved = getSavedPrototype(WorkspaceAnimation.WorkspaceAnimationController,
-                '_finishWorkspaceSwitch');
-            /* ensure selection is shown after workspaces switching */
-            Tiling.spaces.forEach(s => s.showSelection());
-            saved.call(this, switchData);
-        });
-
     /**
      * Used on overview layout.  UnalignedLayoutStrategy is not exported in Gnome 45, and hence
      * we need to override this function and call AlbumWM customised UnalignedLayoutStrategy found

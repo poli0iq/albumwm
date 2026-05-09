@@ -24,6 +24,9 @@ Features that the fork author considered useless or harmful are dropped.
 - Dropped `user.css` and `user.js` support (the latter didn't work anyway)
 - Dropped all the open-window-position modes except RIGHT and DOWN
 - Dropped the maximize-within-tiling option, windows are now always properly maximized
+- Dropped the focused-window border highlight
+
+  Ratioale: the windows already indicate focus themselves.
 
 ## Installation
 

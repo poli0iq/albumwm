@@ -65,9 +65,6 @@ export function enable(extension) {
         'overview-min-windows-per-row',
         'overview-max-window-scale',
         'minimap-shade-opacity',
-        'selection-border-size',
-        'selection-border-radius-top',
-        'selection-border-radius-bottom',
     ]
         .forEach(k => setState(null, k));
     prefs.__defineGetter__("minimum_margin", () => {
