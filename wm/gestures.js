@@ -52,10 +52,7 @@ export function enable(extension) {
         }
 
         const fingers = event.get_touchpad_gesture_finger_count();
-        if (
-            fingers <= 2 ||
-            (Main.actionMode & Shell.ActionMode.OVERVIEW) > 0
-        ) {
+        if (fingers <= 2 || (Main.actionMode & Shell.ActionMode.OVERVIEW) > 0) {
             return Clutter.EVENT_PROPAGATE;
         }
 
@@ -67,7 +64,7 @@ export function enable(extension) {
             if (shouldPropagate(fingers)) {
                 return Clutter.EVENT_PROPAGATE;
             }
-            natural = touchpadSettings.get_boolean("natural-scroll") ? 1 : -1;
+            natural = touchpadSettings.get_boolean('natural-scroll') ? 1 : -1;
             direction = undefined;
             navigator = Navigator.getNavigator();
             return Clutter.EVENT_STOP;
@@ -83,21 +80,16 @@ function shouldPropagate(fingers) {
     ) {
         swipeTrackersEnable();
         return true;
-    }
-    else if (
-        fingers === 3 && gestureHorizontalFingers() !== 3
-    ) {
+    } else if (fingers === 3 && gestureHorizontalFingers() !== 3) {
         swipeTrackersEnable();
         return true;
-    }
-    else if (
+    } else if (
         // if gesure enabled AND finger 4 AND horizontal finger != 4
         fingers === 4 &&
         gestureHorizontalFingers() !== 4
     ) {
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -120,24 +112,24 @@ export function gestureHorizontalFingers() {
    Handle scrolling horizontally in a space. The handler is meant to be
    connected from each space.background and bound to the space.
  */
-let start, dxs = [], dts = [];
+let start,
+    dxs = [],
+    dts = [];
 export function horizontalScroll(space, _actor, event) {
     if (event.type() !== Clutter.EventType.TOUCHPAD_SWIPE) {
         return Clutter.EVENT_PROPAGATE;
     }
 
     const fingers = event.get_touchpad_gesture_finger_count();
-    if (
-        fingers <= 2 || gestureHorizontalFingers() !== fingers
-    ) {
+    if (fingers <= 2 || gestureHorizontalFingers() !== fingers) {
         return Clutter.EVENT_PROPAGATE;
-    }
-    else if (
+    } else if (
         /**
          * If gestures are disabled AND doing a 3-finger swipe (gnome default)
          * AND horizontal fingers are set to 3, then propagate.
          */
-        !gestureEnabled() && fingers === 3
+        !gestureEnabled() &&
+        fingers === 3
     ) {
         return Clutter.EVENT_PROPAGATE;
     }
@@ -145,32 +137,39 @@ export function horizontalScroll(space, _actor, event) {
     const phase = event.get_gesture_phase();
     const [dx] = event.get_gesture_motion_delta();
     switch (phase) {
-    case Clutter.TouchpadGesturePhase.UPDATE:
-        if (direction !== undefined && direction !== DIRECTIONS.Horizontal) {
-            return Clutter.EVENT_PROPAGATE;
-        }
+        case Clutter.TouchpadGesturePhase.UPDATE:
+            if (
+                direction !== undefined &&
+                direction !== DIRECTIONS.Horizontal
+            ) {
+                return Clutter.EVENT_PROPAGATE;
+            }
 
-        if (direction === undefined) {
-            space.vx = 0;
+            if (direction === undefined) {
+                space.vx = 0;
+                dxs = [];
+                dts = [];
+                space.hState = phase;
+                start = space.targetX;
+                Easer.removeEase(space.cloneContainer);
+                direction = DIRECTIONS.Horizontal;
+            }
+            return update(
+                space,
+                -dx * natural * Settings.prefs.swipe_sensitivity[0],
+                event.get_time()
+            );
+        case Clutter.TouchpadGesturePhase.CANCEL:
+        case Clutter.TouchpadGesturePhase.END:
+            if (direction !== DIRECTIONS.Horizontal) {
+                return Clutter.EVENT_PROPAGATE;
+            }
+            space.hState = phase;
+            done(space, event);
             dxs = [];
             dts = [];
-            space.hState = phase;
-            start = space.targetX;
-            Easer.removeEase(space.cloneContainer);
-            direction = DIRECTIONS.Horizontal;
-        }
-        return update(space, -dx * natural * Settings.prefs.swipe_sensitivity[0], event.get_time());
-    case Clutter.TouchpadGesturePhase.CANCEL:
-    case Clutter.TouchpadGesturePhase.END:
-        if (direction !== DIRECTIONS.Horizontal) {
-            return Clutter.EVENT_PROPAGATE;
-        }
-        space.hState = phase;
-        done(space, event);
-        dxs = [];
-        dts = [];
-        direction = undefined;
-        return Clutter.EVENT_STOP;
+            direction = undefined;
+            return Clutter.EVENT_STOP;
     }
 }
 
@@ -186,47 +185,46 @@ export function horizontalTouchScroll(_actor, event) {
     const [myx] = event.get_coords();
 
     switch (type) {
-    case Clutter.EventType.TOUCH_BEGIN:
-        this.vx = 0;
-        dxs = [];
-        dts = [];
-        sdx = myx;
-        walk = 0;
-        start = this.targetX;
-        this.hState = Clutter.TouchpadGesturePhase.UPDATE;
-        Easer.removeEase(this.cloneContainer);
-        navigator = Navigator.getNavigator();
-        direction = DIRECTIONS.Horizontal;
-        update(this, 0, event.get_time());
-        return Clutter.EVENT_PROPAGATE;
-    case Clutter.EventType.TOUCH_UPDATE: {
-        let dx = 0;
-        if (sdx !== null) {
-            dx = myx - sdx;
-        }
-        sdx = myx;
-        walk += Math.abs(dx);
+        case Clutter.EventType.TOUCH_BEGIN:
+            this.vx = 0;
+            dxs = [];
+            dts = [];
+            sdx = myx;
+            walk = 0;
+            start = this.targetX;
+            this.hState = Clutter.TouchpadGesturePhase.UPDATE;
+            Easer.removeEase(this.cloneContainer);
+            navigator = Navigator.getNavigator();
+            direction = DIRECTIONS.Horizontal;
+            update(this, 0, event.get_time());
+            return Clutter.EVENT_PROPAGATE;
+        case Clutter.EventType.TOUCH_UPDATE: {
+            let dx = 0;
+            if (sdx !== null) {
+                dx = myx - sdx;
+            }
+            sdx = myx;
+            walk += Math.abs(dx);
 
-        /**
-         * Here, we ignore the friction setting and reduce the reported time
-         * scale, because the distances involved on a touch screen would make
-         * the flick motion as understood by the trackpad handler impractical.
-         */
-        update(this, -dx, event.get_time() * .75);
-        return Clutter.EVENT_PROPAGATE;
-    }
-    case Clutter.EventType.TOUCH_CANCEL:
-    case Clutter.EventType.TOUCH_END:
-        done(this, event);
-        dxs = [];
-        dts = [];
-        sdx = null;
-        walk = 0;
-        this.hState = Clutter.TouchpadGesturePhase.END;
-        if (walk < 20)
-            return Clutter.EVENT_PROPAGATE; // Don't steal non-swipe events
-        else
-            return Clutter.EVENT_STOP;
+            /**
+             * Here, we ignore the friction setting and reduce the reported time
+             * scale, because the distances involved on a touch screen would make
+             * the flick motion as understood by the trackpad handler impractical.
+             */
+            update(this, -dx, event.get_time() * 0.75);
+            return Clutter.EVENT_PROPAGATE;
+        }
+        case Clutter.EventType.TOUCH_CANCEL:
+        case Clutter.EventType.TOUCH_END:
+            done(this, event);
+            dxs = [];
+            dts = [];
+            sdx = null;
+            walk = 0;
+            this.hState = Clutter.TouchpadGesturePhase.END;
+            if (walk < 20)
+                return Clutter.EVENT_PROPAGATE; // Don't steal non-swipe events
+            else return Clutter.EVENT_STOP;
     }
 }
 
@@ -248,7 +246,7 @@ export function update(space, dx, t) {
     let accel = Settings.prefs.swipe_friction[0] / 16; // px/ms^2
     accel = space.vx > 0 ? -accel : accel;
     let duration = -space.vx / accel;
-    let d = space.vx * duration + .5 * accel * duration ** 2;
+    let d = space.vx * duration + 0.5 * accel * duration ** 2;
     let target = Math.round(space.targetX - d);
 
     space.targetX = target;
@@ -273,7 +271,7 @@ export function done(space) {
     let accel = Settings.prefs.swipe_friction[0] / 16; // px/ms^2
     accel = space.vx > 0 ? -accel : accel;
     let t = -space.vx / accel;
-    let d = space.vx * t + .5 * accel * t ** 2;
+    let d = space.vx * t + 0.5 * accel * t ** 2;
     let target = Math.round(space.targetX - d);
 
     let mode = Clutter.AnimationMode.EASE_OUT_QUAD;
@@ -282,16 +280,19 @@ export function done(space) {
 
     let full = space.cloneContainer.width > space.width;
     // Only snap to the edges if we started gliding when the viewport is fully covered
-    let snap = !(space.targetX >= 0 ||
-                 space.targetX + space.cloneContainer.width <= space.width);
-    if ((snap && target > 0) ||
-        (full && target > space.width * 2)) {
+    let snap = !(
+        space.targetX >= 0 ||
+        space.targetX + space.cloneContainer.width <= space.width
+    );
+    if ((snap && target > 0) || (full && target > space.width * 2)) {
         // Snap to left edge
         first = space[0][0];
         target = 0;
         mode = Clutter.AnimationMode.EASE_OUT_BACK;
-    } else if ((snap && target + space.cloneContainer.width < space.width) ||
-               (full && target + space.cloneContainer.width < -space.width)) {
+    } else if (
+        (snap && target + space.cloneContainer.width < space.width) ||
+        (full && target + space.cloneContainer.width < -space.width)
+    ) {
         // Snap to right edge
         last = space[space.length - 1][0];
         target = space.width - space.cloneContainer.width;
@@ -301,18 +302,20 @@ export function done(space) {
     // Adjust for target window
     let selected;
     space.targetX = Math.round(target);
-    selected = last || first || findTargetWindow(space, start - target > 0 );
+    selected = last || first || findTargetWindow(space, start - target > 0);
     delete selected.lastFrame; // Invalidate frame information
     let x = Tiling.ensuredX(selected, space);
     target = x - selected.clone.targetX;
 
     // Scale down travel time if we've cut down the discance to travel
     let newD = Math.abs(startGlide - target);
-    if (newD < Math.abs(d))
-        t *= Math.abs(newD / d);
+    if (newD < Math.abs(d)) t *= Math.abs(newD / d);
 
     // Use a minimum duration if we've adjusted travel
-    if (target !== space.targetX || mode === Clutter.AnimationMode.EASE_OUT_BACK) {
+    if (
+        target !== space.targetX ||
+        mode === Clutter.AnimationMode.EASE_OUT_BACK
+    ) {
         t = Math.max(t, 200);
     }
     space.targetX = target;
@@ -345,8 +348,10 @@ export function findTargetWindow(space, direction) {
         return;
     }
 
-    if (selected.x + space.targetX >= 0 &&
-          selected.x + selected.width + space.targetX <= space.width) {
+    if (
+        selected.x + space.targetX >= 0 &&
+        selected.x + selected.width + space.targetX <= space.width
+    ) {
         return selected.meta_window;
     }
     selected = selected && space.selectedWindow;
@@ -354,18 +359,17 @@ export function findTargetWindow(space, direction) {
     let min = workArea.x;
 
     let windows = space.getWindows().filter(w => {
-        let  clone = w.clone;
+        let clone = w.clone;
         let x = clone.targetX + space.targetX;
-        return !(x + clone.width < min ||
-                 x > min + workArea.width);
+        return !(x + clone.width < min || x > min + workArea.width);
     });
-    if (!direction) // scroll left
+    if (!direction)
+        // scroll left
         windows.reverse();
     let visible = windows.filter(w => {
         let clone = w.clone;
         let x = clone.targetX + space.targetX;
-        return x >= 0 &&
-            x + clone.width <= min + workArea.width;
+        return x >= 0 && x + clone.width <= min + workArea.width;
     });
     if (visible.length > 0) {
         return visible[0];
@@ -381,24 +385,26 @@ export function findTargetWindow(space, direction) {
         }
     }
 
-    if (windows.length === 1)
-        return windows[0];
+    if (windows.length === 1) return windows[0];
 
     let closest = windows[0].clone;
     let next = windows[1].clone;
     let r1, r2;
-    if (direction) { // ->
-        r1 = Math.abs(closest.targetX + closest.width + space.targetX) / closest.width;
+    if (direction) {
+        // ->
+        r1 =
+            Math.abs(closest.targetX + closest.width + space.targetX) /
+            closest.width;
         r2 = Math.abs(next.targetX + space.targetX - space.width) / next.width;
     } else {
-        r1 = Math.abs(closest.targetX + space.targetX - space.width) / closest.width;
+        r1 =
+            Math.abs(closest.targetX + space.targetX - space.width) /
+            closest.width;
         r2 = Math.abs(next.targetX + next.width + space.targetX) / next.width;
     }
     // Choose the window the most visible width (as a ratio)
-    if (r1 > r2)
-        return closest.meta_window;
-    else
-        return next.meta_window;
+    if (r1 > r2) return closest.meta_window;
+    else return next.meta_window;
 }
 
 /**
@@ -408,5 +414,5 @@ export function findTargetWindow(space, direction) {
  */
 export function swipeTrackersEnable(option) {
     let enable = option ?? true;
-    Patches.swipeTrackers.forEach(t => t.enabled = enable);
+    Patches.swipeTrackers.forEach(t => (t.enabled = enable));
 }

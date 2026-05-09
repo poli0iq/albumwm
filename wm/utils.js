@@ -24,18 +24,18 @@ export function enable() {
     warpRipple.addTo(Main.uiGroup);
 
     signals = new Signals();
-    signals.connect(global.stage, "touch-event", (_actor, event) => {
+    signals.connect(global.stage, 'touch-event', (_actor, event) => {
         switch (event.type()) {
-        case Clutter.EventType.TOUCH_BEGIN:
-        case Clutter.EventType.TOUCH_UPDATE:
-            inTouch = true;
-            break;
-        case Clutter.EventType.TOUCH_END:
-        case Clutter.EventType.TOUCH_CANCEL:
-            inTouch = false;
-            break;
-        default:
-            return Clutter.EVENT_PROPAGATE;
+            case Clutter.EventType.TOUCH_BEGIN:
+            case Clutter.EventType.TOUCH_UPDATE:
+                inTouch = true;
+                break;
+            case Clutter.EventType.TOUCH_END:
+            case Clutter.EventType.TOUCH_CANCEL:
+                inTouch = false;
+                break;
+            default:
+                return Clutter.EVENT_PROPAGATE;
         }
 
         // was one of our touch events
@@ -62,11 +62,11 @@ export function assert(condition, message, ...dump) {
 export function print_stacktrace(error) {
     let trace;
     if (!error) {
-        trace = new Error().stack.split("\n");
+        trace = new Error().stack.split('\n');
         // Remove _this_ frame
         trace.splice(0, 1);
     } else {
-        trace = error.stack.split("\n");
+        trace = error.stack.split('\n');
     }
     console.error(`JS ERROR: ${error}\n ${trace.join('\n')}`);
 }
@@ -84,8 +84,12 @@ export function framestr(rect) {
 }
 
 export function isPointInsideActor(actor, x, y) {
-    return (actor.x <= x && x <= actor.x + actor.width) &&
-        (actor.y <= y && y <= actor.y + actor.height);
+    return (
+        actor.x <= x &&
+        x <= actor.x + actor.width &&
+        actor.y <= y &&
+        y <= actor.y + actor.height
+    );
 }
 
 export function setBackgroundImage(actor, resource_path) {
@@ -94,12 +98,15 @@ export function setBackgroundImage(actor, resource_path) {
 
     let pixbuf = GdkPixbuf.Pixbuf.new_from_resource(resource_path);
 
-    image.set_data(pixbuf.get_pixels(),
-        pixbuf.get_has_alpha() ? Cogl.PixelFormat.RGBA_8888
+    image.set_data(
+        pixbuf.get_pixels(),
+        pixbuf.get_has_alpha()
+            ? Cogl.PixelFormat.RGBA_8888
             : Cogl.PixelFormat.RGB_888,
         pixbuf.get_width(),
         pixbuf.get_height(),
-        pixbuf.get_rowstride());
+        pixbuf.get_rowstride()
+    );
     actor.set_content(image);
     actor.content_repeat = Clutter.ContentRepeat.BOTH;
 }
@@ -126,7 +133,6 @@ export function color_from_string(colorString) {
     }
 }
 
-
 // // Debug and development utils
 
 /**
@@ -147,7 +153,7 @@ export function toggleWindowBoxes(metaWindow) {
     const inputFrame = metaWindow.get_buffer_rect();
     const actor = metaWindow.get_compositor_private();
 
-    const makeFrameBox = ({ x, y, width, height }, color)  => {
+    const makeFrameBox = ({ x, y, width, height }, color) => {
         let frameBox = new St.Widget();
         frameBox.set_position(x, y);
         frameBox.set_size(width, height);
@@ -156,12 +162,16 @@ export function toggleWindowBoxes(metaWindow) {
     };
 
     const boxes = [];
-    boxes.push(makeFrameBox(frame, "red"));
-    boxes.push(makeFrameBox(inputFrame, "blue"));
+    boxes.push(makeFrameBox(frame, 'red'));
+    boxes.push(makeFrameBox(inputFrame, 'blue'));
 
-    if (inputFrame.x !== actor.x || inputFrame.y !== actor.y ||
-       inputFrame.width !== actor.width || inputFrame.height !== actor.height) {
-        boxes.push(makeFrameBox(actor, "yellow"));
+    if (
+        inputFrame.x !== actor.x ||
+        inputFrame.y !== actor.y ||
+        inputFrame.width !== actor.width ||
+        inputFrame.height !== actor.height
+    ) {
+        boxes.push(makeFrameBox(actor, 'yellow'));
     }
 
     boxes.forEach(box => global.stage.add_child(box));
@@ -177,7 +187,7 @@ export function toggleCloneMarks() {
         if (metaWindow.clone) {
             metaWindow.clone.opacity = 190;
             metaWindow.clone.__oldOpacity = 190;
-            metaWindow.clone.background_color = color_from_string("red")[1];
+            metaWindow.clone.background_color = color_from_string('red')[1];
         }
     }
     function unmarkCloneOf(metaWindow) {
@@ -196,15 +206,16 @@ export function toggleCloneMarks() {
         windows.forEach(unmarkCloneOf);
     } else {
         markNewClonesSignalId = Display.connect_after(
-            "window-created", (_, mw) => markCloneOf(mw));
+            'window-created',
+            (_, mw) => markCloneOf(mw)
+        );
 
         windows.forEach(markCloneOf);
     }
 }
 
 export function isInRect(x, y, r) {
-    return r.x <= x && x < r.x + r.width &&
-        r.y <= y && y < r.y + r.height;
+    return r.x <= x && x < r.x + r.width && r.y <= y && y < r.y + r.height;
 }
 
 /**
@@ -224,8 +235,7 @@ export function getPointerCoords() {
  */
 export function monitorAtPoint(gx, gy) {
     for (let monitor of Main.layoutManager.monitors) {
-        if (isInRect(gx, gy, monitor))
-            return monitor;
+        if (isInRect(gx, gy, monitor)) return monitor;
     }
     return null;
 }
@@ -241,7 +251,10 @@ export function monitorAtCurrentPoint() {
 /**
  * Warps pointer to the center of a monitor.
  */
-export function warpPointerToMonitor(monitor, params = { center: false, ripple: true }) {
+export function warpPointerToMonitor(
+    monitor,
+    params = { center: false, ripple: true }
+) {
     const center = params?.center ?? false;
     const ripple = params?.ripple ?? true;
 
@@ -258,7 +271,8 @@ export function warpPointerToMonitor(monitor, params = { center: false, ripple: 
         warpPointer(
             monitor.x + Math.floor(monitor.width / 2),
             monitor.y + Math.floor(monitor.height / 2),
-            ripple);
+            ripple
+        );
         return;
     }
 
@@ -294,9 +308,12 @@ export function getModiferState() {
 export function monitorOfPoint(x, y) {
     // get_monitor_index_for_rect "helpfully" returns the primary monitor index for out of bounds rects..
     for (let monitor of Main.layoutManager.monitors) {
-        if ((monitor.x <= x && x <= monitor.x + monitor.width) &&
-            (monitor.y <= y && y <= monitor.y + monitor.height))
-        {
+        if (
+            monitor.x <= x &&
+            x <= monitor.x + monitor.width &&
+            monitor.y <= y &&
+            y <= monitor.y + monitor.height
+        ) {
             return monitor;
         }
     }
@@ -305,7 +322,7 @@ export function monitorOfPoint(x, y) {
 }
 
 export function mkFmt({ nameOnly } = { nameOnly: false }) {
-    function defaultFmt(actor, prefix = "") {
+    function defaultFmt(actor, prefix = '') {
         const fmtNum = num => num.toFixed(0);
         let extra = [
             `${actor.get_position().map(fmtNum)}`,
@@ -316,23 +333,28 @@ export function mkFmt({ nameOnly } = { nameOnly: false }) {
             metaWindow = `(mw: ${metaWindow.title})`;
             extra.push(metaWindow);
         }
-        const extraStr = extra.join(" | ");
-        let actorId = "";
+        const extraStr = extra.join(' | ');
+        let actorId = '';
         if (nameOnly) {
             // eslint-disable-next-line no-nested-ternary, eqeqeq
-            actorId = actor.name ? actor.name : prefix.length == 0 ? "" : "#";
+            actorId = actor.name ? actor.name : prefix.length == 0 ? '' : '#';
         } else {
             actorId = actor.toString();
         }
         actorId = prefix + actorId;
-        let spacing = actorId.length > 0 ? " " : "";
+        let spacing = actorId.length > 0 ? ' ' : '';
         return `*${spacing}${actorId} ${extraStr}`;
     }
     return defaultFmt;
 }
 
-export function printActorTree(node, fmt = mkFmt(), options = {}, state = null) {
-    state = Object.assign({}, state || { level: 0, actorPrefix: "" });
+export function printActorTree(
+    node,
+    fmt = mkFmt(),
+    options = {},
+    state = null
+) {
+    state = Object.assign({}, state || { level: 0, actorPrefix: '' });
     const defaultOptions = {
         limit: 9999,
         collapseChains: true,
@@ -359,7 +381,7 @@ export function printActorTree(node, fmt = mkFmt(), options = {}, state = null) 
         */
         if (node.get_children().length > 0) {
             if (node.x === 0 && node.y === 0) {
-                state.actorPrefix += `${node.name ? node.name : "#"}.`;
+                state.actorPrefix += `${node.name ? node.name : '#'}.`;
                 collapse = true;
             } else {
                 collapse = false;
@@ -370,7 +392,7 @@ export function printActorTree(node, fmt = mkFmt(), options = {}, state = null) 
     }
     if (!collapse) {
         console.debug(Lib.indent(state.level, fmt(node, state.actorPrefix)));
-        state.actorPrefix = "";
+        state.actorPrefix = '';
         state.level += 1;
     }
 
@@ -447,10 +469,13 @@ export function later_add(...args) {
 /**
  * Backwards compatible Display.grab_accelerator function.
  */
-export function grab_accelerator(keystr, keyBindingFlags = Meta.KeyBindingFlags.NONE) {
+export function grab_accelerator(
+    keystr,
+    keyBindingFlags = Meta.KeyBindingFlags.NONE
+) {
     if (Display.grab_accelerator.length > 1) {
         return Display.grab_accelerator(keystr, keyBindingFlags);
-    } else  {
+    } else {
         return Display.grab_accelerator(keystr);
     }
 }
@@ -479,39 +504,38 @@ export function timeout_remove(...timeouts) {
  * @param {Function} options.onComplete
  * @returns GLib timeout id
  */
-export function periodic_timeout(options = { }) {
+export function periodic_timeout(options = {}) {
     const operiod = options?.period_ms ?? 1000;
     const ocount = options?.count ?? 1;
-    const oinit = options?.init ?? function() {};
-    const ocallback = options?.callback ?? function() {};
-    const ocontinue = options?.onContinue ?? function() {};
-    const ocomplete = options?.onComplete ?? function() {};
+    const oinit = options?.init ?? function () {};
+    const ocallback = options?.callback ?? function () {};
+    const ocontinue = options?.onContinue ?? function () {};
+    const ocomplete = options?.onComplete ?? function () {};
 
     oinit();
     let called = 0;
-    return GLib.timeout_add(
-        GLib.PRIORITY_DEFAULT,
-        operiod,
-        () => {
-            // check for early exit (if callback returns false)
-            if (ocallback() === false) {
-                ocomplete();
-                return false;
-            }
-
-            if (called < ocount) {
-                called++;
-                ocontinue(called);
-                return true;
-            }
-
+    return GLib.timeout_add(GLib.PRIORITY_DEFAULT, operiod, () => {
+        // check for early exit (if callback returns false)
+        if (ocallback() === false) {
             ocomplete();
-            return false; // on return false destroys timeout
-        });
+            return false;
+        }
+
+        if (called < ocount) {
+            called++;
+            ocontinue(called);
+            return true;
+        }
+
+        ocomplete();
+        return false; // on return false destroys timeout
+    });
 }
 
 export class Signals extends Map {
-    static get [Symbol.species]() { return Map; }
+    static get [Symbol.species]() {
+        return Map;
+    }
 
     _getOrCreateSignals(object) {
         let signals = this.get(object);
@@ -549,8 +573,7 @@ export class Signals extends Map {
                     ids.splice(i, 1);
                 }
             }
-            if (ids.length === 0)
-                this.delete(object);
+            if (ids.length === 0) this.delete(object);
         }
     }
 
@@ -613,10 +636,11 @@ export let Easer = {
     },
 
     isEasing(actor) {
-        return actor.get_transition('x') ||
-        actor.get_transition('y') ||
-        actor.get_transition('scale-x') ||
-        actor.get_transition('scale-x');
+        return (
+            actor.get_transition('x') ||
+            actor.get_transition('y') ||
+            actor.get_transition('scale-x') ||
+            actor.get_transition('scale-x')
+        );
     },
 };
-

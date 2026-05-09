@@ -25,7 +25,9 @@ export function newGnomeTerminal(metaWindow, app) {
        window being active when called. If the new window doesn't start in the
        same directory it's probably because 'vte.sh' hasn't been sourced. */
     app.action_group.activate_action(
-        "win.new-terminal", new GLib.Variant("(ss)", ["window", "current"]));
+        'win.new-terminal',
+        new GLib.Variant('(ss)', ['window', 'current'])
+    );
 }
 
 export function duplicateWindow(metaWindow) {

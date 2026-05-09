@@ -8,8 +8,13 @@ import { DispatcherMode } from './utils.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {
-    Utils, Tiling, Keybindings, Topbar,
-    Scratch, Minimap, Settings
+    Utils,
+    Tiling,
+    Keybindings,
+    Topbar,
+    Scratch,
+    Minimap,
+    Settings,
 } from './imports.js';
 
 /**
@@ -47,8 +52,7 @@ export function disable() {
 }
 
 export function primaryModifier(mask) {
-    if (mask === 0)
-        return 0;
+    if (mask === 0) return 0;
 
     let primary = 1;
     while (mask > 1) {
@@ -68,25 +72,33 @@ class ActionDispatcher {
     mode;
 
     constructor() {
-        console.debug("#dispatch", "created");
+        console.debug('#dispatch', 'created');
         this.signals = new Utils.Signals();
         this.actor = Tiling.spaces.spaceContainer;
         this.actor.reactive = true;
         this.navigator = getNavigator();
 
         if (grab) {
-            console.debug("#dispatch", "already in grab");
+            console.debug('#dispatch', 'already in grab');
             return;
         }
 
         grab = Main.pushModal(this.actor);
         if (!grab) {
-            console.error("Failed to grab modal");
+            console.error('Failed to grab modal');
             throw new Error('Could not grab modal');
         }
 
-        this.signals.connect(this.actor, 'key-press-event', this._keyPressEvent.bind(this));
-        this.signals.connect(this.actor, 'key-release-event', this._keyReleaseEvent.bind(this));
+        this.signals.connect(
+            this.actor,
+            'key-press-event',
+            this._keyPressEvent.bind(this)
+        );
+        this.signals.connect(
+            this.actor,
+            'key-release-event',
+            this._keyReleaseEvent.bind(this)
+        );
 
         this.keyPressCallbacks = [];
         this.keyReleaseCallbacks = [];
@@ -151,11 +163,13 @@ class ActionDispatcher {
         Utils.timeout_remove(this._noModsTimeoutId);
         this._noModsTimeoutId = GLib.timeout_add(
             GLib.PRIORITY_DEFAULT,
-            0, () => {
+            0,
+            () => {
                 this._finish(global.get_current_time());
                 this._noModsTimeoutId = null;
                 return false; // stops timeout recurrence
-            });
+            }
+        );
     }
 
     _keyPressEvent(_actor, event) {
@@ -165,12 +179,15 @@ class ActionDispatcher {
         let keysym = event.get_key_symbol();
         let action = global.display.get_keybinding_action(
             event.get_key_code(),
-            event.get_state());
+            event.get_state()
+        );
 
         // run callbacks and if any return true, stop bubbling
-        if (this.keyPressCallbacks.some(callback => {
-            return callback(this._modifierMask, keysym, event);
-        })) {
+        if (
+            this.keyPressCallbacks.some(callback => {
+                return callback(this._modifierMask, keysym, event);
+            })
+        ) {
             return Clutter.EVENT_STOP;
         }
 
@@ -200,8 +217,7 @@ class ActionDispatcher {
             let [, , mods] = global.get_pointer();
             let state = mods & this._modifierMask;
 
-            if (state === 0)
-                this._finish(event.get_time());
+            if (state === 0) this._finish(event.get_time());
         } else {
             this._resetNoModsTimeout();
         }
@@ -220,7 +236,10 @@ class ActionDispatcher {
             metaWindow.minimize();
         } else if (action && action.options.activeInNavigator) {
             // action is performed while navigator is open (e.g. switch-left)
-            if (!metaWindow && (action.options.mutterFlags & Meta.KeyBindingFlags.PER_WINDOW)) {
+            if (
+                !metaWindow &&
+                action.options.mutterFlags & Meta.KeyBindingFlags.PER_WINDOW
+            ) {
                 return;
             }
 
@@ -229,8 +248,9 @@ class ActionDispatcher {
             }
             action.handler(metaWindow, space, { navigator: this.navigator });
             if (space !== Tiling.spaces.selectedSpace) {
-                this.navigator.minimaps.forEach(m => typeof m === 'number'
-                    ? Utils.timeout_remove(m) : m.hide());
+                this.navigator.minimaps.forEach(m =>
+                    typeof m === 'number' ? Utils.timeout_remove(m) : m.hide()
+                );
             }
             if (Tiling.inGrab && !Tiling.inGrab.dnd && Tiling.inGrab.window) {
                 Tiling.inGrab.beginDnD();
@@ -239,11 +259,15 @@ class ActionDispatcher {
             // closes navigator and action is performed afterwards
             // (e.g. switch-monitor-left)
             this._resetNoModsTimeout();
-            this._doActionTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 0, () => {
-                action.handler(metaWindow, space);
-                this._doActionTimeout = null;
-                return false; // on return false destroys timeout
-            });
+            this._doActionTimeout = GLib.timeout_add(
+                GLib.PRIORITY_DEFAULT,
+                0,
+                () => {
+                    action.handler(metaWindow, space);
+                    this._doActionTimeout = null;
+                    return false; // on return false destroys timeout
+                }
+            );
         }
     }
 
@@ -266,7 +290,7 @@ class ActionDispatcher {
                 grab = null;
             }
         } catch (e) {
-            console.debug("Failed to release grab: ", e);
+            console.debug('Failed to release grab: ', e);
         }
 
         this.actor.reactive = false;
@@ -282,7 +306,7 @@ let index = 0;
 export let navigator;
 class NavigatorClass {
     constructor() {
-        console.debug("#navigator", "nav created");
+        console.debug('#navigator', 'nav created');
 
         /**
          * Hint for using take window mode (used in `takeWindow`).
@@ -383,10 +407,9 @@ class NavigatorClass {
 
     destroy() {
         this.minimaps.forEach(m => {
-            if (typeof  m === 'number') {
+            if (typeof m === 'number') {
                 Utils.timeout_remove(m);
-            }
-            else {
+            } else {
                 m.destroy();
             }
         });
@@ -407,8 +430,7 @@ class NavigatorClass {
             this.space = from;
             if (this.startWindow && this._startWindow.get_compositor_private())
                 selected = this._startWindow;
-            else
-                selected = display.focus_window;
+            else selected = display.focus_window;
         }
 
         if (this.space !== from) {
@@ -419,8 +441,10 @@ class NavigatorClass {
             }
         }
 
-        selected = this.space.indexOf(selected) !== -1 ? selected
-            : this.space.selectedWindow;
+        selected =
+            this.space.indexOf(selected) !== -1
+                ? selected
+                : this.space.selectedWindow;
 
         if (selected && !Tiling.inGrab) {
             let hasFocus = selected && selected.has_focus();
@@ -437,8 +461,7 @@ class NavigatorClass {
             Tiling.focus_handler(selected);
         }
 
-        if (!Tiling.inGrab)
-            Scratch.showWindows();
+        if (!Tiling.inGrab) Scratch.showWindows();
 
         Topbar.fixTopBar();
 
@@ -453,8 +476,7 @@ export let Navigator = NavigatorClass;
 Signals.addSignalMethods(Navigator.prototype);
 
 export function getNavigator() {
-    if (navigator)
-        return navigator;
+    if (navigator) return navigator;
 
     navigator = new Navigator();
     return navigator;
@@ -504,7 +526,15 @@ export function dismissDispatcher(mode) {
     }
 }
 
-export function preview_navigate(meta_window, space, { _display, _screen, binding }) {
+export function preview_navigate(
+    meta_window,
+    space,
+    { _display, _screen, binding }
+) {
     let tabPopup = getActionDispatcher(DispatcherMode.KEYBOARD);
-    tabPopup.show(binding.is_reversed(), binding.get_name(), binding.get_mask());
+    tabPopup.show(
+        binding.is_reversed(),
+        binding.get_name(),
+        binding.get_mask()
+    );
 }

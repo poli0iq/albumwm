@@ -8,12 +8,12 @@ export class AcceleratorParse {
          * Refer to:
          * https://gitlab.gnome.org/GNOME/gtk/-/blob/4.13.0/gdk/gdkenums.h?ref_type=tags#L115
          */
-        this.GDK_SHIFT_MASK    = 1 << 0;
-        this.GDK_CONTROL_MASK  = 1 << 2;
-        this.GDK_ALT_MASK      = 1 << 3;
-        this.GDK_SUPER_MASK    = 1 << 26;
-        this.GDK_HYPER_MASK    = 1 << 27;
-        this.GDK_META_MASK     = 1 << 28;
+        this.GDK_SHIFT_MASK = 1 << 0;
+        this.GDK_CONTROL_MASK = 1 << 2;
+        this.GDK_ALT_MASK = 1 << 3;
+        this.GDK_SUPER_MASK = 1 << 26;
+        this.GDK_HYPER_MASK = 1 << 27;
+        this.GDK_META_MASK = 1 << 28;
     }
 
     accelerator_parse(keystr) {
@@ -33,8 +33,7 @@ export class AcceleratorParse {
         const mapped = this.keycodeMap.get(key);
         if (mapped) {
             key = mapped;
-        }
-        else {
+        } else {
             ok = false;
             key = 0;
             mask = 0;
@@ -65,25 +64,25 @@ export class AcceleratorParse {
         let result = 0;
         for (let mod of mods) {
             switch (mod.toLowerCase()) {
-            case '<shift>':
-                result |= this.GDK_SHIFT_MASK;
-                break;
-            case '<control>':
-            case '<ctrl>':
-            case '<primary>':
-                result |= this.GDK_CONTROL_MASK;
-                break;
-            case '<alt>':
-                result |= this.GDK_ALT_MASK;
-                break;
-            case '<super>':
-                result |= this.GDK_SUPER_MASK;
-                break;
-            case '<hyper>':
-                result |= this.GDK_HYPER_MASK;
-                break;
-            case '<meta>':
-                result |= this.GDK_META_MASK;
+                case '<shift>':
+                    result |= this.GDK_SHIFT_MASK;
+                    break;
+                case '<control>':
+                case '<ctrl>':
+                case '<primary>':
+                    result |= this.GDK_CONTROL_MASK;
+                    break;
+                case '<alt>':
+                    result |= this.GDK_ALT_MASK;
+                    break;
+                case '<super>':
+                    result |= this.GDK_SUPER_MASK;
+                    break;
+                case '<hyper>':
+                    result |= this.GDK_HYPER_MASK;
+                    break;
+                case '<meta>':
+                    result |= this.GDK_META_MASK;
             }
         }
 

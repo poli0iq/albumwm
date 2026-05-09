@@ -66,14 +66,14 @@ export default [
             ],
             // See: https://eslint.org/docs/latest/rules/#suggestions
             'block-scoped-var': 'error',
-            'camelcase': ['error', {properties: 'never'}],
-            'complexity': 'warn',
+            camelcase: ['error', { properties: 'never' }],
+            complexity: 'warn',
             'consistent-return': 'error',
             'default-param-last': 'error',
-            'eqeqeq': 'error',
+            eqeqeq: 'error',
             'no-array-constructor': 'error',
             'no-caller': 'error',
-            'no-empty': ['error', {allowEmptyCatch: true}],
+            'no-empty': ['error', { allowEmptyCatch: true }],
             'no-extend-native': 'error',
             'no-extra-bind': 'error',
             'no-extra-label': 'error',
@@ -152,7 +152,8 @@ export default [
                         'BlockStatement[body.length=1]' +
                         'CallExpression[arguments.length=1][callee.object.type="Super"][callee.property.name="_init"]' +
                         'Identifier:first-child',
-                    message: '_init() that only calls super._init() is unnecessary',
+                    message:
+                        '_init() that only calls super._init() is unnecessary',
                 },
                 {
                     selector:
@@ -160,10 +161,12 @@ export default [
                         'FunctionExpression[params.length=0]' +
                         'BlockStatement[body.length=1]' +
                         'CallExpression[arguments.length=0][callee.object.type="Super"][callee.property.name="_init"]',
-                    message: '_init() that only calls super._init() is unnecessary',
+                    message:
+                        '_init() that only calls super._init() is unnecessary',
                 },
                 {
-                    selector: 'BinaryExpression[operator="instanceof"][right.name="Array"]',
+                    selector:
+                        'BinaryExpression[operator="instanceof"][right.name="Array"]',
                     message: 'Use Array.isArray()',
                 },
             ],

@@ -16,7 +16,7 @@ export function repl() {
     }
 
     let realMonitor = space.monitor;
-    let scale = 0.10;
+    let scale = 0.1;
     let padding = 10;
     const monitorWidth = realMonitor.width * scale;
     const monitorHeight = realMonitor.height * scale;
@@ -30,20 +30,21 @@ export function repl() {
 
     let monitorStyle = `background-color: blue;`;
     let monitor = new St.Widget({
-        name: "monitor0",
+        name: 'monitor0',
         style: monitorStyle,
-        x: virtStage.width / 2 - monitorWidth / 2, y: padding,
+        x: virtStage.width / 2 - monitorWidth / 2,
+        y: padding,
         width: monitorWidth,
         height: virtStage.height - padding * 2,
     });
 
     let panel = new St.Widget({
-        name: "panel",
+        name: 'panel',
         style: `background-color: gray`,
-        x: 0, y: 0,
+        x: 0,
+        y: 0,
         width: monitor.width,
         height: 10,
-
     });
     let workArea = {
         x: monitor.x,
@@ -53,7 +54,7 @@ export function repl() {
     };
 
     let tilingStyle = `background-color: rgba(190, 190, 0, 0.3);`;
-    let tilingContainer = new St.Widget({ name: "tiling", style: tilingStyle });
+    let tilingContainer = new St.Widget({ name: 'tiling', style: tilingStyle });
 
     global.stage.add_child(virtStage);
     virtStage.x = 3000;
@@ -64,15 +65,8 @@ export function repl() {
     monitor.add_child(tilingContainer);
 
     function sync(space_ = space) {
-        let columns = layout(
-            fromSpace(space_, scale),
-            workArea,
-            prefs
-        );
-        renderAndView(
-            tilingContainer,
-            columns
-        );
+        let columns = layout(fromSpace(space_, scale), workArea, prefs);
+        renderAndView(tilingContainer, columns);
         tilingContainer.x = space_.targetX * scale;
     }
 
@@ -113,16 +107,14 @@ export function renderAndView(container, columns) {
 }
 
 export function fromSpace(space, scale = 1) {
-    return space.map(
-        col => col.map(
-            metaWindow => {
-                let f = metaWindow.get_frame_rect();
-                return {
-                    width: f.width * scale,
-                    height: f.height * scale,
-                };
-            }
-        )
+    return space.map(col =>
+        col.map(metaWindow => {
+            let f = metaWindow.get_frame_rect();
+            return {
+                width: f.width * scale,
+                height: f.height * scale,
+            };
+        })
     );
 }
 
@@ -161,7 +153,8 @@ export function allocateDefault(column, availableHeight, preAllocatedWindow) {
         };
 
         const k = preAllocatedWindow && column.indexOf(preAllocatedWindow);
-        const selectedHeight = preAllocatedWindow && heightOf(preAllocatedWindow);
+        const selectedHeight =
+            preAllocatedWindow && heightOf(preAllocatedWindow);
 
         let nonSelected = column.slice();
         if (preAllocatedWindow) {
@@ -177,7 +170,9 @@ export function allocateDefault(column, availableHeight, preAllocatedWindow) {
         );
 
         const deficit = Math.max(
-            0, nonSelected.length * minHeight - availableForNonSelected);
+            0,
+            nonSelected.length * minHeight - availableForNonSelected
+        );
 
         let heights = fitProportionally(
             nonSelectedHeights,
@@ -197,13 +192,26 @@ export function allocateEqualHeight(column, available) {
     return column.map(_ => Math.floor(available / column.length));
 }
 
-export function layoutGrabColumn(column, x, y0, targetWidth, availableHeight, grabWindow) {
+export function layoutGrabColumn(
+    column,
+    x,
+    y0,
+    targetWidth,
+    availableHeight,
+    grabWindow
+) {
     function mosh(windows, height, y0) {
         let targetHeights = fitProportionally(
             windows.map(mw => mw.rect.height),
             height
         );
-        let [w, y] = layoutColumnSimple(windows, x, y0, targetWidth, targetHeights);
+        let [w, y] = layoutColumnSimple(
+            windows,
+            x,
+            y0,
+            targetWidth,
+            targetHeights
+        );
         return y;
     }
 
@@ -217,8 +225,12 @@ export function layoutGrabColumn(column, x, y0, targetWidth, availableHeight, gr
     let yGrabRel = f.y - this.monitor.y;
     targetWidth = f.width;
 
-    const H1 = (yGrabRel - y0) - gap - (k - 1) * gap;
-    const H2 = availableHeight - (yGrabRel + f.height - y0) - gap - (column.length - k - 2) * gap;
+    const H1 = yGrabRel - y0 - gap - (k - 1) * gap;
+    const H2 =
+        availableHeight -
+        (yGrabRel + f.height - y0) -
+        gap -
+        (column.length - k - 2) * gap;
     k > 0 && mosh(column.slice(0, k), H1, y0);
     let y = mosh(column.slice(k, k + 1), f.height, yGrabRel);
     k + 1 < column.length && mosh(column.slice(k + 1), H2, y);
@@ -226,8 +238,14 @@ export function layoutGrabColumn(column, x, y0, targetWidth, availableHeight, gr
     return targetWidth;
 }
 
-
-export function layoutColumnSimple(windows, x, y0, targetWidth, targetHeights, time) {
+export function layoutColumnSimple(
+    windows,
+    x,
+    y0,
+    targetWidth,
+    targetHeights,
+    time
+) {
     let y = y0;
 
     for (let i = 0; i < windows.length; i++) {
@@ -241,9 +259,8 @@ export function layoutColumnSimple(windows, x, y0, targetWidth, targetHeights, t
 
         y += targetHeight + prefs.window_gap;
     }
-    return targetWidth, y;
+    return (targetWidth, y);
 }
-
 
 /**
    Mutates columns
@@ -273,15 +290,30 @@ export function layout(columns, workArea, prefs, options = {}) {
         } else {
             targetWidth = Math.max(...column.map(w => w.width));
         }
-        targetWidth = Math.min(targetWidth, workArea.width - 2 * prefs.minimum_margin);
+        targetWidth = Math.min(
+            targetWidth,
+            workArea.width - 2 * prefs.minimum_margin
+        );
 
         if (inGrab && i === selectedIndex) {
-            layoutGrabColumn(column, x, y0, targetWidth, availableHeight, selectedInColumn);
+            layoutGrabColumn(
+                column,
+                x,
+                y0,
+                targetWidth,
+                availableHeight,
+                selectedInColumn
+            );
         } else {
-            let allocator = options.customAllocators && options.customAllocators[i];
+            let allocator =
+                options.customAllocators && options.customAllocators[i];
             allocator = allocator || allocateDefault;
 
-            let targetHeights = allocator(column, availableHeight, selectedInColumn);
+            let targetHeights = allocator(
+                column,
+                availableHeight,
+                selectedInColumn
+            );
             layoutColumnSimple(column, x, y0, targetWidth, targetHeights);
         }
 

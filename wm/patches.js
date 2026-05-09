@@ -53,13 +53,14 @@ export function disable() {
 }
 
 export function registerOverrideProp(obj, name, override, warn = true) {
-    if (!obj)
-        return;
+    if (!obj) return;
 
     // check if prop exists
     const exists = obj?.[name];
     if (!exists && warn) {
-        console.warn(`#AlbumWM: attempt to override prop for '${name}' failed: is null or undefined`);
+        console.warn(
+            `#AlbumWM: attempt to override prop for '${name}' failed: is null or undefined`
+        );
     }
 
     let saved = getSavedProp(obj, name) ?? obj[name];
@@ -75,13 +76,14 @@ export function registerOverrideProp(obj, name, override, warn = true) {
 }
 
 export function registerOverridePrototype(obj, name, override) {
-    if (!obj)
-        return;
+    if (!obj) return;
 
     // check if method for prototype exists
     const exists = obj?.prototype?.[name];
     if (!exists) {
-        console.warn(`#AlbumWM: attempt to override prototype for '${name}' failed: is null or undefined`);
+        console.warn(
+            `#AlbumWM: attempt to override prototype for '${name}' failed: is null or undefined`
+        );
     }
 
     registerOverrideProp(obj.prototype, name, override);
@@ -93,21 +95,17 @@ export function makeFallback(obj, method, ...args) {
 }
 
 export function overrideWithFallback(obj, method, body) {
-    registerOverridePrototype(
-        obj, method, function(...args) {
-            let fallback = makeFallback(obj, method, this, ...args);
-            body(fallback, this, ...args);
-        }
-    );
+    registerOverridePrototype(obj, method, function (...args) {
+        let fallback = makeFallback(obj, method, this, ...args);
+        body(fallback, this, ...args);
+    });
 }
 
 export function getSavedProp(obj, name) {
     let props = savedProps.get(obj);
-    if (!props)
-        return undefined;
+    if (!props) return undefined;
     let prop = props[name];
-    if (!prop)
-        return undefined;
+    if (!prop) return undefined;
     return prop.saved;
 }
 
@@ -137,55 +135,77 @@ export function setupOverrides() {
      * we need to override this function and call AlbumWM customised UnalignedLayoutStrategy found
      * in overlayout.js.
      */
-    registerOverridePrototype(Workspace.WorkspaceLayout, '_createBestLayout', function(area) {
-        const [rowSpacing, columnSpacing] =
-        this._adjustSpacingAndPadding(this._spacing, this._spacing, null);
+    registerOverridePrototype(
+        Workspace.WorkspaceLayout,
+        '_createBestLayout',
+        function (area) {
+            const [rowSpacing, columnSpacing] = this._adjustSpacingAndPadding(
+                this._spacing,
+                this._spacing,
+                null
+            );
 
-        // We look for the largest scale that allows us to fit the
-        // largest row/tallest column on the workspace.
-        this._layoutStrategy = new OverviewLayout.UnalignedLayoutStrategy({
-            monitor: Main.layoutManager.monitors[this._monitorIndex],
-            rowSpacing,
-            columnSpacing,
-        });
-
-        let lastLayout = null;
-        let lastNumColumns = -1;
-        let lastScale = 0;
-        let lastSpace = 0;
-
-        for (let numRows = 1; ; numRows++) {
-            const numColumns = Math.ceil(this._sortedWindows.length / numRows);
-
-            // If adding a new row does not change column count just stop
-            // (for instance: 9 windows, with 3 rows -> 3 columns, 4 rows ->
-            // 3 columns as well => just use 3 rows then)
-            if (numColumns === lastNumColumns)
-                break;
-
-            const layout = this._layoutStrategy.computeLayout(this._sortedWindows, {
-                numRows,
+            // We look for the largest scale that allows us to fit the
+            // largest row/tallest column on the workspace.
+            this._layoutStrategy = new OverviewLayout.UnalignedLayoutStrategy({
+                monitor: Main.layoutManager.monitors[this._monitorIndex],
+                rowSpacing,
+                columnSpacing,
             });
 
-            const [scale, space] = this._layoutStrategy.computeScaleAndSpace(layout, area);
+            let lastLayout = null;
+            let lastNumColumns = -1;
+            let lastScale = 0;
+            let lastSpace = 0;
 
-            if (lastLayout && !this._isBetterScaleAndSpace(lastScale, lastSpace, scale, space))
-                break;
+            for (let numRows = 1; ; numRows++) {
+                const numColumns = Math.ceil(
+                    this._sortedWindows.length / numRows
+                );
 
-            lastLayout = layout;
-            lastNumColumns = numColumns;
-            lastScale = scale;
-            lastSpace = space;
+                // If adding a new row does not change column count just stop
+                // (for instance: 9 windows, with 3 rows -> 3 columns, 4 rows ->
+                // 3 columns as well => just use 3 rows then)
+                if (numColumns === lastNumColumns) break;
+
+                const layout = this._layoutStrategy.computeLayout(
+                    this._sortedWindows,
+                    {
+                        numRows,
+                    }
+                );
+
+                const [scale, space] =
+                    this._layoutStrategy.computeScaleAndSpace(layout, area);
+
+                if (
+                    lastLayout &&
+                    !this._isBetterScaleAndSpace(
+                        lastScale,
+                        lastSpace,
+                        scale,
+                        space
+                    )
+                )
+                    break;
+
+                lastLayout = layout;
+                lastNumColumns = numColumns;
+                lastScale = scale;
+                lastSpace = space;
+            }
+
+            return lastLayout;
         }
-
-        return lastLayout;
-    });
-
+    );
 
     registerOverridePrototype(Workspace.Workspace, '_isOverviewWindow', win => {
         win = win.meta_window ?? win; // should be metawindow, but get if not
         // upstream (gnome value result - whta it would have done)
-        const saved = getSavedPrototype(Workspace.Workspace, '_isOverviewWindow');
+        const saved = getSavedPrototype(
+            Workspace.Workspace,
+            '_isOverviewWindow'
+        );
         const upstreamValue = saved?.call(this, win) ?? !win.skip_taskbar;
 
         if (Scratch.isScratchWindow(win)) {
@@ -210,130 +230,155 @@ export function setupOverrides() {
      * Resolve issue where window that is set to minimise-on-close should be removed
      * from tiling (stick) before closing.  See https://github.com/paperwm/PaperWM/issues/608.
      */
-    registerOverridePrototype(WindowPreview.WindowPreview, '_deleteAll', function() {
-        const windows = this.window_container.layout_manager.get_windows();
+    registerOverridePrototype(
+        WindowPreview.WindowPreview,
+        '_deleteAll',
+        function () {
+            const windows = this.window_container.layout_manager.get_windows();
 
-        // Delete all windows, starting from the bottom-most (most-modal) one
-        for (const window of windows.reverse()) {
-            window.stick();
-            window.delete(global.get_current_time());
+            // Delete all windows, starting from the bottom-most (most-modal) one
+            for (const window of windows.reverse()) {
+                window.stick();
+                window.delete(global.get_current_time());
+            }
+
+            this._closeRequested = true;
         }
-
-        this._closeRequested = true;
-    });
+    );
 
     /**
      * Always show workspace thumbnails in overview if more than one workspace.
      * See original function at:
      * https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/gnome-44/js/ui/workspaceThumbnail.js#L690
      */
-    registerOverridePrototype(WorkspaceThumbnail.ThumbnailsBox, '_updateShouldShow',
+    registerOverridePrototype(
+        WorkspaceThumbnail.ThumbnailsBox,
+        '_updateShouldShow',
         function () {
             const { nWorkspaces } = global.workspace_manager;
             const shouldShow = nWorkspaces > 1;
 
-            if (this._shouldShow === shouldShow)
-                return;
+            if (this._shouldShow === shouldShow) return;
 
             this._shouldShow = shouldShow;
             this.notify('should-show');
-        });
+        }
+    );
 
     /**
      * Provides ability to set AltTab window preview sizes (which is a little harder in 45+).
      * https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/main/js/ui/altTab.js#L1002
      */
-    registerOverridePrototype(AltTab.WindowIcon, '_init', function(window, mode) {
-        const saved = getSavedPrototype(AltTab.WindowIcon, '_init');
-        saved.call(this, window, mode);
+    registerOverridePrototype(
+        AltTab.WindowIcon,
+        '_init',
+        function (window, mode) {
+            const saved = getSavedPrototype(AltTab.WindowIcon, '_init');
+            saved.call(this, window, mode);
 
-        const WINDOW_PREVIEW_SIZE = 128;
-        const AppIconMode = {
-            THUMBNAIL_ONLY: 1,
-            APP_ICON_ONLY: 2,
-            BOTH: 3,
-        };
-        const APP_ICON_SIZE = 96;
-        const APP_ICON_SIZE_SMALL = 48;
+            const WINDOW_PREVIEW_SIZE = 128;
+            const AppIconMode = {
+                THUMBNAIL_ONLY: 1,
+                APP_ICON_ONLY: 2,
+                BOTH: 3,
+            };
+            const APP_ICON_SIZE = 96;
+            const APP_ICON_SIZE_SMALL = 48;
 
-        let mutterWindow = this.window.get_compositor_private();
+            let mutterWindow = this.window.get_compositor_private();
 
-        this._icon.destroy_all_children();
+            this._icon.destroy_all_children();
 
-        this.monitor = Tiling.spaces.selectedSpace.monitor;
-        let _createWindowClone = (window, size) => {
-            let [width, height] = window.get_size();
-            let scale = Math.min(1.0, size / width, size / height);
-            return new Clutter.Clone({
-                source: window,
-                width: width * scale,
-                height: height * scale,
-                x_align: Clutter.ActorAlign.CENTER,
-                y_align: Clutter.ActorAlign.CENTER,
-                // usual hack for the usual bug in ClutterBinLayout...
-                x_expand: true,
-                y_expand: true,
-            });
-        };
+            this.monitor = Tiling.spaces.selectedSpace.monitor;
+            let _createWindowClone = (window, size) => {
+                let [width, height] = window.get_size();
+                let scale = Math.min(1.0, size / width, size / height);
+                return new Clutter.Clone({
+                    source: window,
+                    width: width * scale,
+                    height: height * scale,
+                    x_align: Clutter.ActorAlign.CENTER,
+                    y_align: Clutter.ActorAlign.CENTER,
+                    // usual hack for the usual bug in ClutterBinLayout...
+                    x_expand: true,
+                    y_expand: true,
+                });
+            };
 
-        let size;
-        let scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
-        const scale = Settings.prefs.window_switcher_preview_scale;
-        // scale size based on AlbumWM's minimap-scale
-        if (scale > 0) {
-            size = Math.round(this.monitor.height * scale);
-        } else {
-            size = WINDOW_PREVIEW_SIZE;
-        }
-        switch (mode) {
-        case AppIconMode.THUMBNAIL_ONLY:
-            this._icon.add_child(_createWindowClone(mutterWindow, size * scaleFactor));
-            break;
-
-        case AppIconMode.BOTH:
-            this._icon.add_child(_createWindowClone(mutterWindow, size * scaleFactor));
-
-            if (this.app) {
-                this._icon.add_child(
-                    this._createAppIcon(this.app, APP_ICON_SIZE_SMALL));
+            let size;
+            let scaleFactor = St.ThemeContext.get_for_stage(
+                global.stage
+            ).scale_factor;
+            const scale = Settings.prefs.window_switcher_preview_scale;
+            // scale size based on AlbumWM's minimap-scale
+            if (scale > 0) {
+                size = Math.round(this.monitor.height * scale);
+            } else {
+                size = WINDOW_PREVIEW_SIZE;
             }
-            break;
+            switch (mode) {
+                case AppIconMode.THUMBNAIL_ONLY:
+                    this._icon.add_child(
+                        _createWindowClone(mutterWindow, size * scaleFactor)
+                    );
+                    break;
 
-        case AppIconMode.APP_ICON_ONLY:
-            size = APP_ICON_SIZE;
-            this._icon.add_child(this._createAppIcon(this.app, size));
+                case AppIconMode.BOTH:
+                    this._icon.add_child(
+                        _createWindowClone(mutterWindow, size * scaleFactor)
+                    );
+
+                    if (this.app) {
+                        this._icon.add_child(
+                            this._createAppIcon(this.app, APP_ICON_SIZE_SMALL)
+                        );
+                    }
+                    break;
+
+                case AppIconMode.APP_ICON_ONLY:
+                    size = APP_ICON_SIZE;
+                    this._icon.add_child(this._createAppIcon(this.app, size));
+            }
+
+            this._icon.set_size(size * scaleFactor, size * scaleFactor);
         }
+    );
 
-        this._icon.set_size(size * scaleFactor, size * scaleFactor);
-    });
+    registerOverridePrototype(
+        Screenshot.ScreenshotUI,
+        'open',
+        async function (mode) {
+            const saved = getSavedPrototype(Screenshot.ScreenshotUI, 'open');
 
-    registerOverridePrototype(Screenshot.ScreenshotUI, 'open', async function(mode) {
-        const saved = getSavedPrototype(Screenshot.ScreenshotUI, 'open');
-
-        if (!Main.overview.visible) {
-            Tiling?.spaces.forEach(s => {
-                s.visible.forEach(w => {
-                    w.get_compositor_private()?.remove_clip();
+            if (!Main.overview.visible) {
+                Tiling?.spaces.forEach(s => {
+                    s.visible.forEach(w => {
+                        w.get_compositor_private()?.remove_clip();
+                    });
                 });
-            });
+            }
+
+            await saved.call(this, mode);
         }
+    );
 
-        await saved.call(this, mode);
-    });
+    registerOverridePrototype(
+        Screenshot.ScreenshotUI,
+        'close',
+        function (instantly) {
+            const saved = getSavedPrototype(Screenshot.ScreenshotUI, 'close');
 
-    registerOverridePrototype(Screenshot.ScreenshotUI, 'close', function(instantly) {
-        const saved = getSavedPrototype(Screenshot.ScreenshotUI, 'close');
-
-        if (!Main.overview.visible) {
-            Tiling?.spaces.forEach(s => {
-                s.visible.forEach(w => {
-                    s.applyClipToClone(w);
+            if (!Main.overview.visible) {
+                Tiling?.spaces.forEach(s => {
+                    s.visible.forEach(w => {
+                        s.applyClipToClone(w);
+                    });
                 });
-            });
-        }
+            }
 
-        saved.call(this, instantly);
-    });
+            saved.call(this, instantly);
+        }
+    );
 }
 
 /**
@@ -455,10 +500,9 @@ export function setupActions() {
     // eslint-disable-next-line array-callback-return
     actions = global.stage.get_actions().filter(a => {
         switch (a.constructor) {
-        case WindowManager.AppSwitchAction:
-            return true;
+            case WindowManager.AppSwitchAction:
+                return true;
         }
     });
     actions.forEach(a => global.stage.remove_action(a));
 }
-

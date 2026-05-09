@@ -20,18 +20,17 @@ export class Minimap extends Array {
         super();
         this.space = space;
         // initial fade
-        space.getWindows()
-            .forEach(w => {
-                w.clone?.shade?.show();
-                if (w === space.selectedWindow) {
-                    return;
-                }
+        space.getWindows().forEach(w => {
+            w.clone?.shade?.show();
+            if (w === space.selectedWindow) {
+                return;
+            }
 
-                Easer.addEase(w.clone?.shade, {
-                    time: Settings.prefs.animation_time,
-                    opacity: Settings.prefs.minimap_shade_opacity,
-                });
+            Easer.addEase(w.clone?.shade, {
+                time: Settings.prefs.animation_time,
+                opacity: Settings.prefs.minimap_shade_opacity,
             });
+        });
 
         this.monitor = monitor;
         let actor = new St.Widget({
@@ -39,7 +38,7 @@ export class Minimap extends Array {
             style_class: 'albumwm-minimap switcher-list',
         });
         this.actor = actor;
-        actor.height = space.height * 0.20;
+        actor.height = space.height * 0.2;
 
         let highlight = new St.Widget({
             name: 'minimap-selection',
@@ -60,7 +59,10 @@ export class Minimap extends Array {
         actor.add_child(label);
         actor.add_child(clip);
         clip.add_child(container);
-        clip.set_position(12 + Settings.prefs.window_gap, 12 + Math.round(1.5 * Settings.prefs.window_gap));
+        clip.set_position(
+            12 + Settings.prefs.window_gap,
+            12 + Math.round(1.5 * Settings.prefs.window_gap)
+        );
         highlight.y = clip.y - 10;
         Main.uiGroup.add_child(this.actor);
         this.actor.opacity = 0;
@@ -69,7 +71,11 @@ export class Minimap extends Array {
         this.signals = new Utils.Signals();
         this.signals.connect(space, 'select', this.select.bind(this));
         this.signals.connect(space, 'window-added', this.addWindow.bind(this));
-        this.signals.connect(space, 'window-removed', this.removeWindow.bind(this));
+        this.signals.connect(
+            space,
+            'window-removed',
+            this.removeWindow.bind(this)
+        );
         this.signals.connect(space, 'layout', this.layout.bind(this));
         this.signals.connect(space, 'swapped', this.swapped.bind(this));
         this.signals.connect(space, 'full-layout', this.reset.bind(this));
@@ -77,7 +83,9 @@ export class Minimap extends Array {
         this.layout();
     }
 
-    static get [Symbol.species]() { return Array; }
+    static get [Symbol.species]() {
+        return Array;
+    }
 
     reset() {
         this.splice(0, this.length).forEach(c => c.forEach(x => x.destroy()));
@@ -101,8 +109,7 @@ export class Minimap extends Array {
         let clone = this[index][row];
         let column = this[index];
         column.splice(row, 1);
-        if (column.length === 0)
-            this.splice(index, 1);
+        if (column.length === 0) this.splice(index, 1);
         // this.container.remove_child(clone);
         Utils.actor_remove_child(this.container, clone);
         this.layout();
@@ -116,8 +123,7 @@ export class Minimap extends Array {
     }
 
     show(animate) {
-        if (this.destroyed)
-            return;
+        if (this.destroyed) return;
 
         // if minimap_scale preference is 0, then don't show
         if (Settings.prefs.minimap_scale <= 0) {
@@ -127,19 +133,22 @@ export class Minimap extends Array {
         this.layout();
         let time = animate ? Settings.prefs.animation_time : 0;
         this.actor.show();
-        Easer.addEase(this.actor,
-            { opacity: 255, time, mode: Clutter.AnimationMode.EASE_OUT_EXPO });
+        Easer.addEase(this.actor, {
+            opacity: 255,
+            time,
+            mode: Clutter.AnimationMode.EASE_OUT_EXPO,
+        });
     }
 
     hide(animate) {
-        if (this.destroyed)
-            return;
+        if (this.destroyed) return;
         let time = animate ? Settings.prefs.animation_time : 0;
-        Easer.addEase(this.actor,
-            {
-                opacity: 0, time, mode: Clutter.AnimationMode.EASE_OUT_EXPO,
-                onComplete: () => this.actor.hide(),
-            });
+        Easer.addEase(this.actor, {
+            opacity: 0,
+            time,
+            mode: Clutter.AnimationMode.EASE_OUT_EXPO,
+            onComplete: () => this.actor.hide(),
+        });
     }
 
     createClones() {
@@ -153,7 +162,7 @@ export class Minimap extends Array {
         const clone = new Clutter.Clone({ source: windowActor });
         const container = new Clutter.Actor({
             // layout_manager: new WindowCloneLayout(this),
-            name: "window-clone-container",
+            name: 'window-clone-container',
         });
         clone.meta_window = mw;
         container.clone = clone;
@@ -169,18 +178,24 @@ export class Minimap extends Array {
         let buffer = meta_window.get_buffer_rect();
         let frame = meta_window.get_frame_rect();
         let scale = Settings.prefs.minimap_scale;
-        clone.set_size(buffer.width * scale, buffer.height * scale - Settings.prefs.window_gap);
-        clone.set_position((buffer.x - frame.x) * scale, (buffer.y - frame.y) * scale);
+        clone.set_size(
+            buffer.width * scale,
+            buffer.height * scale - Settings.prefs.window_gap
+        );
+        clone.set_position(
+            (buffer.x - frame.x) * scale,
+            (buffer.y - frame.y) * scale
+        );
         container.set_size(frame.width * scale, frame.height * scale);
     }
 
     layout() {
-        if (this.destroyed)
-            return;
+        if (this.destroyed) return;
         let gap = Settings.prefs.window_gap;
         let x = 0;
         for (let column of this) {
-            let y = 0, w = 0;
+            let y = 0,
+                w = 0;
             for (let c of column) {
                 c.set_position(x, y);
                 this._allocateClone(c);
@@ -190,14 +205,19 @@ export class Minimap extends Array {
             x += w + gap;
         }
 
-        this.clip.width = Math.min(this.container.width,
-            this.monitor.width - this.clip.x * 2 - 24);
+        this.clip.width = Math.min(
+            this.container.width,
+            this.monitor.width - this.clip.x * 2 - 24
+        );
         this.actor.width = this.clip.width + this.clip.x * 2;
         this.clip.set_clip(0, 0, this.clip.width, this.clip.height);
         this.label.set_style(`max-width: ${this.clip.width}px;`);
         this.actor.set_position(
-            this.monitor.x + Math.floor((this.monitor.width - this.actor.width) / 2),
-            this.monitor.y + Math.floor((this.monitor.height - this.actor.height) / 2));
+            this.monitor.x +
+                Math.floor((this.monitor.width - this.actor.width) / 2),
+            this.monitor.y +
+                Math.floor((this.monitor.height - this.actor.height) / 2)
+        );
         this.select();
     }
 
@@ -209,15 +229,13 @@ export class Minimap extends Array {
             return;
         }
         let [index, row] = position;
-        if (!(index in this && row in this[index]))
-            return;
+        if (!(index in this && row in this[index])) return;
         highlight.show();
         let clip = this.clip;
         let container = this.container;
         let label = this.label;
         let selected = this[index][row];
-        if (!selected)
-            return;
+        if (!selected) return;
 
         this.space.getWindows().forEach(w => {
             const shade = w.clone.shade;
@@ -250,38 +268,36 @@ export class Minimap extends Array {
         if (container.x + container.width < clip.width)
             container.x = clip.width - container.width;
 
-        if (container.x > 0)
-            container.x = 0;
+        if (container.x > 0) container.x = 0;
 
         let gap = Settings.prefs.window_gap;
-        highlight.x = Math.round(
-            clip.x + container.x + selected.x - gap / 2);
+        highlight.x = Math.round(clip.x + container.x + selected.x - gap / 2);
         highlight.y = Math.round(
-            clip.y + selected.y - Settings.prefs.window_gap);
-        highlight.set_size(Math.round(selected.width + gap),
-            Math.round(Math.min(selected.height, this.clip.height + gap) + gap));
+            clip.y + selected.y - Settings.prefs.window_gap
+        );
+        highlight.set_size(
+            Math.round(selected.width + gap),
+            Math.round(Math.min(selected.height, this.clip.height + gap) + gap)
+        );
 
         let x = highlight.x + (highlight.width - label.width) / 2;
         if (x + label.width > clip.x + clip.width)
             x = clip.x + clip.width - label.width + 5;
-        if (x < 0)
-            x = clip.x - 5;
+        if (x < 0) x = clip.x - 5;
 
         label.set_position(Math.round(x), this.clip.y + this.clip.height + 8);
         this.actor.height = this.clip.y + this.clip.height + 40;
     }
 
     destroy() {
-        if (this.destroyed)
-            return;
-        this.space.getWindows()
-            .forEach(w => {
-                Easer.addEase(w.clone?.shade, {
-                    time: Settings.prefs.animation_time,
-                    opacity: 0,
-                    onComplete: () => w.clone?.shade.hide(),
-                });
+        if (this.destroyed) return;
+        this.space.getWindows().forEach(w => {
+            Easer.addEase(w.clone?.shade, {
+                time: Settings.prefs.animation_time,
+                opacity: 0,
+                onComplete: () => w.clone?.shade.hide(),
             });
+        });
         this.destroyed = true;
         this.signals.destroy();
         this.signals = null;

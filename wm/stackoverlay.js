@@ -44,9 +44,7 @@ import { Settings, Utils, Tiling, Grab } from './imports.js';
 */
 
 let previewPointerWatcher;
-export function enable(_extension) {
-
-}
+export function enable(_extension) {}
 
 export function disable() {
     previewPointerWatcher?.remove();
@@ -56,11 +54,12 @@ export function disable() {
 export function createAppIcon(metaWindow, size) {
     let tracker = Shell.WindowTracker.get_default();
     let app = tracker.get_window_app(metaWindow);
-    let appIcon = app ? app.create_icon_texture(size)
+    let appIcon = app
+        ? app.create_icon_texture(size)
         : new St.Icon({
-            icon_name: 'icon-missing',
-            icon_size: size,
-        });
+              icon_name: 'icon-missing',
+              icon_size: size,
+          });
     appIcon.x_expand = appIcon.y_expand = true;
     appIcon.x_align = appIcon.y_align = Clutter.ActorAlign.END;
 
@@ -85,8 +84,7 @@ export class ClickOverlay {
     }
 
     show() {
-        if (Main.overview.visible)
-            return;
+        if (Main.overview.visible) return;
         this.left.overlay.show();
         this.right.overlay.show();
     }
@@ -113,7 +111,7 @@ export class StackOverlay {
 
         const overlay = new Clutter.Actor({
             reactive: true,
-            name: "stack-overlay",
+            name: 'stack-overlay',
         });
 
         // Uncomment to debug the overlays
@@ -122,8 +120,12 @@ export class StackOverlay {
 
         this.monitor = monitor;
         const panelBox = Main.layoutManager.panelBox;
-        overlay.y = monitor.y + panelBox.height + Settings.prefs.vertical_margin;
-        overlay.height = this.monitor.height - panelBox.height - Settings.prefs.vertical_margin;
+        overlay.y =
+            monitor.y + panelBox.height + Settings.prefs.vertical_margin;
+        overlay.height =
+            this.monitor.height -
+            panelBox.height -
+            Settings.prefs.vertical_margin;
         overlay.width = Tiling.stack_margin;
 
         this.signals = new Utils.Signals();
@@ -145,8 +147,12 @@ export class StackOverlay {
             this._activateTarget();
         });
 
-        this.signals.connect(overlay, 'enter-event', () => this.triggerPreview());
-        this.signals.connect(overlay, 'leave-event', () => this.removePreview());
+        this.signals.connect(overlay, 'enter-event', () =>
+            this.triggerPreview()
+        );
+        this.signals.connect(overlay, 'leave-event', () =>
+            this.removePreview()
+        );
 
         global.window_group.add_child(overlay);
         Main.layoutManager.trackChrome(overlay);
@@ -163,7 +169,7 @@ export class StackOverlay {
         // if pointer is still at edge (within 2px), trigger preview
         this.triggerPreviewTimeout = GLib.timeout_add(
             GLib.PRIORITY_DEFAULT,
-            (Settings.prefs.animation_time * 1000) + 50,
+            Settings.prefs.animation_time * 1000 + 50,
             () => {
                 if (this._pointerIsAtEdge()) {
                     this.triggerPreview(true);
@@ -171,7 +177,8 @@ export class StackOverlay {
 
                 this.triggerPreviewTimeout = null;
                 return false; // on return false destroys timeout
-            });
+            }
+        );
     }
 
     /**
@@ -181,22 +188,19 @@ export class StackOverlay {
     _pointerIsAtEdge() {
         const [x] = global.get_pointer();
         switch (this._direction) {
-        case Meta.MotionDirection.LEFT:
-            if (
-                x >= this.monitor.x &&
-                x <= this.monitor.x + 2
-            ) {
-                return true;
-            }
-            break;
-        case Meta.MotionDirection.RIGHT:
-            if (
-                x <= this.monitor.x + this.monitor.width &&
-                x >= this.monitor.x + this.monitor.width - 2
-            ) {
-                return true;
-            }
-            break;
+            case Meta.MotionDirection.LEFT:
+                if (x >= this.monitor.x && x <= this.monitor.x + 2) {
+                    return true;
+                }
+                break;
+            case Meta.MotionDirection.RIGHT:
+                if (
+                    x <= this.monitor.x + this.monitor.width &&
+                    x >= this.monitor.x + this.monitor.width - 2
+                ) {
+                    return true;
+                }
+                break;
         }
 
         return false;
@@ -222,61 +226,71 @@ export class StackOverlay {
 
         // create pointerwatcher to ensure preview is removed
         previewPointerWatcher?.remove();
-        previewPointerWatcher = PointerWatcher.getPointerWatcher().addWatch(200, () => {
-            if (!this._pointerIsAtEdge()) {
-                this.removePreview();
-                previewPointerWatcher?.remove();
-                previewPointerWatcher = null;
+        previewPointerWatcher = PointerWatcher.getPointerWatcher().addWatch(
+            200,
+            () => {
+                if (!this._pointerIsAtEdge()) {
+                    this.removePreview();
+                    previewPointerWatcher?.remove();
+                    previewPointerWatcher = null;
+                }
             }
-        });
+        );
 
-        this.showPreviewTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.SHOW_DELAY, () => {
-            this.removePreview();
-            this.showPreview();
-            this.showPreviewTimeout = null;
+        this.showPreviewTimeout = GLib.timeout_add(
+            GLib.PRIORITY_DEFAULT,
+            this.SHOW_DELAY,
+            () => {
+                this.removePreview();
+                this.showPreview();
+                this.showPreviewTimeout = null;
 
-            // activate preview on timeout
-            if (Settings.prefs.edge_preview_timeout_enable) {
-                // if no continual activation
-                if (postActivatePreview &&
-                    !Settings.prefs.edge_preview_timeout_continual) {
-                    // check have a target
-                    if (!this.target) {
+                // activate preview on timeout
+                if (Settings.prefs.edge_preview_timeout_enable) {
+                    // if no continual activation
+                    if (
+                        postActivatePreview &&
+                        !Settings.prefs.edge_preview_timeout_continual
+                    ) {
+                        // check have a target
+                        if (!this.target) {
+                            return;
+                        }
+
+                        // push pointer back
+                        let [, py] = global.get_pointer();
+                        const offset = 3;
+                        let x;
+                        switch (this._direction) {
+                            case Meta.MotionDirection.LEFT:
+                                x = this.monitor.x + offset;
+                                break;
+                            case Meta.MotionDirection.RIGHT:
+                                x =
+                                    this.monitor.x +
+                                    this.monitor.width -
+                                    offset;
+                                break;
+                        }
+                        Utils.warpPointer(x, py, false);
                         return;
                     }
 
-                    // push pointer back
-                    let [, py] = global.get_pointer();
-                    const offset = 3;
-                    let x;
-                    switch (this._direction) {
-                    case Meta.MotionDirection.LEFT:
-                        x = this.monitor.x + offset;
-                        break;
-                    case Meta.MotionDirection.RIGHT:
-                        x = this.monitor.x + this.monitor.width - offset;
-                        break;
-                    }
-                    Utils.warpPointer(
-                        x,
-                        py,
-                        false
+                    this.activatePreviewTimeout = GLib.timeout_add(
+                        GLib.PRIORITY_DEFAULT,
+                        Settings.prefs.edge_preview_timeout,
+                        () => {
+                            // check if still at edge
+                            if (this._pointerIsAtEdge()) {
+                                this._activateTarget();
+                            }
+                        }
                     );
-                    return;
                 }
 
-                this.activatePreviewTimeout = GLib.timeout_add(
-                    GLib.PRIORITY_DEFAULT,
-                    Settings.prefs.edge_preview_timeout, () => {
-                        // check if still at edge
-                        if (this._pointerIsAtEdge()) {
-                            this._activateTarget();
-                        }
-                    });
+                return false; // on return false destroys timeout
             }
-
-            return false; // on return false destroys timeout
-        });
+        );
     }
 
     removePreview() {
@@ -310,7 +324,8 @@ export class StackOverlay {
          * if timeout is enabled, only show if valid timeout (e.g. if SHOW_DELAY <= timeout,
          * then won't see the preview anyway).
          */
-        if (Settings.prefs.edge_preview_timeout_enable &&
+        if (
+            Settings.prefs.edge_preview_timeout_enable &&
             Settings.prefs.edge_preview_timeout <= this.SHOW_DELAY
         ) {
             return;
@@ -336,8 +351,7 @@ export class StackOverlay {
         const scaleHeight = scale * clone.height;
         if (this._direction === Meta.MotionDirection.RIGHT) {
             x = monitor.x + monitor.width - scaleWidth;
-        }
-        else {
+        } else {
             x = monitor.x;
         }
 
@@ -366,43 +380,49 @@ export class StackOverlay {
             return bail();
         }
 
-        let mru = global.display.get_tab_list(Meta.TabList.NORMAL_ALL,
-            space.workspace);
+        let mru = global.display.get_tab_list(
+            Meta.TabList.NORMAL_ALL,
+            space.workspace
+        );
         let column = space[index];
         this.target = mru.filter(w => column.includes(w))[0];
         let metaWindow = this.target;
-        if (!metaWindow)
-            return;
+        if (!metaWindow) return;
 
         let overlay = this.overlay;
-        overlay.y = this.monitor.y + Main.layoutManager.panelBox.height + Settings.prefs.vertical_margin;
+        overlay.y =
+            this.monitor.y +
+            Main.layoutManager.panelBox.height +
+            Settings.prefs.vertical_margin;
         overlay.width = 1;
 
         if (this._direction === Meta.MotionDirection.LEFT) {
             let column = space[space.indexOf(metaWindow) + 1];
-            let neighbour = column &&
+            let neighbour =
+                column &&
                 global.display.sort_windows_by_stacking(column).reverse()[0];
 
-            if (!neighbour)
-                return bail(); // Should normally have a neighbour. Bail!
+            if (!neighbour) return bail(); // Should normally have a neighbour. Bail!
 
             overlay.x = this.monitor.x;
             Utils.actor_raise(overlay, neighbour.get_compositor_private());
         } else {
             let column = space[space.indexOf(metaWindow) - 1];
-            let neighbour = column &&
+            let neighbour =
+                column &&
                 global.display.sort_windows_by_stacking(column).reverse()[0];
-            if (!neighbour)
-                return bail(); // Should normally have a neighbour. Bail!
+            if (!neighbour) return bail(); // Should normally have a neighbour. Bail!
 
             overlay.x = this.monitor.x + this.monitor.width - overlay.width;
             Utils.actor_raise(overlay, neighbour.get_compositor_private());
         }
 
-        if (space.selectedWindow.fullscreen || space.selectedWindow.maximized_vertically)
+        if (
+            space.selectedWindow.fullscreen ||
+            space.selectedWindow.maximized_vertically
+        )
             overlay.hide();
-        else
-            overlay.show();
+        else overlay.show();
 
         return true;
     }

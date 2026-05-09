@@ -25,7 +25,7 @@ export function findNext(cur, values, slack = 0) {
 
 export function findPrev(cur, values, slack = 0) {
     let i = 0;
-    for (;i < values.length; i++) {
+    for (; i < values.length; i++) {
         let x = values[i];
         if (x + slack >= cur) {
             break;
@@ -40,15 +40,11 @@ export function findPrev(cur, values, slack = 0) {
 }
 
 export function arrayEqual(a, b) {
-    if (a === b)
-        return true;
-    if (!a || !b)
-        return false;
-    if (a.length !== b.length)
-        return false;
+    if (a === b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i])
-            return false;
+        if (a[i] !== b[i]) return false;
     }
     return true;
 }
@@ -69,9 +65,9 @@ export function in_bounds(array, i) {
 }
 
 export function indent(level, str) {
-    let blank = "";
+    let blank = '';
     for (let i = 0; i < level; i++) {
-        blank += "  ";
+        blank += '  ';
     }
     return blank + str;
 }

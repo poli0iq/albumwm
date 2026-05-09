@@ -24,9 +24,12 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         //
         // * neither height/fullHeight have any sort of spacing or padding
         return {
-            x: 0, y: 0,
-            width: 0, height: 0,
-            fullWidth: 0, fullHeight: 0,
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            fullWidth: 0,
+            fullHeight: 0,
             windows: [],
         };
     }
@@ -53,7 +56,9 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         let { rows, scale } = layout;
         for (let i = 0; i < rows.length; i++) {
             let row = rows[i];
-            row.width = row.fullWidth * scale + (row.windows.length - 1) * this._columnSpacing;
+            row.width =
+                row.fullWidth * scale +
+                (row.windows.length - 1) * this._columnSpacing;
             row.height = row.fullHeight * scale;
         }
     }
@@ -64,14 +69,12 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
             return true;
         }
 
-        if (row.fullWidth + width <= idealRowWidth)
-            return true;
+        if (row.fullWidth + width <= idealRowWidth) return true;
 
         let oldRatio = row.fullWidth / idealRowWidth;
         let newRatio = (row.fullWidth + width) / idealRowWidth;
 
-        if (Math.abs(1 - newRatio) < Math.abs(1 - oldRatio))
-            return true;
+        if (Math.abs(1 - newRatio) < Math.abs(1 - oldRatio)) return true;
 
         return false;
     }
@@ -82,7 +85,9 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         });
 
         if (layoutParams.numRows === 0)
-            throw new Error(`${this.constructor.name}: No numRows given in layout params`);
+            throw new Error(
+                `${this.constructor.name}: No numRows given in layout params`
+            );
 
         let numRows = layoutParams.numRows;
 
@@ -113,7 +118,10 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
                 row.fullHeight = Math.max(row.fullHeight, height);
 
                 // either new width is < idealWidth or new width is nearer from idealWidth then oldWidth
-                if (this._keepSameRow(row, window, width, idealRowWidth) || (i === numRows - 1)) {
+                if (
+                    this._keepSameRow(row, window, width, idealRowWidth) ||
+                    i === numRows - 1
+                ) {
                     row.windows.push(window);
                     row.fullWidth += width;
                 } else {
@@ -127,8 +135,7 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         for (let i = 0; i < numRows; i++) {
             let row = rows[i];
 
-            if (!maxRow || row.fullWidth > maxRow.fullWidth)
-                maxRow = row;
+            if (!maxRow || row.fullWidth > maxRow.fullWidth) maxRow = row;
             gridHeight += row.fullHeight;
         }
 
@@ -153,11 +160,16 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
 
         // Thumbnails should be less than 70% of the original size
         let scale = Math.min(
-            horizontalScale, verticalScale, Settings.prefs.overview_max_window_scale);
+            horizontalScale,
+            verticalScale,
+            Settings.prefs.overview_max_window_scale
+        );
 
         let scaledLayoutWidth = layout.gridWidth * scale + hspacing;
         let scaledLayoutHeight = layout.gridHeight * scale + vspacing;
-        let space = (scaledLayoutWidth * scaledLayoutHeight) / (area.width * area.height);
+        let space =
+            (scaledLayoutWidth * scaledLayoutHeight) /
+            (area.width * area.height);
 
         layout.scale = scale;
 
@@ -179,7 +191,10 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         }
 
         let verticalSpacing = (rows.length - 1) * this._rowSpacing;
-        let additionalVerticalScale = Math.min(1, (area.height - verticalSpacing) / heightWithoutSpacing);
+        let additionalVerticalScale = Math.min(
+            1,
+            (area.height - verticalSpacing) / heightWithoutSpacing
+        );
 
         // keep track how much smaller the grid becomes due to scaling
         // so it can be centered again
@@ -191,22 +206,43 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
 
             // If this window layout row doesn't fit in the actual
             // geometry, then apply an additional scale to it.
-            let horizontalSpacing = (row.windows.length - 1) * this._columnSpacing;
+            let horizontalSpacing =
+                (row.windows.length - 1) * this._columnSpacing;
             let widthWithoutSpacing = row.width - horizontalSpacing;
-            let additionalHorizontalScale = Math.min(1, (area.width - horizontalSpacing) / widthWithoutSpacing);
+            let additionalHorizontalScale = Math.min(
+                1,
+                (area.width - horizontalSpacing) / widthWithoutSpacing
+            );
 
             if (additionalHorizontalScale < additionalVerticalScale) {
                 row.additionalScale = additionalHorizontalScale;
                 // Only consider the scaling in addition to the vertical scaling for centering.
-                compensation += (additionalVerticalScale - additionalHorizontalScale) * row.height;
+                compensation +=
+                    (additionalVerticalScale - additionalHorizontalScale) *
+                    row.height;
             } else {
                 row.additionalScale = additionalVerticalScale;
                 // No compensation when scaling vertically since centering based on a too large
                 // height would undo what vertical scaling is trying to achieve.
             }
 
-            row.x = area.x + (Math.max(area.width - (widthWithoutSpacing * row.additionalScale + horizontalSpacing), 0) / 2);
-            row.y = area.y + (Math.max(area.height - (heightWithoutSpacing + verticalSpacing), 0) / 2) + y;
+            row.x =
+                area.x +
+                Math.max(
+                    area.width -
+                        (widthWithoutSpacing * row.additionalScale +
+                            horizontalSpacing),
+                    0
+                ) /
+                    2;
+            row.y =
+                area.y +
+                Math.max(
+                    area.height - (heightWithoutSpacing + verticalSpacing),
+                    0
+                ) /
+                    2 +
+                y;
             y += row.height * row.additionalScale + this._rowSpacing;
         }
 
@@ -221,7 +257,10 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
             for (let j = 0; j < row.windows.length; j++) {
                 let window = row.windows[j];
 
-                let s = scale * this._computeWindowScale(window) * row.additionalScale;
+                let s =
+                    scale *
+                    this._computeWindowScale(window) *
+                    row.additionalScale;
                 let cellWidth = window.boundingBox.width * s;
                 let cellHeight = window.boundingBox.height * s;
 
@@ -236,8 +275,7 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
                 if (rows.length === 1)
                     cloneY = rowY + (rowHeight - cloneHeight) / 2;
                 // If there are multiple rows, align windows to the bottom edge of the row
-                else
-                    cloneY = rowY + rowHeight - cellHeight;
+                else cloneY = rowY + rowHeight - cellHeight;
 
                 // Align with the pixel grid to prevent blurry windows at scale = 1
                 cloneX = Math.floor(cloneX);

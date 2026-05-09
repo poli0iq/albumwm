@@ -6,7 +6,14 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import { Settings, Utils, Tiling, Navigator, Scratch, Gestures } from './imports.js';
+import {
+    Settings,
+    Utils,
+    Tiling,
+    Navigator,
+    Scratch,
+    Gestures,
+} from './imports.js';
 import { DispatcherMode, Easer } from './utils.js';
 
 export let grabbed = false;
@@ -16,18 +23,24 @@ export let grabbed = false;
  */
 function setCursorGrabbing(cursorType) {
     if (Utils.version[0] >= 50) {
-        global.stage.set_cursor_type(cursorType ? Clutter.CursorType.GRABBING : Clutter.CursorType.DEFAULT);
+        global.stage.set_cursor_type(
+            cursorType
+                ? Clutter.CursorType.GRABBING
+                : Clutter.CursorType.DEFAULT
+        );
     } else if (Utils.version[0] >= 48) {
-        global.display.set_cursor(cursorType ? Meta.Cursor.GRABBING : Meta.Cursor.DEFAULT)
+        global.display.set_cursor(
+            cursorType ? Meta.Cursor.GRABBING : Meta.Cursor.DEFAULT
+        );
     } else {
-        global.display.set_cursor(cursorType ? Meta.Cursor.MOVE_OR_RESIZE_WINDOW : Meta.Cursor.DEFAULT)
+        global.display.set_cursor(
+            cursorType ? Meta.Cursor.MOVE_OR_RESIZE_WINDOW : Meta.Cursor.DEFAULT
+        );
     }
 }
 
 let dragDriftTimeout;
-export function enable() {
-
-}
+export function enable() {}
 
 export function disable() {
     grabbed = null;
@@ -40,7 +53,7 @@ export function disable() {
  * "clickout" of a drag operation when `grab_end_op` is unavailable
  * (i.e. as of Gnome 44 where `grab_end_op` was removed).
  * @returns Clutter.VirtualInputDevice
-*/
+ */
 let virtualPointer;
 export function getVirtualPointer() {
     if (!virtualPointer) {
@@ -64,23 +77,26 @@ export class MoveGrab {
         this.zoneActors = new Set();
 
         // save whether this was tiled window at start of grab
-        this.wasTiled = !(this.initialSpace.isFloating(metaWindow) ||
-            Scratch.isScratchWindow(metaWindow));
+        this.wasTiled = !(
+            this.initialSpace.isFloating(metaWindow) ||
+            Scratch.isScratchWindow(metaWindow)
+        );
 
         this.dndTargets = [];
     }
 
     begin({ center } = {}) {
-        console.debug("#grab", "begin");
+        console.debug('#grab', 'begin');
 
         this.center = center;
-        if (grabbed)
-            return;
+        if (grabbed) return;
 
         grabbed = true;
         global.display.end_grab_op?.(global.get_current_time());
         setCursorGrabbing(true);
-        this.dispatcher = new Navigator.getActionDispatcher(DispatcherMode.POINTER);
+        this.dispatcher = new Navigator.getActionDispatcher(
+            DispatcherMode.POINTER
+        );
         this.actor = this.dispatcher.actor;
 
         let metaWindow = this.window;
@@ -112,17 +128,26 @@ export class MoveGrab {
         !center && clone.set_pivot_point(px, py);
         center && clone.set_pivot_point(0, 0);
 
-        this.signals.connect(this.actor, "button-release-event", this.end.bind(this));
-        this.signals.connect(this.actor, "touch-event", (act, evt) => {
+        this.signals.connect(
+            this.actor,
+            'button-release-event',
+            this.end.bind(this)
+        );
+        this.signals.connect(this.actor, 'touch-event', (act, evt) => {
             if (evt.type() === Clutter.EventType.TOUCH_END) {
                 this.end();
-            }
-            else {
+            } else {
                 this.motion(act, evt);
             }
         });
-        this.signals.connect(this.actor, "motion-event", this.motion.bind(this));
-        this.signals.connect(global.display, "window-entered-monitor",
+        this.signals.connect(
+            this.actor,
+            'motion-event',
+            this.motion.bind(this)
+        );
+        this.signals.connect(
+            global.display,
+            'window-entered-monitor',
             this.beginDnD.bind(this)
         );
 
@@ -141,9 +166,10 @@ export class MoveGrab {
 
         this.center = center;
         this.dnd = true;
-        console.debug("#grab", "begin DnD");
-        Navigator.getNavigator().minimaps.forEach(m => typeof m === 'number'
-            ? Utils.timeout_remove(m) : m.hide());
+        console.debug('#grab', 'begin DnD');
+        Navigator.getNavigator().minimaps.forEach(m =>
+            typeof m === 'number' ? Utils.timeout_remove(m) : m.hide()
+        );
         setCursorGrabbing(true);
         let metaWindow = this.window;
         let clone = metaWindow.clone;
@@ -153,7 +179,12 @@ export class MoveGrab {
         let point = {};
         if (center) {
             point = space.cloneContainer.apply_relative_transform_to_point(
-                global.stage, new Graphene.Point3D({ x: Math.round(clone.x), y: Math.round(clone.y) }));
+                global.stage,
+                new Graphene.Point3D({
+                    x: Math.round(clone.x),
+                    y: Math.round(clone.y),
+                })
+            );
         } else {
             // For some reason the above isn't smooth when DnD is triggered from dragging
             let [dx, dy] = this.pointerOffset;
@@ -170,7 +201,12 @@ export class MoveGrab {
         let newScale = clone.scale_x * space.actor.scale_x;
         clone.set_scale(newScale, newScale);
 
-        let params = { time: Settings.prefs.animation_time, scale_x: 0.5, scale_y: 0.5, opacity: 240 };
+        let params = {
+            time: Settings.prefs.animation_time,
+            scale_x: 0.5,
+            scale_y: 0.5,
+            opacity: 240,
+        };
         if (center) {
             this.pointerOffset = [0, 0];
             clone.set_pivot_point(0, 0);
@@ -181,16 +217,27 @@ export class MoveGrab {
         clone.__oldOpacity = clone.opacity;
         Easer.addEase(clone, params);
 
-        this.signals.connect(global.stage, "button-press-event", this.end.bind(this));
+        this.signals.connect(
+            global.stage,
+            'button-press-event',
+            this.end.bind(this)
+        );
 
         let monitor = Utils.monitorAtPoint(gx, gy);
         let onSame = monitor === space.monitor;
 
         let [x] = space.globalToViewport(gx, gy);
         if (!this.center && onSame && single && space[i]) {
-            Tiling.move_to(space, space[i][0], { x: x + Settings.prefs.window_gap / 2 });
+            Tiling.move_to(space, space[i][0], {
+                x: x + Settings.prefs.window_gap / 2,
+            });
         } else if (!this.center && onSame && single && space[i - 1]) {
-            Tiling.move_to(space, space[i - 1][0], { x: x - space[i - 1][0].clone.width - Settings.prefs.window_gap / 2 });
+            Tiling.move_to(space, space[i - 1][0], {
+                x:
+                    x -
+                    space[i - 1][0].clone.width -
+                    Settings.prefs.window_gap / 2,
+            });
         } else if (!this.center && onSame && space.length === 0) {
             space.targetX = x;
             space.cloneContainer.x = x;
@@ -199,7 +246,11 @@ export class MoveGrab {
         let [sx, sy] = space.globalToScroll(gx, gy, { useTarget: true });
 
         Tiling.spaces.forEach(space => {
-            this.signals.connect(space.background, "motion-event", this.spaceMotion.bind(this, space));
+            this.signals.connect(
+                space.background,
+                'motion-event',
+                this.spaceMotion.bind(this, space)
+            );
         });
         this.selectDndZone(space, sx, sy, single && onSame);
     }
@@ -215,7 +266,10 @@ export class MoveGrab {
         const gap = Settings.prefs.window_gap;
         const halfGap = gap / 2;
         const columnZoneMarginViz = 100 + halfGap;
-        const columnZoneMargin = space.length > 0 ? columnZoneMarginViz : Math.round(space.width / 4);
+        const columnZoneMargin =
+            space.length > 0
+                ? columnZoneMarginViz
+                : Math.round(space.width / 4);
         const rowZoneMargin = 250 + halfGap;
 
         let target = null;
@@ -260,8 +314,8 @@ export class MoveGrab {
                 target = {
                     position: [j],
                     center: cx,
-                    originProp: "x",
-                    sizeProp: "width",
+                    originProp: 'x',
+                    sizeProp: 'width',
                     marginA: columnZoneMarginViz,
                     marginB: columnZoneMarginViz,
                     space,
@@ -274,8 +328,7 @@ export class MoveGrab {
             }
 
             // Must be strictly within the column to tile vertically
-            if (x < colX)
-                continue;
+            if (x < colX) continue;
 
             // vertically tiled
             for (let i = 0; i < column.length + 1; i++) {
@@ -300,10 +353,10 @@ export class MoveGrab {
                     target = {
                         position: [j, i],
                         center: cy,
-                        originProp: "y",
-                        sizeProp: "height",
+                        originProp: 'y',
+                        sizeProp: 'height',
                         marginA: isFirst ? 0 : rowZoneMargin,
-                        marginB: isLast  ? 0 : rowZoneMargin,
+                        marginB: isLast ? 0 : rowZoneMargin,
                         space,
                         actorParams: {
                             x: clone.targetX,
@@ -328,8 +381,10 @@ export class MoveGrab {
             if (a.position.length !== b.position.length) {
                 return false;
             }
-            return a.position[0] === b.position[0] &&
-                a.position[1] === b.position[1];
+            return (
+                a.position[0] === b.position[0] &&
+                a.position[1] === b.position[1]
+            );
         };
 
         if (!sameTarget(target, this.dndTarget)) {
@@ -366,13 +421,18 @@ export class MoveGrab {
         if (gx >= monitor.x && gx <= monitor.x + this.dragDriftPx) {
             this._dragDrfit(
                 this.initialSpace,
-                -1 * Settings.prefs.drag_drift_speed, x => x > monitor.x + this.dragDriftPx
+                -1 * Settings.prefs.drag_drift_speed,
+                x => x > monitor.x + this.dragDriftPx
             );
         }
-        if (gx <= monitor.x + monitor.width && gx >= monitor.x + monitor.width - this.dragDriftPx) {
+        if (
+            gx <= monitor.x + monitor.width &&
+            gx >= monitor.x + monitor.width - this.dragDriftPx
+        ) {
             this._dragDrfit(
                 this.initialSpace,
-                Settings.prefs.drag_drift_speed, x => x < monitor.x + monitor.width - this.dragDriftPx
+                Settings.prefs.drag_drift_speed,
+                x => x < monitor.x + monitor.width - this.dragDriftPx
             );
         }
 
@@ -444,7 +504,7 @@ export class MoveGrab {
     end() {
         grabbed = null;
         Utils.timeout_remove(dragDriftTimeout);
-        console.debug("#grab", "end");
+        console.debug('#grab', 'end');
         this.signals.destroy();
         this.signals = null;
 
@@ -494,7 +554,11 @@ export class MoveGrab {
                 space.targetX = space.cloneContainer.x;
                 space.selectedWindow = metaWindow;
                 if (dndTarget.position) {
-                    space.layout(true, { customAllocators: { [dndTarget.position[0]]: Tiling.allocateEqualHeight } });
+                    space.layout(true, {
+                        customAllocators: {
+                            [dndTarget.position[0]]: Tiling.allocateEqualHeight,
+                        },
+                    });
                 } else {
                     space.layout();
                 }
@@ -502,8 +566,7 @@ export class MoveGrab {
                 Tiling.ensureViewport(metaWindow, space);
 
                 Utils.actor_raise(clone);
-            }
-            else if (clone) {
+            } else if (clone) {
                 metaWindow.move_frame(true, clone.x, clone.y);
                 Scratch.makeScratch(metaWindow);
                 this.initialSpace.moveDone();
@@ -533,10 +596,7 @@ export class MoveGrab {
             }
 
             Navigator.getNavigator().accept();
-        }
-        else if (
-            clone &&
-            this.initialSpace.indexOf(metaWindow) !== -1) {
+        } else if (clone && this.initialSpace.indexOf(metaWindow) !== -1) {
             let space = this.initialSpace;
             space.targetX = space.cloneContainer.x;
 
@@ -586,12 +646,20 @@ export class MoveGrab {
                 let [x, y] = global.get_pointer();
                 getVirtualPointer().notify_absolute_motion(
                     Clutter.get_current_event_time(),
-                    x, y);
+                    x,
+                    y
+                );
 
-                getVirtualPointer().notify_button(Clutter.get_current_event_time(),
-                    Clutter.BUTTON_PRIMARY, Clutter.ButtonState.PRESSED);
-                getVirtualPointer().notify_button(Clutter.get_current_event_time(),
-                    Clutter.BUTTON_PRIMARY, Clutter.ButtonState.RELEASED);
+                getVirtualPointer().notify_button(
+                    Clutter.get_current_event_time(),
+                    Clutter.BUTTON_PRIMARY,
+                    Clutter.ButtonState.PRESSED
+                );
+                getVirtualPointer().notify_button(
+                    Clutter.get_current_event_time(),
+                    Clutter.BUTTON_PRIMARY,
+                    Clutter.ButtonState.RELEASED
+                );
             }
         });
     }
@@ -601,7 +669,7 @@ export class MoveGrab {
             return;
         }
         const mkZoneActor = props => {
-            let actor = new St.Widget({ style_class: "tile-preview" });
+            let actor = new St.Widget({ style_class: 'tile-preview' });
             actor.x = props.x ?? 0;
             actor.y = props.y ?? 0;
             actor.width = props.width ?? 0;
@@ -612,7 +680,9 @@ export class MoveGrab {
         zone.actor = mkZoneActor({ ...zone.actorParams });
 
         // deactivate previous target
-        this.dndTargets.filter(t => t !== zone).forEach(t => this.deactivateDndTarget(t));
+        this.dndTargets
+            .filter(t => t !== zone)
+            .forEach(t => this.deactivateDndTarget(t));
         this.dndTargets = [zone];
 
         this.dndTarget = zone;
@@ -632,7 +702,9 @@ export class MoveGrab {
 
             let clone = this.window.clone;
             let space = zone.space;
-            let [x, y] = space.globalToScroll(...clone.get_transformed_position());
+            let [x, y] = space.globalToScroll(
+                ...clone.get_transformed_position()
+            );
             zone.actor.set_position(x, y);
             zone.actor.set_size(...clone.get_transformed_size());
         } else {
@@ -666,7 +738,5 @@ export class MoveGrab {
  * Resize grab class currently used to identify window grab type.
  */
 export class ResizeGrab {
-    end() {
-
-    }
+    end() {}
 }

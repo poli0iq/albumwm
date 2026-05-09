@@ -22,7 +22,7 @@ export let panelBox = Main.layoutManager.panelBox;
 export let focusButton, openPositionButton;
 let signals, gsettings;
 
-export function enable (extension) {
+export function enable(extension) {
     gsettings = extension.getSettings();
 
     signals = new Utils.Signals();
@@ -31,7 +31,12 @@ export function enable (extension) {
     openPositionButton = new OpenPositionButton();
 
     Main.panel.addToStatusArea('FocusButton', focusButton, 2, 'left');
-    Main.panel.addToStatusArea('OpenPositionButton', openPositionButton, 3, 'left');
+    Main.panel.addToStatusArea(
+        'OpenPositionButton',
+        openPositionButton,
+        3,
+        'left'
+    );
 
     fixFocusModeIcon();
     fixOpenPositionIcon();
@@ -41,13 +46,21 @@ export function enable (extension) {
         fixTopBar();
     });
 
-    signals.connect(gsettings, 'changed::show-focus-mode-icon', (_settings, _key) => {
-        fixFocusModeIcon();
-    });
+    signals.connect(
+        gsettings,
+        'changed::show-focus-mode-icon',
+        (_settings, _key) => {
+            fixFocusModeIcon();
+        }
+    );
 
-    signals.connect(gsettings, 'changed::show-open-position-icon', (_settings, _key) => {
-        fixOpenPositionIcon();
-    });
+    signals.connect(
+        gsettings,
+        'changed::show-open-position-icon',
+        (_settings, _key) => {
+            fixOpenPositionIcon();
+        }
+    );
 
     signals.connect(panelBox, 'show', () => {
         fixTopBar();
@@ -87,12 +100,12 @@ export function topBarScrollAction(event) {
 
     let direction = event.get_scroll_direction();
     switch (direction) {
-    case Clutter.ScrollDirection.DOWN:
-        Tiling.spaces?.activeSpace.switchRight(false);
-        break;
-    case Clutter.ScrollDirection.UP:
-        Tiling.spaces?.activeSpace.switchLeft(false);
-        break;
+        case Clutter.ScrollDirection.DOWN:
+            Tiling.spaces?.activeSpace.switchRight(false);
+            break;
+        case Clutter.ScrollDirection.UP:
+            Tiling.spaces?.activeSpace.switchLeft(false);
+            break;
     }
     const selected = Tiling.spaces?.activeSpace?.selectedWindow;
     if (selected) {
@@ -180,7 +193,8 @@ const BaseIcon = GObject.registerClass(
          */
         _updateTooltipPosition(xpoint = 0) {
             let point = this.apply_transform_to_point(
-                new Graphene.Point3D({ x: xpoint, y: 0 }));
+                new Graphene.Point3D({ x: xpoint, y: 0 })
+            );
             this.tooltip.set_position(Math.max(0, point.x - 62), point.y + 34);
         }
 
@@ -210,7 +224,9 @@ const BaseIcon = GObject.registerClass(
         getKeybindString(key) {
             // get first keybind
             try {
-                let kb = gsettings.get_child('keybindings').get_strv(key)[0]
+                let kb = gsettings
+                    .get_child('keybindings')
+                    .get_strv(key)[0]
                     .replace(/[<>]/g, ' ')
                     .trim()
                     .replace(/\s+/g, '+');
@@ -229,33 +245,41 @@ const BaseIcon = GObject.registerClass(
 
 export const FocusIcon = GObject.registerClass(
     class FocusIcon extends BaseIcon {
-        _init(
-            props = {},
-            tooltipProps = {}
-        ) {
+        _init(props = {}, tooltipProps = {}) {
             super._init(
                 props,
                 tooltipProps,
                 () => {
-                    const pather = relativePath => GLib.uri_resolve_relative(import.meta.url, relativePath, GLib.UriFlags.NONE);
-                    this.gIconDefault = Gio.icon_new_for_string(pather('../resources/focus-mode-default-symbolic.svg'));
-                    this.gIconCenter = Gio.icon_new_for_string(pather('../resources/focus-mode-center-symbolic.svg'));
-                    this.gIconEdge = Gio.icon_new_for_string(pather('../resources/focus-mode-edge-symbolic.svg'));
+                    const pather = relativePath =>
+                        GLib.uri_resolve_relative(
+                            import.meta.url,
+                            relativePath,
+                            GLib.UriFlags.NONE
+                        );
+                    this.gIconDefault = Gio.icon_new_for_string(
+                        pather('../resources/focus-mode-default-symbolic.svg')
+                    );
+                    this.gIconCenter = Gio.icon_new_for_string(
+                        pather('../resources/focus-mode-center-symbolic.svg')
+                    );
+                    this.gIconEdge = Gio.icon_new_for_string(
+                        pather('../resources/focus-mode-edge-symbolic.svg')
+                    );
                 },
                 mode => {
                     mode = mode ?? Tiling.FocusModes.DEFAULT;
                     this.mode = mode;
 
                     switch (mode) {
-                    case Tiling.FocusModes.CENTER:
-                        this.gicon = this.gIconCenter;
-                        break;
-                    case Tiling.FocusModes.EDGE:
-                        this.gicon = this.gIconEdge;
-                        break;
-                    default:
-                        this.gicon = this.gIconDefault;
-                        break;
+                        case Tiling.FocusModes.CENTER:
+                            this.gicon = this.gIconCenter;
+                            break;
+                        case Tiling.FocusModes.EDGE:
+                            this.gicon = this.gIconEdge;
+                            break;
+                        default:
+                            this.gicon = this.gIconDefault;
+                            break;
                     }
 
                     return this;
@@ -268,19 +292,19 @@ Current mode: <span foreground="${color}"><b>${mode}</b></span>\
 ${this.getKeybindString('switch-focus-mode')}`);
                     };
                     switch (this.mode) {
-                    case Tiling.FocusModes.DEFAULT:
-                        markup('#6be67b', 'DEFAULT');
-                        return;
-                    case Tiling.FocusModes.CENTER:
-                        markup('#6be6cb', 'CENTER');
-                        break;
-                    case Tiling.FocusModes.EDGE:
-                        markup('#abe67b', 'EDGE');
-                        break;
-                    default:
-                        markup('#6be67b', 'DEFAULT');
-                        this.tooltip.set_text('');
-                        break;
+                        case Tiling.FocusModes.DEFAULT:
+                            markup('#6be67b', 'DEFAULT');
+                            return;
+                        case Tiling.FocusModes.CENTER:
+                            markup('#6be6cb', 'CENTER');
+                            break;
+                        case Tiling.FocusModes.EDGE:
+                            markup('#abe67b', 'EDGE');
+                            break;
+                        default:
+                            markup('#6be67b', 'DEFAULT');
+                            this.tooltip.set_text('');
+                            break;
                     }
                 }
             );
@@ -293,9 +317,12 @@ export const FocusButton = GObject.registerClass(
         _init() {
             super._init(0.0, 'FocusMode');
 
-            this._icon = new FocusIcon({
-                style_class: 'system-status-icon focus-mode-button',
-            }, { parent: this, x_point: -10 });
+            this._icon = new FocusIcon(
+                {
+                    style_class: 'system-status-icon focus-mode-button',
+                },
+                { parent: this, x_point: -10 }
+            );
 
             this.setFocusMode();
             this.add_child(this._icon);
@@ -318,8 +345,10 @@ export const FocusButton = GObject.registerClass(
                 return Clutter.EVENT_PROPAGATE;
             }
 
-            if (event.type() !== Clutter.EventType.TOUCH_BEGIN &&
-                event.type() !== Clutter.EventType.BUTTON_PRESS) {
+            if (
+                event.type() !== Clutter.EventType.TOUCH_BEGIN &&
+                event.type() !== Clutter.EventType.BUTTON_PRESS
+            ) {
                 return Clutter.EVENT_PROPAGATE;
             }
 
@@ -332,34 +361,48 @@ export const FocusButton = GObject.registerClass(
 
 export const OpenPositionIcon = GObject.registerClass(
     class OpenPositionIcon extends BaseIcon {
-        _init(
-            props = {},
-            tooltipProps = {}
-        ) {
+        _init(props = {}, tooltipProps = {}) {
             super._init(
                 props,
                 tooltipProps,
                 () => {
-                    const pather = relativePath => GLib.uri_resolve_relative(import.meta.url, relativePath, GLib.UriFlags.NONE);
-                    this.gIconRight = Gio.icon_new_for_string(pather('../resources/open-position-right-symbolic.svg'));
-                    this.gIconDown = Gio.icon_new_for_string(pather('../resources/open-position-down-symbolic.svg'));
+                    const pather = relativePath =>
+                        GLib.uri_resolve_relative(
+                            import.meta.url,
+                            relativePath,
+                            GLib.UriFlags.NONE
+                        );
+                    this.gIconRight = Gio.icon_new_for_string(
+                        pather('../resources/open-position-right-symbolic.svg')
+                    );
+                    this.gIconDown = Gio.icon_new_for_string(
+                        pather('../resources/open-position-down-symbolic.svg')
+                    );
 
-                    signals.connect(gsettings, 'changed::open-window-position', (_settings, _key) => {
-                        const mode = Settings.prefs.open_window_position;
-                        this.setMode(mode);
-                    });
+                    signals.connect(
+                        gsettings,
+                        'changed::open-window-position',
+                        (_settings, _key) => {
+                            const mode = Settings.prefs.open_window_position;
+                            this.setMode(mode);
+                        }
+                    );
                 },
                 mode => {
                     mode = mode ?? Settings.OpenWindowPositions.RIGHT;
                     this.mode = mode;
-                    this.gicon = mode === Settings.OpenWindowPositions.DOWN
-                        ? this.gIconDown
-                        : this.gIconRight;
+                    this.gicon =
+                        mode === Settings.OpenWindowPositions.DOWN
+                            ? this.gIconDown
+                            : this.gIconRight;
                     this.updateTooltipText();
                     return this;
                 },
                 () => {
-                    const label = this.mode === Settings.OpenWindowPositions.DOWN ? 'DOWN' : 'RIGHT';
+                    const label =
+                        this.mode === Settings.OpenWindowPositions.DOWN
+                            ? 'DOWN'
+                            : 'RIGHT';
                     const ct = this.tooltip.clutter_text;
                     ct.set_markup(`<i>Open Window Position</i>
 Current position: <b>${label}</b>\
@@ -374,9 +417,11 @@ ${this.getKeybindString('switch-open-window-position')}`);
  * Toggles between RIGHT and DOWN open-window positions.
  */
 export function switchToNextOpenPositionMode() {
-    const next = Settings.prefs.open_window_position === Settings.OpenWindowPositions.DOWN
-        ? Settings.OpenWindowPositions.RIGHT
-        : Settings.OpenWindowPositions.DOWN;
+    const next =
+        Settings.prefs.open_window_position ===
+        Settings.OpenWindowPositions.DOWN
+            ? Settings.OpenWindowPositions.RIGHT
+            : Settings.OpenWindowPositions.DOWN;
     gsettings.set_int('open-window-position', next);
 }
 
@@ -392,9 +437,12 @@ export const OpenPositionButton = GObject.registerClass(
         _init() {
             super._init(0.0, 'OpenPosition');
 
-            this._icon = new OpenPositionIcon({
-                style_class: 'system-status-icon open-position-icon',
-            }, { parent: this, x_point: -10 });
+            this._icon = new OpenPositionIcon(
+                {
+                    style_class: 'system-status-icon open-position-icon',
+                },
+                { parent: this, x_point: -10 }
+            );
 
             this.setPositionMode(Settings.prefs.open_window_position);
             this.add_child(this._icon);
@@ -421,24 +469,25 @@ export const OpenPositionButton = GObject.registerClass(
 
 export function fixTopBar() {
     const space = Tiling?.spaces?.activeSpace;
-    if (!space)
-        return;
+    if (!space) return;
 
     const normal = !Main.overview.visible;
     // selected is current (tiled) selected window (can be different to focused window)
     const selected = space.selectedWindow;
     const focused = display.focus_window;
-    const focusIsFloatOrScratch = focused && (space.isFloating(focused) || Scratch.isScratchWindow(focused));
+    const focusIsFloatOrScratch =
+        focused &&
+        (space.isFloating(focused) || Scratch.isScratchWindow(focused));
     // check if is currently fullscreened (check focused-floating, focused-scratch, and selected/tiled window)
-    const fullscreen = focusIsFloatOrScratch ? focused.fullscreen : selected && selected.fullscreen;
+    const fullscreen = focusIsFloatOrScratch
+        ? focused.fullscreen
+        : selected && selected.fullscreen;
 
     if (normal && !space.showTopBar) {
         hideTopBar();
-    }
-    else if (normal && fullscreen) {
+    } else if (normal && fullscreen) {
         hideTopBar();
-    }
-    else {
+    } else {
         showTopBar();
     }
 }
@@ -452,9 +501,13 @@ export function hideTopBar() {
 }
 
 export function fixFocusModeIcon() {
-    Settings.prefs.show_focus_mode_icon ? focusButton.show() : focusButton.hide();
+    Settings.prefs.show_focus_mode_icon
+        ? focusButton.show()
+        : focusButton.hide();
 }
 
 export function fixOpenPositionIcon() {
-    Settings.prefs.show_open_position_icon ? openPositionButton.show() : openPositionButton.hide();
+    Settings.prefs.show_open_position_icon
+        ? openPositionButton.show()
+        : openPositionButton.hide();
 }

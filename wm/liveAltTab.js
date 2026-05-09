@@ -22,12 +22,24 @@ export function disable() {
 
 export function liveAltTab(meta_window, space, { _display, _screen, binding }) {
     let tabPopup = new LiveAltTab(binding.is_reversed(), false);
-    tabPopup.show(binding.is_reversed(), binding.get_name(), binding.get_mask());
+    tabPopup.show(
+        binding.is_reversed(),
+        binding.get_name(),
+        binding.get_mask()
+    );
 }
 
-export function liveAltTabScratch(meta_window, space, { _display, _screen, binding }) {
+export function liveAltTabScratch(
+    meta_window,
+    space,
+    { _display, _screen, binding }
+) {
     let tabPopup = new LiveAltTab(binding.is_reversed(), true);
-    tabPopup.show(binding.is_reversed(), binding.get_name(), binding.get_mask());
+    tabPopup.show(
+        binding.is_reversed(),
+        binding.get_name(),
+        binding.get_mask()
+    );
 }
 
 export const LiveAltTab = GObject.registerClass(
@@ -41,18 +53,20 @@ export const LiveAltTab = GObject.registerClass(
         }
 
         _getWindowList(reverse) {
-            let tabList = global.display.get_tab_list(
-                Meta.TabList.NORMAL_ALL,
-                switcherSettings.get_boolean('current-workspace-only')
-                    ? global.workspace_manager.get_active_workspace() : null)
+            let tabList = global.display
+                .get_tab_list(
+                    Meta.TabList.NORMAL_ALL,
+                    switcherSettings.get_boolean('current-workspace-only')
+                        ? global.workspace_manager.get_active_workspace()
+                        : null
+                )
                 .filter(w => !Scratch.isScratchWindow(w));
 
             let scratch = Scratch.getScratchWindows();
 
             if (this.scratchOnly) {
                 return reverse ? scratch.reverse() : scratch;
-            }
-            else if (Scratch.isScratchWindow(global.display.focus_window)) {
+            } else if (Scratch.isScratchWindow(global.display.focus_window)) {
                 // Access scratch windows in mru order with shift-super-tab
                 return scratch.concat(reverse ? tabList.reverse() : tabList);
             } else {
@@ -62,11 +76,16 @@ export const LiveAltTab = GObject.registerClass(
 
         _initialSelection(backward, actionName) {
             this.space.startAnimate();
-            let workArea = Main.layoutManager.getWorkAreaForMonitor(this.monitor.index);
+            let workArea = Main.layoutManager.getWorkAreaForMonitor(
+                this.monitor.index
+            );
             let fog = new Clutter.Actor({
-                x: workArea.x, y: workArea.y,
-                width: workArea.width, height: workArea.height,
-                opacity: 0, background_color: Utils.color_from_string("black")[1],
+                x: workArea.x,
+                y: workArea.y,
+                width: workArea.width,
+                height: workArea.height,
+                opacity: 0,
+                background_color: Utils.color_from_string('black')[1],
             });
 
             // this.blur = new Clutter.BlurEffect();
@@ -83,29 +102,31 @@ export const LiveAltTab = GObject.registerClass(
         }
 
         _keyPressHandler(keysym, mutterActionId) {
-            if (keysym === Clutter.KEY_Escape)
-                return Clutter.EVENT_PROPAGATE;
+            if (keysym === Clutter.KEY_Escape) return Clutter.EVENT_PROPAGATE;
             // After the first super-tab the mutterActionId we get is apparently
             // SWITCH_APPLICATIONS so we need to case on those too.
             switch (mutterActionId) {
-            case Meta.KeyBindingAction.SWITCH_APPLICATIONS:
-                mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS;
-                break;
-            case Meta.KeyBindingAction.SWITCH_APPLICATIONS_BACKWARD:
-                mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS_BACKWARD;
-                break;
-            case Keybindings.idOf('live-alt-tab'):
-                mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS;
-                break;
-            case Keybindings.idOf('live-alt-tab-backward'):
-                mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS_BACKWARD;
-                break;
-            case Keybindings.idOf('live-alt-tab-scratch'):
-                mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS;
-                break;
-            case Keybindings.idOf('live-alt-tab-scratch-backward'):
-                mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS_BACKWARD;
-                break;
+                case Meta.KeyBindingAction.SWITCH_APPLICATIONS:
+                    mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS;
+                    break;
+                case Meta.KeyBindingAction.SWITCH_APPLICATIONS_BACKWARD:
+                    mutterActionId =
+                        Meta.KeyBindingAction.SWITCH_WINDOWS_BACKWARD;
+                    break;
+                case Keybindings.idOf('live-alt-tab'):
+                    mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS;
+                    break;
+                case Keybindings.idOf('live-alt-tab-backward'):
+                    mutterActionId =
+                        Meta.KeyBindingAction.SWITCH_WINDOWS_BACKWARD;
+                    break;
+                case Keybindings.idOf('live-alt-tab-scratch'):
+                    mutterActionId = Meta.KeyBindingAction.SWITCH_WINDOWS;
+                    break;
+                case Keybindings.idOf('live-alt-tab-scratch-backward'):
+                    mutterActionId =
+                        Meta.KeyBindingAction.SWITCH_WINDOWS_BACKWARD;
+                    break;
             }
             // let action = Keybindings.byId(mutterActionId);
             // if (action && action.options.activeInNavigator) {
@@ -183,4 +204,5 @@ export const LiveAltTab = GObject.registerClass(
             }
             actor.set_scale(1, 1);
         }
-    });
+    }
+);

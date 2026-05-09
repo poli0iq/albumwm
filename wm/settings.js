@@ -65,9 +65,8 @@ export function enable(extension) {
         'overview-min-windows-per-row',
         'overview-max-window-scale',
         'minimap-shade-opacity',
-    ]
-        .forEach(k => setState(null, k));
-    prefs.__defineGetter__("minimum_margin", () => {
+    ].forEach(k => setState(null, k));
+    prefs.__defineGetter__('minimum_margin', () => {
         return Math.min(15, prefs.horizontal_margin);
     });
     gsettings.connect('changed', setState);
@@ -78,7 +77,7 @@ export function enable(extension) {
     // A intermediate window is created before the prefs dialog is created.
     // Prevent it from being inserted into the tiling causing flickering and general disorder
     defwinprop({
-        wm_class: "Gnome-shell-extension-prefs",
+        wm_class: 'Gnome-shell-extension-prefs',
         scratch_layer: true,
         focus: true,
     });
@@ -116,9 +115,15 @@ export function getConflictSettings() {
         addSchemaToConflictSettings('org.gnome.shell.keybindings');
 
         // below schemas are checked but may not exist in all distributions
-        addSchemaToConflictSettings('org.gnome.settings-daemon.plugins.media-keys', false);
+        addSchemaToConflictSettings(
+            'org.gnome.settings-daemon.plugins.media-keys',
+            false
+        );
         // ubuntu tiling-assistant (enabled by default on Ubuntu 23.10)
-        addSchemaToConflictSettings('org.gnome.shell.extensions.tiling-assistant', false);
+        addSchemaToConflictSettings(
+            'org.gnome.shell.extensions.tiling-assistant',
+            false
+        );
     }
 
     return conflictSettings;
@@ -131,10 +136,11 @@ export function getConflictSettings() {
 export function addSchemaToConflictSettings(schemaId, warn = true) {
     try {
         conflictSettings.push(new Gio.Settings({ schema_id: schemaId }));
-    }
-    catch (e) {
+    } catch (e) {
         if (warn) {
-            console.warn(`Invalid schema_id '${schemaId}': could not add to keybind conflict checks`);
+            console.warn(
+                `Invalid schema_id '${schemaId}': could not add to keybind conflict checks`
+            );
         }
     }
 }
@@ -157,8 +163,7 @@ export function keystrToKeycombo(keystr) {
     }
 
     let [, key, mask] = accelerator_parse(keystr);
-    if (aboveTab)
-        key = META_KEY_ABOVE_TAB;
+    if (aboveTab) key = META_KEY_ABOVE_TAB;
     return `${key}|${mask}`; // Since js doesn't have a mapable tuple type
 }
 
@@ -166,12 +171,10 @@ export function generateKeycomboMap(settings) {
     let map = {};
     for (let name of settings.list_keys()) {
         let value = settings.get_value(name);
-        if (value.get_type_string() !== 'as')
-            continue;
+        if (value.get_type_string() !== 'as') continue;
 
         for (let combo of value.deep_unpack().map(keystrToKeycombo)) {
-            if (combo === '0|0')
-                continue;
+            if (combo === '0|0') continue;
             if (map[combo]) {
                 map[combo].push(name);
             } else {
@@ -194,7 +197,8 @@ export function findConflicts(schemas) {
                 conflicts.push({
                     name: albumMap[combo][0],
                     conflicts: against[combo],
-                    settings, combo,
+                    settings,
+                    combo,
                 });
             }
         }
@@ -220,7 +224,10 @@ export function getSavedOverrides() {
  * Saves an overrides list.
  */
 export function saveOverrides(overrides) {
-    gsettings.set_string(RESTORE_KEYBINDS_KEY, JSON.stringify(Object.fromEntries(overrides)));
+    gsettings.set_string(
+        RESTORE_KEYBINDS_KEY,
+        JSON.stringify(Object.fromEntries(overrides))
+    );
 }
 
 export function conflictKeyChanged(settings, key) {
@@ -270,7 +277,9 @@ export function overrideConflicts(checkKey = null) {
             });
 
             // now disable conflict
-            disableAll.push(() => settings.set_value(c, new GLib.Variant('as', [])));
+            disableAll.push(() =>
+                settings.set_value(c, new GLib.Variant('as', []))
+            );
         });
     }
 
@@ -290,7 +299,9 @@ export function overrideConflicts(checkKey = null) {
 export function updateOverrides() {
     let saveList = getSavedOverrides();
     saveList.forEach((saved, key) => {
-        const settings = getConflictSettings().find(s => s.schema_id === saved.schema_id);
+        const settings = getConflictSettings().find(
+            s => s.schema_id === saved.schema_id
+        );
         if (settings) {
             const newKeybind = settings.get_value(key).deep_unpack();
             if (Array.isArray(newKeybind) && newKeybind.length === 0) {
@@ -315,10 +326,16 @@ export function restoreConflicts() {
     let saveList = getSavedOverrides();
     const toRemove = [];
     saveList.forEach((saved, key) => {
-        const settings = getConflictSettings().find(s => s.schema_id === saved.schema_id);
+        const settings = getConflictSettings().find(
+            s => s.schema_id === saved.schema_id
+        );
         if (settings) {
             const keybind = JSON.parse(saved.bind);
-            toRemove.push({ key, remove: () => settings.set_value(key, new GLib.Variant('as', keybind)) });
+            toRemove.push({
+                key,
+                remove: () =>
+                    settings.set_value(key, new GLib.Variant('as', keybind)),
+            });
         }
     });
 
@@ -344,28 +361,25 @@ export function restoreConflicts() {
 */
 export let winprops = [];
 export function winprop_match_p(meta_window, prop) {
-    let wm_class = meta_window.wm_class || "";
+    let wm_class = meta_window.wm_class || '';
     let title = meta_window.title;
     if (prop.wm_class) {
         if (prop.wm_class instanceof RegExp) {
-            if (!wm_class.match(prop.wm_class))
-                return false;
+            if (!wm_class.match(prop.wm_class)) return false;
         } else if (prop.wm_class !== wm_class) {
             return false;
         }
     }
     if (prop.title) {
         if (prop.title instanceof RegExp) {
-            if (!title.match(prop.title))
-                return false;
-        } else if (prop.title !== title)
-            return false;
+            if (!title.match(prop.title)) return false;
+        } else if (prop.title !== title) return false;
     }
 
     return true;
 }
 
-export function find_winprop(meta_window)  {
+export function find_winprop(meta_window) {
     // sort by title first (prioritise title over wm_class)
     let props = winprops.filter(winprop_match_p.bind(null, meta_window));
 
@@ -375,7 +389,7 @@ export function find_winprop(meta_window)  {
     }
 
     // fall back, if star (catch-all) winprop exists, return the first one
-    let starProps = winprops.filter(w => w.wm_class === "*" || w.title === "*");
+    let starProps = winprops.filter(w => w.wm_class === '*' || w.title === '*');
     if (starProps.length > 0) {
         return starProps[0];
     }
@@ -405,8 +419,7 @@ function defwinprop(spec) {
         let firstresult = 0;
         if (a.gsetting && !b.gsetting) {
             firstresult = -1;
-        }
-        else if (!a.gsetting && b.gsetting) {
+        } else if (!a.gsetting && b.gsetting) {
             firstresult = 1;
         }
 
@@ -414,8 +427,7 @@ function defwinprop(spec) {
         let secondresult = 0;
         if (a.title && !b.title) {
             secondresult = -1;
-        }
-        else if (!a.title && b.title) {
+        } else if (!a.title && b.title) {
             secondresult = 1;
         }
 
@@ -429,7 +441,9 @@ function defwinprop(spec) {
  */
 export function addWinpropsFromGSettings() {
     // add gsetting (user config) winprops
-    gsettings.get_value('winprops').deep_unpack()
+    gsettings
+        .get_value('winprops')
+        .deep_unpack()
         .map(value => JSON.parse(value))
         .forEach(prop => {
             // test if wm_class or title is a regex expression

@@ -3,8 +3,19 @@ import GLib from 'gi://GLib';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
 import {
-    Utils, Settings, Gestures, Keybindings, LiveAltTab, Navigator,
-    Stackoverlay, Scratch, Tiling, Topbar, Patches, App, Grab
+    Utils,
+    Settings,
+    Gestures,
+    Keybindings,
+    LiveAltTab,
+    Navigator,
+    Stackoverlay,
+    Scratch,
+    Tiling,
+    Topbar,
+    Patches,
+    App,
+    Grab,
 } from './wm/imports.js';
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -44,9 +55,19 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 export default class AlbumWM extends Extension {
     modules = [
-        Utils, Settings, Patches,
-        Gestures, Keybindings, LiveAltTab, Navigator, Stackoverlay, Scratch,
-        Tiling, Topbar, App, Grab,
+        Utils,
+        Settings,
+        Patches,
+        Gestures,
+        Keybindings,
+        LiveAltTab,
+        Navigator,
+        Stackoverlay,
+        Scratch,
+        Tiling,
+        Topbar,
+        App,
+        Grab,
     ];
 
     enable() {
@@ -76,6 +97,6 @@ export default class AlbumWM extends Extension {
 
     spawnPager(content) {
         const quoted = GLib.shell_quote(content);
-        Util.spawn(["sh", "-c", `echo -En ${quoted} | gedit --new-window -`]);
+        Util.spawn(['sh', '-c', `echo -En ${quoted} | gedit --new-window -`]);
     }
 }

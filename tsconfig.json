@@ -1,24 +1,16 @@
 {
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "outDir": "./dist",
-    "sourceMap": false,
-    "strict": true,
-    "skipLibCheck": true,
-    "noEmitOnError": true,
-    "target": "ES2023",
-    "lib": ["ES2023"],
-    "allowJs": true
-  },
-  "include": [
-    "**/*.js",
-    "**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "result",
-    "eslint.config.js"
-  ]
+    "compilerOptions": {
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "outDir": "./dist",
+        "sourceMap": false,
+        "strict": true,
+        "skipLibCheck": true,
+        "noEmitOnError": true,
+        "target": "ES2023",
+        "lib": ["ES2023"],
+        "allowJs": true
+    },
+    "include": ["**/*.js", "**/*.ts"],
+    "exclude": ["node_modules", "dist", "result", "eslint.config.js"]
 }
