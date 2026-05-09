@@ -12,21 +12,6 @@ import * as WinpropsPane from './preferences/winpropsPane.js';
 
 const _ = s => s;
 
-export default class AlbumWMPrefs extends ExtensionPreferences {
-    fillPreferencesWindow(window) {
-        const provider = new Gtk.CssProvider();
-        provider.load_from_path(`${this.path}/resources/prefs.css`);
-        Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(),
-            provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        );
-
-        window.set_size_request(700, 750);
-        new SettingsWidget(this, window);
-    }
-}
-
 class SettingsWidget {
     constructor(extension, prefsWindow) {
         this.extension = extension;
@@ -388,5 +373,20 @@ class SettingsWidget {
         booleanStateChanged('show-open-position-icon');
         percentValueChanged('maximize-width-percent', 'maximize-width-percent');
         booleanStateChanged('topbar-mouse-scroll-enable');
+    }
+}
+
+export default class AlbumWMPrefs extends ExtensionPreferences {
+    fillPreferencesWindow(window) {
+        const provider = new Gtk.CssProvider();
+        provider.load_from_path(`${this.path}/resources/prefs.css`);
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        );
+
+        window.set_size_request(700, 750);
+        new SettingsWidget(this, window);
     }
 }

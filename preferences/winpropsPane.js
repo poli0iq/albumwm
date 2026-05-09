@@ -2,98 +2,6 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
-export const WinpropsPane = GObject.registerClass(
-    {
-        GTypeName: 'WinpropsPane',
-        Template: GLib.uri_resolve_relative(
-            import.meta.url,
-            '../ui/WinpropsPane.ui',
-            GLib.UriFlags.NONE
-        ),
-        InternalChildren: ['search', 'listbox', 'addButton', 'scrolledWindow'],
-        Signals: {
-            changed: {},
-        },
-    },
-    class WinpropsPane extends Gtk.Box {
-        _init(params = {}) {
-            super._init(params);
-
-            // define search box filter function (searches wm_class, title, and accelLabel)
-            this._listbox.set_filter_func(row => {
-                let search = this._search.get_text().toLowerCase();
-                let wmclass = row.winprop.wm_class?.toLowerCase() ?? '';
-                let title = row.winprop.title?.toLowerCase() ?? '';
-                let accelLabel = row._accelLabel.label?.toLowerCase() ?? '';
-                return (
-                    wmclass.includes(search) ||
-                    title.includes(search) ||
-                    accelLabel.includes(search)
-                );
-            });
-            this._search.connect('changed', () => {
-                this._listbox.invalidate_filter();
-            });
-
-            this._expandedRow = null;
-            this.rows = [];
-        }
-
-        addWinprops(winprops) {
-            winprops.forEach(winprop => {
-                this._listbox.insert(this._createRow(winprop), -1);
-            });
-        }
-
-        _removeRow(row) {
-            this._listbox.remove(row);
-            let remove = this.rows.findIndex(r => r === row);
-            if (remove >= 0) {
-                this.rows.splice(remove, 1);
-            }
-            this.emit('changed');
-        }
-
-        _onAddButtonClicked() {
-            // first clear search text, otherwise won't be able to see new row
-            this._search.set_text('');
-
-            let row = this._createRow();
-            row.expanded = true;
-            this._listbox.insert(row, 0);
-            this._scrolledWindow.get_vadjustment().set_value(0);
-        }
-
-        _createRow(winprop) {
-            let wp = winprop ?? { wm_class: '' };
-            const row = new WinpropsRow({ winprop: wp });
-            this.rows.push(row);
-            row.connect('notify::expanded', row => this._onRowExpanded(row));
-            row.connect('row-deleted', row => this._removeRow(row));
-            row.connect('changed', () => this.emit('changed'));
-            return row;
-        }
-
-        _onRowActivated(list, row) {
-            if (!row.is_focus()) {
-                return;
-            }
-            row.expanded = !row.expanded;
-        }
-
-        _onRowExpanded(row) {
-            if (row.expanded) {
-                if (this._expandedRow) {
-                    this._expandedRow.expanded = false;
-                }
-                this._expandedRow = row;
-            } else if (this._expandedRow === row) {
-                this._expandedRow = null;
-            }
-        }
-    }
-);
-
 export const WinpropsRow = GObject.registerClass(
     {
         GTypeName: 'WinpropsRow',
@@ -175,7 +83,7 @@ export const WinpropsRow = GObject.registerClass(
             this._preferredWidth.set_text(this.winprop.preferredWidth ?? '');
             // if scratchLayer is active then users can't edit preferredWidth
             this._preferredWidth.set_sensitive(
-                !this.winprop.scratch_layer ?? true
+                !(this.winprop.scratch_layer ?? false)
             );
 
             this._preferredWidth.connect('changed', () => {
@@ -333,6 +241,98 @@ export const WinpropsRow = GObject.registerClass(
                     this.remove_css_class('expanded');
                 }
             });
+        }
+    }
+);
+
+export const WinpropsPane = GObject.registerClass(
+    {
+        GTypeName: 'WinpropsPane',
+        Template: GLib.uri_resolve_relative(
+            import.meta.url,
+            '../ui/WinpropsPane.ui',
+            GLib.UriFlags.NONE
+        ),
+        InternalChildren: ['search', 'listbox', 'addButton', 'scrolledWindow'],
+        Signals: {
+            changed: {},
+        },
+    },
+    class WinpropsPane extends Gtk.Box {
+        _init(params = {}) {
+            super._init(params);
+
+            // define search box filter function (searches wm_class, title, and accelLabel)
+            this._listbox.set_filter_func(row => {
+                let search = this._search.get_text().toLowerCase();
+                let wmclass = row.winprop.wm_class?.toLowerCase() ?? '';
+                let title = row.winprop.title?.toLowerCase() ?? '';
+                let accelLabel = row._accelLabel.label?.toLowerCase() ?? '';
+                return (
+                    wmclass.includes(search) ||
+                    title.includes(search) ||
+                    accelLabel.includes(search)
+                );
+            });
+            this._search.connect('changed', () => {
+                this._listbox.invalidate_filter();
+            });
+
+            this._expandedRow = null;
+            this.rows = [];
+        }
+
+        addWinprops(winprops) {
+            winprops.forEach(winprop => {
+                this._listbox.insert(this._createRow(winprop), -1);
+            });
+        }
+
+        _removeRow(row) {
+            this._listbox.remove(row);
+            let remove = this.rows.findIndex(r => r === row);
+            if (remove >= 0) {
+                this.rows.splice(remove, 1);
+            }
+            this.emit('changed');
+        }
+
+        _onAddButtonClicked() {
+            // first clear search text, otherwise won't be able to see new row
+            this._search.set_text('');
+
+            let row = this._createRow();
+            row.expanded = true;
+            this._listbox.insert(row, 0);
+            this._scrolledWindow.get_vadjustment().set_value(0);
+        }
+
+        _createRow(winprop) {
+            let wp = winprop ?? { wm_class: '' };
+            const row = new WinpropsRow({ winprop: wp });
+            this.rows.push(row);
+            row.connect('notify::expanded', row => this._onRowExpanded(row));
+            row.connect('row-deleted', row => this._removeRow(row));
+            row.connect('changed', () => this.emit('changed'));
+            return row;
+        }
+
+        _onRowActivated(list, row) {
+            if (!row.is_focus()) {
+                return;
+            }
+            row.expanded = !row.expanded;
+        }
+
+        _onRowExpanded(row) {
+            if (row.expanded) {
+                if (this._expandedRow) {
+                    this._expandedRow.expanded = false;
+                }
+                this._expandedRow = row;
+            } else if (this._expandedRow === row) {
+                this._expandedRow = null;
+            }
         }
     }
 );
