@@ -7,8 +7,21 @@ on:
     branches: [ 'main' ]
 
 jobs:
+  lint-format:
+    name: Prettier
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install
+        run: npm ci
+
+      - name: Prettier
+        run: npm run format:check
+
   lint:
-    name: ESLint and Prettier
+    name: ESLint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,9 +32,6 @@ jobs:
 
       - name: ESLint
         run: npm run lint
-
-      - name: Prettier
-        run: npm run format:check
 
   lint-ui:
     name: Blueprint
