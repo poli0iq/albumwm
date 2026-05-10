@@ -44,6 +44,7 @@ export const WinpropsRow = GObject.registerClass(
             'row-deleted': {},
         },
     },
+    // eslint-disable-next-line no-shadow
     class WinpropsRow extends Gtk.ListBoxRow {
         _init(params = {}) {
             super._init(params);
@@ -258,6 +259,7 @@ export const WinpropsPane = GObject.registerClass(
             changed: {},
         },
     },
+    // eslint-disable-next-line no-shadow
     class WinpropsPane extends Gtk.Box {
         _init(params = {}) {
             super._init(params);
@@ -311,8 +313,8 @@ export const WinpropsPane = GObject.registerClass(
             let wp = winprop ?? { wm_class: '' };
             const row = new WinpropsRow({ winprop: wp });
             this.rows.push(row);
-            row.connect('notify::expanded', row => this._onRowExpanded(row));
-            row.connect('row-deleted', row => this._removeRow(row));
+            row.connect('notify::expanded', () => this._onRowExpanded(row));
+            row.connect('row-deleted', () => this._removeRow(row));
             row.connect('changed', () => this.emit('changed'));
             return row;
         }

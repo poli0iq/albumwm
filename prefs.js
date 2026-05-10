@@ -134,12 +134,12 @@ class SettingsWidget {
             element.connect('changed', () => {
                 // process values
                 // check if values are percent or pixel
-                const value = element.get_text();
-                const isPercent = value
+                const text = element.get_text();
+                const isPercent = text
                     .split(';')
                     .map(v => v.trim())
                     .every(v => /^.*%$/.test(v));
-                const isPixels = value
+                const isPixels = text
                     .split(';')
                     .map(v => v.trim())
                     .every(v => /^.*px$/.test(v));
@@ -157,7 +157,7 @@ class SettingsWidget {
                 }
 
                 // now process element value into internal array
-                const varr = value
+                const varr = text
                     .split(';')
                     .map(v => v.trim())
                     .map(v => v.replaceAll(/[^\d.]/g, '')) // strip everything but digits and period

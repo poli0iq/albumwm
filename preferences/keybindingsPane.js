@@ -109,29 +109,30 @@ const forbiddenKeyvals = [
     Gdk.KEY_Mode_switch,
 ];
 
+const printableKeyvalRanges = [
+    [Gdk.KEY_a, Gdk.KEY_z],
+    [Gdk.KEY_A, Gdk.KEY_Z],
+    [Gdk.KEY_0, Gdk.KEY_9],
+    [Gdk.KEY_kana_fullstop, Gdk.KEY_semivoicedsound],
+    [Gdk.KEY_Arabic_comma, Gdk.KEY_Arabic_sukun],
+    [Gdk.KEY_Serbian_dje, Gdk.KEY_Cyrillic_HARDSIGN],
+    [Gdk.KEY_Greek_ALPHAaccent, Gdk.KEY_Greek_omega],
+    [Gdk.KEY_hebrew_doublelowline, Gdk.KEY_hebrew_taf],
+    [Gdk.KEY_Thai_kokai, Gdk.KEY_Thai_lekkao],
+    [Gdk.KEY_Hangul_Kiyeog, Gdk.KEY_Hangul_J_YeorinHieuh],
+];
+
 function isValidBinding(combo) {
     if (
         (combo.mods === 0 || combo.mods === Gdk.ModifierType.SHIFT_MASK) &&
         combo.keycode !== 0
     ) {
         const keyval = combo.keyval;
+        const isPrintable = printableKeyvalRanges.some(
+            ([lo, hi]) => keyval >= lo && keyval <= hi
+        );
         if (
-            (keyval >= Gdk.KEY_a && keyval <= Gdk.KEY_z) ||
-            (keyval >= Gdk.KEY_A && keyval <= Gdk.KEY_Z) ||
-            (keyval >= Gdk.KEY_0 && keyval <= Gdk.KEY_9) ||
-            (keyval >= Gdk.KEY_kana_fullstop &&
-                keyval <= Gdk.KEY_semivoicedsound) ||
-            (keyval >= Gdk.KEY_Arabic_comma &&
-                keyval <= Gdk.KEY_Arabic_sukun) ||
-            (keyval >= Gdk.KEY_Serbian_dje &&
-                keyval <= Gdk.KEY_Cyrillic_HARDSIGN) ||
-            (keyval >= Gdk.KEY_Greek_ALPHAaccent &&
-                keyval <= Gdk.KEY_Greek_omega) ||
-            (keyval >= Gdk.KEY_hebrew_doublelowline &&
-                keyval <= Gdk.KEY_hebrew_taf) ||
-            (keyval >= Gdk.KEY_Thai_kokai && keyval <= Gdk.KEY_Thai_lekkao) ||
-            (keyval >= Gdk.KEY_Hangul_Kiyeog &&
-                keyval <= Gdk.KEY_Hangul_J_YeorinHieuh) ||
+            isPrintable ||
             (keyval === Gdk.KEY_space && combo.mods === 0) ||
             forbiddenKeyvals.includes(keyval)
         ) {
@@ -219,6 +220,7 @@ const Combo = GObject.registerClass(
             ),
         },
     },
+    // eslint-disable-next-line no-shadow
     class Combo extends GObject.Object {
         _init(acceleratorParse, params = {}) {
             super._init(params);
@@ -324,6 +326,7 @@ const Keybinding = GObject.registerClass(
             changed: {},
         },
     },
+    // eslint-disable-next-line no-shadow
     class Keybinding extends GObject.Object {
         _init(settings, acceleratorParse, params = {}) {
             super._init(params);
@@ -499,6 +502,7 @@ export const KeybindingsModel = GObject.registerClass(
             },
         },
     },
+    // eslint-disable-next-line no-shadow
     class KeybindingsModel extends GObject.Object {
         _init(acceleratorParse, params = {}) {
             super._init(params);
@@ -581,24 +585,24 @@ export const KeybindingsModel = GObject.registerClass(
                 }
             }
             let changed = new Set();
-            for (const [keystr, actions] of map.entries()) {
-                if (actions.size > 1) {
+            for (const [keystr, bindingActions] of map.entries()) {
+                if (bindingActions.size > 1) {
                     if (!this.collisions.has(keystr)) {
-                        for (const action of actions) {
+                        for (const action of bindingActions) {
                             changed.add(action);
                         }
                     } else {
                         let old = this.collisions.get(keystr);
                         for (const action of symmetricDifference(
                             old,
-                            actions
+                            bindingActions
                         )) {
                             changed.add(action);
                         }
                     }
-                    this.collisions.set(keystr, actions);
+                    this.collisions.set(keystr, bindingActions);
                 } else {
-                    for (const action of actions) {
+                    for (const action of bindingActions) {
                         changed.add(action);
                     }
                     this.collisions.delete(keystr);
@@ -661,25 +665,25 @@ const ComboRow = GObject.registerClass(
             },
         },
     },
+    // eslint-disable-next-line no-shadow
     class ComboRow extends Gtk.ListBoxRow {
         _init(params = {}) {
             super._init(params);
 
-            let controller;
-            controller = Gtk.EventControllerKey.new();
-            controller.connect(
+            const keyController = Gtk.EventControllerKey.new();
+            keyController.connect(
                 'key-pressed',
                 (controller, keyval, keycode, state) => {
                     this._onKeyPressed(controller, keyval, keycode, state);
                 }
             );
-            this.add_controller(controller);
+            this.add_controller(keyController);
 
-            controller = Gtk.EventControllerFocus.new();
-            controller.connect('leave', () => {
+            const focusController = Gtk.EventControllerFocus.new();
+            focusController.connect('leave', () => {
                 this.editing = false;
             });
-            this.add_controller(controller);
+            this.add_controller(focusController);
 
             this._collisions = Gio.ListStore.new(Keybinding.$gtype);
 
@@ -925,6 +929,7 @@ const KeybindingsRow = GObject.registerClass(
             },
         },
     },
+    // eslint-disable-next-line no-shadow
     class KeybindingsRow extends Gtk.ListBoxRow {
         _init(acceleratorParse, params = {}) {
             super._init(params);
@@ -1018,11 +1023,11 @@ const KeybindingsRow = GObject.registerClass(
             const map = new Map();
             const collisions = this.keybindings.collisions;
             for (const combo of this.keybinding.combos) {
-                const actions = collisions.get(combo.keystr);
-                if (!actions) continue;
+                const bindingActions = collisions.get(combo.keystr);
+                if (!bindingActions) continue;
                 map.set(
                     combo.keystr,
-                    [...actions]
+                    [...bindingActions]
                         .filter(a => a !== this.keybinding.action)
                         .map(a => this.keybindings.getKeybinding(a))
                 );
@@ -1067,6 +1072,7 @@ export const KeybindingsPane = GObject.registerClass(
         ),
         InternalChildren: ['search', 'listbox'],
     },
+    // eslint-disable-next-line no-shadow
     class KeybindingsPane extends Gtk.Box {
         _init(params = {}) {
             super._init(params);
@@ -1134,7 +1140,7 @@ export const KeybindingsPane = GObject.registerClass(
                 keybindings: this._model,
                 keybinding,
             });
-            row.connect('notify::expanded', row => this._onRowExpanded(row));
+            row.connect('notify::expanded', () => this._onRowExpanded(row));
             row.connect('collision-activated', (_row, binding) =>
                 this._onCollisionActivated(binding)
             );
