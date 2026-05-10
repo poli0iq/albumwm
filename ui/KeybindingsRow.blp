@@ -35,6 +35,10 @@ template $KeybindingsRow: ListBoxRow {
         visible: false;
         icon-name: "dialog-error-symbolic";
         halign: start;
+
+        accessibility {
+          label: _("Keybinding conflict");
+        }
       }
 
       Label accelLabel {

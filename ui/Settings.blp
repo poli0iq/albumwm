@@ -2,131 +2,134 @@ using Gtk 4.0;
 using Adw 1;
 
 Adjustment horizontal-friction-adjustment {
+  lower: 0;
   upper: 10;
   step-increment: 0.1;
   page-increment: 1;
 }
 
 Adjustment horizontal-sensitivity-adjustment {
+  lower: 0;
   upper: 10;
   step-increment: 0.1;
   page-increment: 10;
 }
 
 Adjustment horizontal_margin {
+  lower: 0;
   upper: 100;
   step-increment: 1;
   page-increment: 10;
 }
 
-Image image1 {
-  focusable: false;
-  icon-name: "";
-}
-
 Adjustment vertical-friction-adjustment {
+  lower: 0;
   upper: 10;
   step-increment: 0.1;
   page-increment: 10;
 }
 
 Adjustment vertical-sensitivity-adjustment {
+  lower: 0;
   upper: 10;
   step-increment: 0.1;
   page-increment: 10;
 }
 
 Adjustment vertical_margin {
+  lower: 0;
   upper: 100;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment vertical_margin_bottom {
+  lower: 0;
   upper: 100;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment window_gap {
+  lower: 0;
   upper: 99;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment animation_time_adjustment {
-  upper: 6.00;
   lower: 0.00;
+  upper: 6.00;
   step-increment: 0.01;
   page-increment: 0.1;
 }
 
 Adjustment drift_speed_adjustment {
-  upper: 15;
   lower: 0;
+  upper: 15;
   step-increment: 1;
   page-increment: 5;
 }
 
 Adjustment drag_drift_speed_adjustment {
-  upper: 15;
   lower: 0;
+  upper: 15;
   step-increment: 1;
   page-increment: 5;
 }
 
 Adjustment minimap_scale {
-  upper: 95;
   lower: 0;
+  upper: 95;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment minimap_shade_opacity_scale {
-  upper: 255;
   lower: 0;
+  upper: 255;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment edge_preview_scale {
-  upper: 95;
   lower: 0;
+  upper: 95;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment edge_preview_timeout_scale {
-  upper: 10000;
   lower: 0;
+  upper: 10000;
   step-increment: 100;
   page-increment: 1000;
 }
 
 Adjustment window_switcher_preview_scale {
-  upper: 95;
   lower: 5;
+  upper: 95;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment maximize_width_percent_scale {
-  upper: 100;
   lower: 50;
+  upper: 100;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment overview_max_window_scale {
-  upper: 95;
   lower: 10;
+  upper: 95;
   step-increment: 1;
   page-increment: 10;
 }
 
 Adjustment overview_min_windows_per_row {
-  upper: 20;
   lower: 1;
+  upper: 20;
   step-increment: 1;
   page-increment: 5;
 }
@@ -315,7 +318,7 @@ Adw.PreferencesPage general_page {
             Grid {
               focusable: false;
               tooltip-text: _(
-                "Enables / disables AlbumWM gestures. Disabling this restores Gnome's default touchpad gestures."
+                "Enables / disables AlbumWM gestures. Disabling this restores Gnome’s default touchpad gestures."
               );
               margin-start: 12;
               margin-end: 12;
@@ -470,7 +473,6 @@ Adw.PreferencesPage general_page {
               SpinButton hmargin_spinner {
                 width-chars: 2;
                 max-width-chars: 2;
-                text: _("0");
                 adjustment: horizontal_margin;
                 snap-to-ticks: true;
                 numeric: true;
@@ -511,7 +513,6 @@ Adw.PreferencesPage general_page {
               SpinButton top_margin_spinner {
                 width-chars: 2;
                 max-width-chars: 2;
-                text: _("0");
                 adjustment: vertical_margin;
                 snap-to-ticks: true;
                 numeric: true;
@@ -552,7 +553,6 @@ Adw.PreferencesPage general_page {
               SpinButton bottom_margin_spinner {
                 width-chars: 2;
                 max-width-chars: 2;
-                text: _("0");
                 adjustment: vertical_margin_bottom;
                 snap-to-ticks: true;
                 numeric: true;
@@ -570,7 +570,7 @@ Adw.PreferencesPage general_page {
             activatable: false;
             focusable: false;
             tooltip-text: _(
-              "Semicolon separated values of \"useful window widths\" that will be cycled through. Values types can be either percentage (of available screen width), e.g. \"50%\" or pixel values, e.g. \"500px\". Mixed value types are not supported."
+              "Semicolon separated values of “useful window widths” that will be cycled through. Each value is either a percentage of the available screen width (e.g. “50 %”) or a pixel size with a “px” suffix. Mixed value types are not supported."
             );
 
             Grid {
@@ -601,7 +601,7 @@ Adw.PreferencesPage general_page {
 
                 Button cycle_widths_reset_button {
                   margin-end: 8;
-                  label: "reset";
+                  label: _("reset");
                   tooltip-text: _("Resets width values to the default AlbumWM width values");
                 }
 
@@ -622,7 +622,7 @@ Adw.PreferencesPage general_page {
             activatable: false;
             focusable: false;
             tooltip-text: _(
-              "Semicolon separated values of \"useful window heights\" that will be cycled through. Values types can be either percentage (of available screen width), e.g. \"50%\" or pixel values, e.g. \"500px\". Mixed value types are not supported."
+              "Semicolon separated values of “useful window heights” that will be cycled through. Each value is either a percentage of the available screen height (e.g. “50 %”) or a pixel size with a “px” suffix. Mixed value types are not supported."
             );
 
             Grid {
@@ -653,7 +653,7 @@ Adw.PreferencesPage general_page {
 
                 Button cycle_heights_reset_button {
                   margin-end: 8;
-                  label: "reset";
+                  label: _("reset");
                   tooltip-text: _("Resets height values to the default AlbumWM height values");
                 }
 
@@ -776,7 +776,7 @@ Adw.PreferencesPage advanced_page {
 
             Grid {
               focusable: false;
-              tooltip-text: _("Sets the drift speed (px/ms) when using \"drifting view to the left/right\" keybinds.");
+              tooltip-text: _("Sets the drift speed (px/ms) when using “drifting view to the left/right” keybinds.");
               margin-start: 12;
               margin-end: 12;
               margin-top: 6;
@@ -786,7 +786,7 @@ Adw.PreferencesPage advanced_page {
               Label {
                 focusable: false;
                 hexpand: true;
-                label: _("Drift speed (px/ms) when using \"viewport drift\" keybinds");
+                label: _("Drift speed (px/ms) when using “viewport drift” keybinds");
                 use-markup: true;
                 xalign: 0;
 
@@ -1015,7 +1015,7 @@ Adw.PreferencesPage advanced_page {
             Grid {
               focusable: false;
               tooltip-text: _(
-                "Sets the opacity [5-255] of the dimming/shade used on non-selected windows during mini-map navigation."
+                "Sets the opacity (between 5 and 255) of the dimming/shade used on non-selected windows during mini-map navigation."
               );
               margin-start: 12;
               margin-end: 12;
@@ -1111,7 +1111,7 @@ Adw.PreferencesPage advanced_page {
             Grid {
               focusable: false;
               tooltip-text: _(
-                "Controls the \"size\" of tiling edge window previews, as compared to their actual window size (e.g. \"15\" corresponds to an edge preview size being approximately 15% of the actual window size)"
+                "Controls the “size” of tiling edge window previews, as compared to their actual window size (e.g. “15” corresponds to an edge preview size being approximately 15 % of the actual window size)"
               );
               margin-start: 12;
               margin-end: 12;
@@ -1319,7 +1319,7 @@ Adw.PreferencesPage advanced_page {
             Grid {
               focusable: false;
               tooltip-text: _(
-                "Controls the \"size\" of mini-map tiles (as shown during window navigation keybinds), as compared to their actual window size (e.g. \"15\" corresponds to a mini-map tile size being approximately 15% of the actual window size)"
+                "Controls the “size” of mini-map tiles (as shown during window navigation keybinds), as compared to their actual window size (e.g. “15” corresponds to a mini-map tile size being approximately 15 % of the actual window size)"
               );
               margin-start: 12;
               margin-end: 12;
@@ -1363,7 +1363,7 @@ Adw.PreferencesPage advanced_page {
             Grid {
               focusable: false;
               tooltip-text: _(
-                "Controls the \"size\" of window switcher previews (e.g. Super+Tab switcher), as compared to their actual window size (e.g. \"15\" corresponds to an edge preview size being approximately 15% of the actual window size)"
+                "Controls the “size” of window switcher previews (e.g. Super+Tab switcher), as compared to their actual window size (e.g. “15” corresponds to an edge preview size being approximately 15 % of the actual window size)"
               );
               margin-start: 12;
               margin-end: 12;
@@ -1407,7 +1407,7 @@ Adw.PreferencesPage advanced_page {
             Grid {
               focusable: false;
               tooltip-text: _(
-                "Controls the maximum window \"size\" of GNOME overview windows, as compared to their actual window size (e.g. \"95\" corresponds to an edge preview size being approximately 95% of the actual window size)"
+                "Controls the maximum window “size” of GNOME overview windows, as compared to their actual window size (e.g. “95” corresponds to an edge preview size being approximately 95 % of the actual window size)"
               );
               margin-start: 12;
               margin-end: 12;
@@ -1468,7 +1468,7 @@ Adw.PreferencesPage advanced_page {
             Grid {
               focusable: false;
               tooltip-text: _(
-                "Sets the percentage of workspace width the \"window maximize horizontally\" function (default keybind Super+F) uses."
+                "Sets the percentage of workspace width the “window maximize horizontally” function (default keybind Super+F) uses."
               );
               margin-start: 12;
               margin-end: 12;
@@ -1586,7 +1586,6 @@ Adw.PreferencesPage advanced_page {
                 editable: true;
                 width-chars: 2;
                 max-width-chars: 2;
-                text: _("0");
                 adjustment: horizontal-sensitivity-adjustment;
                 digits: 1;
                 snap-to-ticks: true;
@@ -1614,7 +1613,6 @@ Adw.PreferencesPage advanced_page {
               SpinButton horizontal-friction {
                 width-chars: 2;
                 max-width-chars: 2;
-                text: _("0,0");
                 adjustment: horizontal-friction-adjustment;
                 digits: 1;
                 snap-to-ticks: true;
@@ -1657,7 +1655,6 @@ Adw.PreferencesPage advanced_page {
               SpinButton vertical-sensitivity {
                 width-chars: 2;
                 max-width-chars: 2;
-                text: _("0");
                 adjustment: vertical-sensitivity-adjustment;
                 digits: 1;
                 snap-to-ticks: true;
@@ -1685,7 +1682,6 @@ Adw.PreferencesPage advanced_page {
               SpinButton vertical-friction {
                 width-chars: 2;
                 max-width-chars: 2;
-                text: _("0,0");
                 adjustment: vertical-friction-adjustment;
                 digits: 1;
                 snap-to-ticks: true;
