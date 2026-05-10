@@ -19,6 +19,8 @@ Features that the fork author considered useless or harmful are dropped.
     [independent workspaces on different monitors](https://gitlab.gnome.org/GNOME/mutter/-/work_items/37),
     not the tiling extension whose job is positioning the windows.
 
+- Preferences ui simplified and
+  ported to [Blueprint](https://gnome.pages.gitlab.gnome.org/blueprint-compiler)
 - Dropped drawing a custom top bar on secondary displays
 - Dropped the window position indicator and top bar styling
 - Dropped all the remnants of X11 support

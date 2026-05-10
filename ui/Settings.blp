@@ -1,0 +1,1707 @@
+using Gtk 4.0;
+using Adw 1;
+
+Adjustment horizontal-friction-adjustment {
+  upper: 10;
+  step-increment: 0.1;
+  page-increment: 1;
+}
+
+Adjustment horizontal-sensitivity-adjustment {
+  upper: 10;
+  step-increment: 0.1;
+  page-increment: 10;
+}
+
+Adjustment horizontal_margin {
+  upper: 100;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Image image1 {
+  focusable: false;
+  icon-name: "";
+}
+
+Adjustment vertical-friction-adjustment {
+  upper: 10;
+  step-increment: 0.1;
+  page-increment: 10;
+}
+
+Adjustment vertical-sensitivity-adjustment {
+  upper: 10;
+  step-increment: 0.1;
+  page-increment: 10;
+}
+
+Adjustment vertical_margin {
+  upper: 100;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment vertical_margin_bottom {
+  upper: 100;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment window_gap {
+  upper: 99;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment animation_time_adjustment {
+  upper: 6.00;
+  lower: 0.00;
+  step-increment: 0.01;
+  page-increment: 0.1;
+}
+
+Adjustment drift_speed_adjustment {
+  upper: 15;
+  lower: 0;
+  step-increment: 1;
+  page-increment: 5;
+}
+
+Adjustment drag_drift_speed_adjustment {
+  upper: 15;
+  lower: 0;
+  step-increment: 1;
+  page-increment: 5;
+}
+
+Adjustment minimap_scale {
+  upper: 95;
+  lower: 0;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment minimap_shade_opacity_scale {
+  upper: 255;
+  lower: 0;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment edge_preview_scale {
+  upper: 95;
+  lower: 0;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment edge_preview_timeout_scale {
+  upper: 10000;
+  lower: 0;
+  step-increment: 100;
+  page-increment: 1000;
+}
+
+Adjustment window_switcher_preview_scale {
+  upper: 95;
+  lower: 5;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment maximize_width_percent_scale {
+  upper: 100;
+  lower: 50;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment overview_max_window_scale {
+  upper: 95;
+  lower: 10;
+  step-increment: 1;
+  page-increment: 10;
+}
+
+Adjustment overview_min_windows_per_row {
+  upper: 20;
+  lower: 1;
+  step-increment: 1;
+  page-increment: 5;
+}
+
+Adw.PreferencesPage general_page {
+  title: _("General");
+  icon-name: "text-x-generic-symbolic";
+
+  Adw.PreferencesGroup scrolledWindow {
+    Viewport {
+      focusable: false;
+      vexpand: true;
+
+      Box general {
+        halign: center;
+        margin-bottom: 16;
+        orientation: vertical;
+        spacing: 12;
+        width-request: 580;
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>Settings</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                tooltip-text: _(
+                  "Sets the position when creating/inserting new tiled windows, e.g. to the right/left of the current window, or at the start/end of all tiled windows."
+                );
+                hexpand: true;
+                label: _("Position when creating new windows");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              ComboBoxText open-window-position {
+                focusable: false;
+                hexpand: false;
+                width-request: 106;
+
+                items [
+                  right: _("To Right"),
+                  down: _("Below"),
+                ]
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Sets default focus mode used in workspaces");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Default <i>window focus mode</i> for workspaces");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              ComboBoxText default-focus-mode {
+                focusable: false;
+                hexpand: false;
+                width-request: 106;
+
+                items [
+                  default: _("Default"),
+                  center: _("Center"),
+                  edge: _("Edge"),
+                ]
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Show scratch windows in overview");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              ComboBoxText scratch-in-overview {
+                focusable: false;
+                hexpand: false;
+                width-request: 106;
+
+                items [
+                  always: _("Always"),
+                  only: _("Only"),
+                  never: _("Never"),
+                ]
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+        }
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>Touchpad Gestures</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Enables / disables AlbumWM gestures. Disabling this restores Gnome's default touchpad gestures."
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Enable Touchpad Gestures");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch gesture-enabled {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Sets the number of fingers used for moving the tiling viewport (windows) left/right.");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Swipe tiling windows <i>(swipe left/right)</i>");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              ComboBoxText gesture-horizontal-fingers {
+                focusable: false;
+                hexpand: false;
+                width-request: 106;
+
+                items [
+                  fingers-disabled: _("Disabled"),
+                  three-fingers: _("3 Fingers"),
+                  four-fingers: _("4 Fingers"),
+                ]
+              }
+            }
+          }
+        }
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>Gaps | Margins</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Gap between windows");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton window_gap_spin {
+                width-chars: 2;
+                max-width-chars: 2;
+                adjustment: window_gap;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow general_row1 {
+            activatable: false;
+            focusable: false;
+
+            Grid workspace_grid1 {
+              focusable: false;
+              tooltip-text: _("The minimum margin to the left and right monitor edge");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Horizontal margin");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton hmargin_spinner {
+                width-chars: 2;
+                max-width-chars: 2;
+                text: _("0");
+                adjustment: horizontal_margin;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow general_row2 {
+            activatable: false;
+            focusable: false;
+
+            Grid workspace_grid5 {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Top margin");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton top_margin_spinner {
+                width-chars: 2;
+                max-width-chars: 2;
+                text: _("0");
+                adjustment: vertical_margin;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Bottom margin");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton bottom_margin_spinner {
+                width-chars: 2;
+                max-width-chars: 2;
+                text: _("0");
+                adjustment: vertical_margin_bottom;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+            tooltip-text: _(
+              "Semicolon separated values of \"useful window widths\" that will be cycled through. Values types can be either percentage (of available screen width), e.g. \"50%\" or pixel values, e.g. \"500px\". Mixed value types are not supported."
+            );
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Useful window widths");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Grid {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+
+                Button cycle_widths_reset_button {
+                  margin-end: 8;
+                  label: "reset";
+                  tooltip-text: _("Resets width values to the default AlbumWM width values");
+                }
+
+                Entry cycle_widths_entry {
+                  width-chars: 24;
+                  max-width-chars: 24;
+
+                  layout {
+                    column: "2";
+                    row: "0";
+                  }
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+            tooltip-text: _(
+              "Semicolon separated values of \"useful window heights\" that will be cycled through. Values types can be either percentage (of available screen width), e.g. \"50%\" or pixel values, e.g. \"500px\". Mixed value types are not supported."
+            );
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Useful window heights");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Grid {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+
+                Button cycle_heights_reset_button {
+                  margin-end: 8;
+                  label: "reset";
+                  tooltip-text: _("Resets height values to the default AlbumWM height values");
+                }
+
+                Entry cycle_heights_entry {
+                  width-chars: 24;
+                  max-width-chars: 24;
+
+                  layout {
+                    column: "1";
+                    row: "0";
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+Adw.PreferencesPage keybindings_page {
+  title: _("Keybindings");
+  icon-name: "input-keyboard-symbolic";
+
+  Adw.PreferencesGroup {
+    $KeybindingsPane keybindings_pane {}
+  }
+}
+
+Adw.PreferencesPage winprops_page {
+  title: _("Winprops");
+  icon-name: "sidebar-show-right-symbolic";
+
+  Adw.PreferencesGroup {
+    $WinpropsPane winpropsPane {}
+  }
+}
+
+Adw.PreferencesPage advanced_page {
+  title: _("Advanced");
+  icon-name: "emblem-system-symbolic";
+
+  Adw.PreferencesGroup advanced_scrolledWindow {
+    Viewport {
+      focusable: false;
+      vexpand: true;
+
+      Box {
+        halign: center;
+        margin-bottom: 16;
+        orientation: vertical;
+        spacing: 12;
+        width-request: 580;
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>Animation | Visual Settings</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Sets the duration of AlbumWM animated transitions (e.g. switching windows, workspaces etc.). Lower values result in faster transitions."
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Animation / transition time (seconds)");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton animation_time_spin {
+                width-chars: 3;
+                max-width-chars: 3;
+                adjustment: animation_time_adjustment;
+                numeric: true;
+                digits: 2;
+                snap-to-ticks: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Sets the drift speed (px/ms) when using \"drifting view to the left/right\" keybinds.");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Drift speed (px/ms) when using \"viewport drift\" keybinds");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton drift_speed_spin {
+                width-chars: 3;
+                max-width-chars: 3;
+                adjustment: drift_speed_adjustment;
+                numeric: true;
+                snap-to-ticks: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Sets the drift speed (px/ms) when mouse is at edge of montior when dragging windows.");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Drift speed (px/ms) when dragging windows (at edge)");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton drag_drift_speed_spin {
+                width-chars: 3;
+                max-width-chars: 3;
+                adjustment: drag_drift_speed_adjustment;
+                numeric: true;
+                snap-to-ticks: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Shows/hides the focus mode icon in TopBar");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Show focus mode icon");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch show-focus-mode-icon {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Shows/hides the open window position icon in TopBar");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Show open window position icon");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch show-open-position-icon {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Sets the animation when exiting GNOME overview and ensuring selected window is in view");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("GNOME overview exit <i>select window</i> animation ");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              ComboBoxText overview-ensure-viewport-animation {
+                focusable: false;
+                hexpand: false;
+                width-request: 106;
+
+                items [
+                  none: _("None"),
+                  translate: _("Translate"),
+                  fade: _("Fade"),
+                ]
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Sets the minimum number of windows for each row in Gnome overview. Increasing this can make Gnome overview appear more like the current tiling layout."
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("<i>Minimum</i> number of windows per GNOME overview row");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton overview_min_windows_per_row_spin {
+                width-chars: 2;
+                max-width-chars: 2;
+                adjustment: overview_min_windows_per_row;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Sets the opacity [5-255] of the dimming/shade used on non-selected windows during mini-map navigation."
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Dimming opacity of windows during mini-map navigation");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton minimap_shade_opacity_spin {
+                width-chars: 3;
+                max-width-chars: 3;
+                adjustment: minimap_shade_opacity_scale;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+        }
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>Tiling Edge Preview Settings</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Enables tiling edge previews");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Enable tiling edge previews");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch edge-preview-enable {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Controls the \"size\" of tiling edge window previews, as compared to their actual window size (e.g. \"15\" corresponds to an edge preview size being approximately 15% of the actual window size)"
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Tiling edge preview scale (%)");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton edge_scale_spin {
+                width-chars: 2;
+                max-width-chars: 2;
+                adjustment: edge_preview_scale;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Enables activating edge window by mouse click");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Click to activate edge window");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch edge-preview-click-enable {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Enables activating edge window by hover timeout");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Hover to activate edge window");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch edge-preview-timeout-enable {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Sets the timeout before activating window (milliseconds)");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Hover timeout (milliseconds)");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton edge-preview-timeout {
+                width-chars: 5;
+                max-width-chars: 5;
+                adjustment: edge_preview_timeout_scale;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _("Enables the continual activation of windows if pointer is still at edge of monitor");
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("<i>Continual </i> edge window activation on hover");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch edge-preview-timeout-continual {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+        }
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>AlbumWM Component Size Settings</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Controls the \"size\" of mini-map tiles (as shown during window navigation keybinds), as compared to their actual window size (e.g. \"15\" corresponds to a mini-map tile size being approximately 15% of the actual window size)"
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Mini-map scale (%) <i>(0 hides Mini-map)</i>");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton minimap_scale_spin {
+                width-chars: 2;
+                max-width-chars: 2;
+                adjustment: minimap_scale;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Controls the \"size\" of window switcher previews (e.g. Super+Tab switcher), as compared to their actual window size (e.g. \"15\" corresponds to an edge preview size being approximately 15% of the actual window size)"
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Window-switcher preview scale (%)");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton window_switcher_preview_scale_spin {
+                width-chars: 2;
+                max-width-chars: 2;
+                adjustment: window_switcher_preview_scale;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Controls the maximum window \"size\" of GNOME overview windows, as compared to their actual window size (e.g. \"95\" corresponds to an edge preview size being approximately 95% of the actual window size)"
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("<i>Maximum</i> window scale (%) of GNOME overview windows");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton overview_max_window_scale_spin {
+                width-chars: 2;
+                max-width-chars: 2;
+                adjustment: overview_max_window_scale;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+        }
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>Other Settings</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              tooltip-text: _(
+                "Sets the percentage of workspace width the \"window maximize horizontally\" function (default keybind Super+F) uses."
+              );
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Maximised horizontal width");
+                use-markup: true;
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton maximize-width-percent {
+                width-chars: 2;
+                max-width-chars: 2;
+                adjustment: maximize_width_percent_scale;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                tooltip-text: _("Enables mouse scrolling on Top Bar to switch window (left/right)");
+                hexpand: true;
+                label: _("Mouse scrolling on Top Bar switches window (left/right)");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              Switch topbar-mouse-scroll-enable {
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+            }
+          }
+        }
+
+        Label {
+          halign: start;
+          hexpand: true;
+          label: _("<b>Three-finger Swipe Sensitivity</b>");
+          use-markup: true;
+        }
+
+        ListBox {
+          focusable: false;
+          selection-mode: none;
+          margin-bottom: 16;
+
+          styles [
+            "frame",
+          ]
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid workspace_grid7 {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 16;
+              row-spacing: 12;
+              column-spacing: 32;
+
+              Label workspace_label1 {
+                focusable: false;
+                hexpand: true;
+                label: _("Horizontal sensitivity");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton horizontal-sensitivity {
+                can-focus: true;
+                editable: true;
+                width-chars: 2;
+                max-width-chars: 2;
+                text: _("0");
+                adjustment: horizontal-sensitivity-adjustment;
+                digits: 1;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+
+              Label workspace_label3 {
+                focusable: false;
+                hexpand: true;
+                label: _("Horizontal friction");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "1";
+                }
+              }
+
+              SpinButton horizontal-friction {
+                width-chars: 2;
+                max-width-chars: 2;
+                text: _("0,0");
+                adjustment: horizontal-friction-adjustment;
+                digits: 1;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "1";
+                }
+              }
+            }
+          }
+
+          ListBoxRow {
+            activatable: false;
+            focusable: false;
+
+            Grid {
+              focusable: false;
+              margin-start: 12;
+              margin-end: 12;
+              margin-top: 6;
+              margin-bottom: 6;
+              row-spacing: 12;
+              column-spacing: 32;
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Vertical sensitivity");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "0";
+                }
+              }
+
+              SpinButton vertical-sensitivity {
+                width-chars: 2;
+                max-width-chars: 2;
+                text: _("0");
+                adjustment: vertical-sensitivity-adjustment;
+                digits: 1;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "0";
+                }
+              }
+
+              Label {
+                focusable: false;
+                hexpand: true;
+                label: _("Vertical friction");
+                xalign: 0;
+
+                layout {
+                  column: "0";
+                  row: "1";
+                }
+              }
+
+              SpinButton vertical-friction {
+                width-chars: 2;
+                max-width-chars: 2;
+                text: _("0,0");
+                adjustment: vertical-friction-adjustment;
+                digits: 1;
+                snap-to-ticks: true;
+                numeric: true;
+                update-policy: always;
+
+                layout {
+                  column: "1";
+                  row: "1";
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

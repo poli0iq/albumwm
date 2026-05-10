@@ -1,0 +1,30 @@
+using Gtk 4.0;
+
+template $KeybindingsPane: Box {
+  focusable: false;
+  orientation: vertical;
+  width-request: 580;
+
+  SearchEntry search {
+    activates-default: false;
+    halign: center;
+    margin-bottom: 12;
+    search-changed => $_onSearchChanged();
+  }
+
+  ScrolledWindow scrolledWindow {
+    Viewport {
+      focusable: false;
+      vexpand: true;
+
+      ListBox listbox {
+        styles [
+          "keybindings",
+          "frame",
+        ]
+
+        row-activated => $_onRowActivated();
+      }
+    }
+  }
+}

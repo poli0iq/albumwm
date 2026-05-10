@@ -27,6 +27,7 @@
 
           nativeBuildInputs = with hostPkgs; [
             glib
+            blueprint-compiler
           ];
 
           # Default buildPhase already includes "npm run build"

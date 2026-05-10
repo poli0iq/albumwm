@@ -1,0 +1,109 @@
+using Gtk 4.0;
+
+template $KeybindingsRow: ListBoxRow {
+  styles [
+    "keybinding",
+  ]
+
+  selectable: false;
+  activatable: true;
+  focusable: true;
+
+  Box {
+    orientation: vertical;
+
+    Box header {
+      spacing: 12;
+
+      styles [
+        "header",
+      ]
+
+      Label descLabel {
+        styles [
+          "description",
+        ]
+
+        ellipsize: end;
+        halign: start;
+        lines: 1;
+        wrap: false;
+        xalign: 0;
+      }
+
+      Image conflictIcon {
+        visible: false;
+        icon-name: "dialog-error-symbolic";
+        halign: start;
+      }
+
+      Label accelLabel {
+        hexpand: true;
+        halign: end;
+        xalign: 1.0;
+        use-markup: true;
+
+        styles [
+          "dim-label",
+        ]
+      }
+    }
+
+    Revealer revealer {
+      Grid {
+        hexpand: true;
+
+        ListBox comboList {
+          activate-on-single-click: true;
+          hexpand: true;
+          selection-mode: none;
+
+          styles [
+            "combos",
+          ]
+
+          row-activated => $_onRowActivated();
+
+          layout {
+            row: "0";
+            column: "0";
+            column-span: "2";
+          }
+        }
+
+        Button resetButton {
+          label: _("Reset");
+          action-name: "keybinding.reset";
+          halign: start;
+          margin-start: 12;
+          margin-top: 8;
+          margin-bottom: 8;
+
+          layout {
+            row: "1";
+            column: "0";
+          }
+        }
+
+        Button addButton {
+          label: _("Add shortcut…");
+          action-name: "keybinding.add";
+          hexpand: true;
+          halign: end;
+          margin-top: 8;
+          margin-end: 12;
+          margin-bottom: 8;
+
+          layout {
+            row: "1";
+            column: "1";
+          }
+
+          styles [
+            "suggested-action",
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+using Gtk 4.0;
+
+template $ComboRow: ListBoxRow {
+  selectable: false;
+  activatable: true;
+  focusable: true;
+  focus-on-click: true;
+
+  child: Stack stack {
+    StackPage {
+      child: Box shortcutPage {
+        hexpand: true;
+        spacing: 12;
+
+        ShortcutLabel shortcutLabel {
+          disabled-text: _("Disabled");
+        }
+
+        MenuButton conflictButton {
+          tooltip-text: _("Conflicts");
+          icon-name: "dialog-error-symbolic";
+          popover: conflictPopover;
+          visible: false;
+
+          styles [
+            "flat",
+            "circular",
+          ]
+        }
+
+        Button deleteButton {
+          hexpand: true;
+          halign: end;
+          tooltip-text: _("Remove shortcut");
+          icon-name: "edit-clear-symbolic";
+
+          styles [
+            "flat",
+            "circular",
+          ]
+
+          clicked => $_onDeleteButtonClicked();
+        }
+      };
+    }
+
+    StackPage {
+      child: Label placeholderPage {
+        hexpand: true;
+        xalign: 0.0;
+        use-markup: true;
+        label: _("<i>Add shortcut…</i>");
+      };
+    }
+
+    StackPage {
+      child: Label editPage {
+        use-markup: true;
+        label: _("Enter keyboard shortcut, <b>Backspace</b> to delete or <b>Esc</b> to cancel");
+      };
+    }
+  };
+}
+
+Popover conflictPopover {
+  Box about {
+    focusable: false;
+    orientation: vertical;
+    margin-top: 12;
+    margin-bottom: 12;
+    spacing: 8;
+
+    Label {
+      label: _("Conflicts:");
+
+      styles [
+        "heading",
+      ]
+    }
+
+    ListBox conflictList {
+      selection-mode: none;
+      row-activated => $_onConflictRowActivated();
+    }
+  }
+}

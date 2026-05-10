@@ -1,0 +1,281 @@
+using Gtk 4.0;
+
+template $WinpropsRow: ListBoxRow {
+  styles [
+    "winprop-row",
+  ]
+
+  selectable: false;
+  activatable: true;
+  focusable: true;
+
+  Box {
+    orientation: vertical;
+
+    Box header {
+      spacing: 12;
+
+      styles [
+        "header",
+      ]
+
+      Label descLabel {
+        styles [
+          "description",
+        ]
+
+        ellipsize: end;
+        halign: start;
+        lines: 1;
+        wrap: false;
+        xalign: 0;
+      }
+
+      Label accelLabel {
+        hexpand: true;
+        halign: end;
+        xalign: 1.0;
+        use-markup: true;
+
+        styles [
+          "dim-label",
+        ]
+      }
+    }
+
+    Revealer revealer {
+      Grid {
+        hexpand: true;
+
+        ListBox optionList {
+          activate-on-single-click: true;
+          hexpand: true;
+          selection-mode: none;
+
+          styles [
+            "option-list",
+          ]
+
+          layout {
+            row: "0";
+            column: "0";
+            column-span: "2";
+          }
+
+          Grid {
+            focusable: false;
+            margin-start: 12;
+            margin-end: 12;
+            margin-top: 6;
+            margin-bottom: 6;
+            column-spacing: 32;
+            tooltip-markup: _(
+              "Window class value used to identify windows to have this winprop applied.  Can be a <b>string</b> or <b>javascript regex expression literal</b>, e.g. <b>/.*terminal.*/i</b> would match on any value that contains the word <b>terminal</b> (case-insensitive)."
+            );
+
+            Label {
+              focusable: false;
+              hexpand: true;
+              label: _("wm_class");
+              xalign: 0;
+
+              layout {
+                column: "0";
+                row: "0";
+              }
+            }
+
+            Entry wmClass {
+              width-chars: 24;
+              max-width-chars: 24;
+
+              layout {
+                column: "2";
+                row: "0";
+              }
+            }
+          }
+
+          Grid {
+            focusable: false;
+            margin-start: 12;
+            margin-end: 12;
+            margin-top: 6;
+            margin-bottom: 6;
+            column-spacing: 32;
+            tooltip-markup: _(
+              "Window title value used to identify windows to have this winprop applied.  Can be a <b>string</b> or <b>javascript regex expression literal</b>, e.g. <b>/.*terminal.*/i</b> would match on any value that contains the word <b>terminal</b> (case-insensitive)."
+            );
+
+            Label {
+              focusable: false;
+              hexpand: true;
+              label: _("title");
+              xalign: 0;
+
+              layout {
+                column: "0";
+                row: "0";
+              }
+            }
+
+            Entry title {
+              width-chars: 24;
+              max-width-chars: 24;
+
+              layout {
+                column: "2";
+                row: "0";
+              }
+            }
+          }
+
+          Grid {
+            focusable: false;
+            margin-start: 12;
+            margin-end: 12;
+            margin-top: 6;
+            margin-bottom: 6;
+            column-spacing: 32;
+
+            Label {
+              focusable: false;
+              hexpand: true;
+              label: _("Open on scratch layer");
+              xalign: 0;
+
+              layout {
+                column: "0";
+                row: "0";
+              }
+            }
+
+            Switch scratchLayer {
+              layout {
+                column: "1";
+                row: "0";
+              }
+            }
+          }
+
+          Grid {
+            focusable: false;
+            margin-start: 12;
+            margin-end: 12;
+            margin-top: 6;
+            margin-bottom: 6;
+            column-spacing: 32;
+            tooltip-markup: _(
+              "Preferred width.  Can be a percent value (e.g. <i>50%</i>) or pixel value (e.g. <i>500px</i>). <i>Note: this property is ignored for windows opened on the scratch layer.</i>"
+            );
+
+            Label {
+              focusable: false;
+              hexpand: true;
+              use-markup: true;
+              label: _("Preferred width <i>(with <b>%</b> or <b>px</b> unit)</i>");
+              xalign: 0;
+
+              layout {
+                column: "0";
+                row: "0";
+              }
+            }
+
+            Entry preferredWidth {
+              width-chars: 12;
+              max-width-chars: 12;
+
+              layout {
+                column: "2";
+                row: "0";
+              }
+            }
+          }
+
+          Grid {
+            focusable: false;
+            margin-start: 12;
+            margin-end: 12;
+            margin-top: 6;
+            margin-bottom: 6;
+            column-spacing: 32;
+
+            Label {
+              focusable: false;
+              hexpand: true;
+              use-markup: true;
+              label: _("Insert into workspace");
+              xalign: 0;
+
+              layout {
+                column: "0";
+                row: "0";
+              }
+            }
+
+            ComboBoxText space {
+              focusable: false;
+              hexpand: false;
+              width-request: 120;
+
+              layout {
+                column: "2";
+                row: "0";
+              }
+            }
+          }
+
+          Grid {
+            focusable: false;
+            margin-start: 12;
+            margin-end: 12;
+            margin-top: 6;
+            margin-bottom: 6;
+            column-spacing: 32;
+
+            Label {
+              focusable: false;
+              hexpand: true;
+              use-markup: true;
+              label: _("Focus window after inserting into workspace");
+              xalign: 0;
+
+              layout {
+                column: "0";
+                row: "0";
+              }
+            }
+
+            Switch focus {
+              layout {
+                column: "2";
+                row: "0";
+              }
+            }
+          }
+        }
+
+        Button deleteButton {
+          label: _("Delete");
+          hexpand: true;
+          halign: end;
+          margin-top: 8;
+          margin-end: 12;
+          margin-bottom: 8;
+
+          layout {
+            row: "1";
+            column: "1";
+          }
+
+          styles [
+            "destructive-action",
+          ]
+
+          clicked => $_onDeleteButtonClicked();
+        }
+      }
+    }
+  }
+}
