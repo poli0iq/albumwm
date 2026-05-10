@@ -16,7 +16,7 @@ export let version = Config.PACKAGE_VERSION.split('.').map(Number);
 
 let warpRipple;
 
-let signals, touchCoords;
+let touchSignals, touchCoords;
 let inTouch = false;
 
 export class Signals extends Map {
@@ -51,7 +51,7 @@ export class Signals extends Map {
         let ids = this.get(object);
         if (ids) {
             if (id === null) {
-                ids.forEach(id => object.disconnect(id));
+                ids.forEach(sigId => object.disconnect(sigId));
                 ids = [];
             } else {
                 object.disconnect(id);
@@ -76,8 +76,8 @@ export function enable() {
     warpRipple = new Ripples.Ripples(0.5, 0.5, 'ripple-pointer-location');
     warpRipple.addTo(Main.uiGroup);
 
-    signals = new Signals();
-    signals.connect(global.stage, 'touch-event', (_actor, event) => {
+    touchSignals = new Signals();
+    touchSignals.connect(global.stage, 'touch-event', (_actor, event) => {
         switch (event.type()) {
             case Clutter.EventType.TOUCH_BEGIN:
             case Clutter.EventType.TOUCH_UPDATE:
@@ -103,8 +103,8 @@ export function disable() {
     warpRipple = null;
     markNewClonesSignalId = null;
 
-    signals.destroy();
-    signals = null;
+    touchSignals.destroy();
+    touchSignals = null;
 }
 
 export function assert(condition, message, ...dump) {

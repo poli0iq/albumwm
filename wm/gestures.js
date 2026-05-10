@@ -343,10 +343,10 @@ export function done(space) {
 /**
  * Finds a target window given a space and direction (-1 is left, 1 is right)
  * @param {Tiling.Space} space
- * @param {Boolean} direction
+ * @param {Boolean} dir
  * @returns
  */
-export function findTargetWindow(space, direction) {
+export function findTargetWindow(space, dir) {
     let selected = space.selectedWindow?.clone;
     if (!selected) {
         return false;
@@ -366,7 +366,7 @@ export function findTargetWindow(space, direction) {
         let x = clone.targetX + space.targetX;
         return !(x + clone.width < min || x > min + workArea.width);
     });
-    if (!direction)
+    if (!dir)
         // scroll left
         windows.reverse();
     let visible = windows.filter(w => {
@@ -381,7 +381,7 @@ export function findTargetWindow(space, direction) {
     if (windows.length === 0) {
         let first = space.getWindow(0, 0);
         let last = space.getWindow(space.length - 1, 0);
-        if (direction) {
+        if (dir) {
             return last;
         } else {
             return first;
@@ -393,7 +393,7 @@ export function findTargetWindow(space, direction) {
     let closest = windows[0].clone;
     let next = windows[1].clone;
     let r1, r2;
-    if (direction) {
+    if (dir) {
         // ->
         r1 =
             Math.abs(closest.targetX + closest.width + space.targetX) /
@@ -416,6 +416,6 @@ export function findTargetWindow(space, direction) {
  * @param {Boolean} option
  */
 export function swipeTrackersEnable(option) {
-    let enable = option ?? true;
-    Patches.swipeTrackers.forEach(t => (t.enabled = enable));
+    let enabled = option ?? true;
+    Patches.swipeTrackers.forEach(t => (t.enabled = enabled));
 }

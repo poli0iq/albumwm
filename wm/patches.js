@@ -259,11 +259,11 @@ export function setupOverrides() {
             this._icon.destroy_all_children();
 
             this.monitor = Tiling.spaces.selectedSpace.monitor;
-            let _createWindowClone = (window, size) => {
-                let [width, height] = window.get_size();
+            let _createWindowClone = (windowActor, size) => {
+                let [width, height] = windowActor.get_size();
                 let scale = Math.min(1.0, size / width, size / height);
                 return new Clutter.Clone({
-                    source: window,
+                    source: windowActor,
                     width: width * scale,
                     height: height * scale,
                     x_align: Clutter.ActorAlign.CENTER,
@@ -467,7 +467,6 @@ export function setupActions() {
      * In particular the 3-finger hold + tap can randomly activate a minimized
      * window when tapping after a 3-finger swipe
      */
-    // eslint-disable-next-line array-callback-return
     actions = global.stage.get_actions().filter(a => {
         switch (a.constructor) {
             case WindowManager.AppSwitchAction:

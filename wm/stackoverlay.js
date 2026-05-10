@@ -60,8 +60,10 @@ export function createAppIcon(metaWindow, size) {
               icon_name: 'icon-missing',
               icon_size: size,
           });
-    appIcon.x_expand = appIcon.y_expand = true;
-    appIcon.x_align = appIcon.y_align = Clutter.ActorAlign.END;
+    appIcon.x_expand = true;
+    appIcon.y_expand = true;
+    appIcon.x_align = Clutter.ActorAlign.END;
+    appIcon.y_align = Clutter.ActorAlign.END;
 
     return appIcon;
 }
@@ -360,20 +362,24 @@ export class StackOverlay {
         overlay.width = 1;
 
         if (this._direction === Meta.MotionDirection.LEFT) {
-            let column = space[space.indexOf(metaWindow) + 1];
+            let neighbourCol = space[space.indexOf(metaWindow) + 1];
             let neighbour =
-                column &&
-                global.display.sort_windows_by_stacking(column).reverse()[0];
+                neighbourCol &&
+                global.display
+                    .sort_windows_by_stacking(neighbourCol)
+                    .reverse()[0];
 
             if (!neighbour) return bail(); // Should normally have a neighbour. Bail!
 
             overlay.x = this.monitor.x;
             Utils.actorRaise(overlay, neighbour.get_compositor_private());
         } else {
-            let column = space[space.indexOf(metaWindow) - 1];
+            let neighbourCol = space[space.indexOf(metaWindow) - 1];
             let neighbour =
-                column &&
-                global.display.sort_windows_by_stacking(column).reverse()[0];
+                neighbourCol &&
+                global.display
+                    .sort_windows_by_stacking(neighbourCol)
+                    .reverse()[0];
             if (!neighbour) return bail(); // Should normally have a neighbour. Bail!
 
             overlay.x = this.monitor.x + this.monitor.width - overlay.width;

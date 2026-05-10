@@ -21,6 +21,7 @@ export function disable() {
 }
 
 export const LiveAltTab = GObject.registerClass(
+    // eslint-disable-next-line no-shadow
     class LiveAltTab extends AltTab.WindowSwitcherPopup {
         _init(reverse, scratchOnly) {
             this.reverse = reverse;

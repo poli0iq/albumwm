@@ -447,7 +447,7 @@ export class Space extends Array {
     ) {
         let space = this;
 
-        function mosh(windows, height, y0) {
+        function mosh(windows, height, baseY) {
             let targetHeights = fitProportionally(
                 windows.map(mw => mw.get_frame_rect().height),
                 height
@@ -455,7 +455,7 @@ export class Space extends Array {
             let [, y] = space.layoutColumnSimple(
                 windows,
                 x,
-                y0,
+                baseY,
                 targetWidth,
                 targetHeights,
                 time
@@ -1429,8 +1429,8 @@ export class Space extends Array {
             n < this.length;
             n++
         ) {
-            let metaWindow = this[n][0];
-            let clone = metaWindow.clone;
+            let mw = this[n][0];
+            let clone = mw.clone;
             let x = clone.targetX + target;
             if (!overlay.target && x + clone.width > this.width) {
                 overlay.setTarget(this, n);
@@ -1443,8 +1443,8 @@ export class Space extends Array {
             n >= 0;
             n--
         ) {
-            let metaWindow = this[n][0];
-            let clone = metaWindow.clone;
+            let mw = this[n][0];
+            let clone = mw.clone;
             let x = clone.targetX + target;
             if (!overlay.target && x < 0) {
                 overlay.setTarget(this, n);
@@ -1750,13 +1750,13 @@ export const Spaces = class Spaces extends Map {
         this.signals.connect(
             display,
             'window-created',
-            (display, metaWindow, _userData) => this.window_created(metaWindow)
+            (_display, metaWindow, _userData) => this.window_created(metaWindow)
         );
 
-        this.signals.connect(display, 'grab-op-begin', (display, mw, type) =>
+        this.signals.connect(display, 'grab-op-begin', (_display, mw, type) =>
             grabBegin(mw, type)
         );
-        this.signals.connect(display, 'grab-op-end', (display, mw, type) =>
+        this.signals.connect(display, 'grab-op-end', (_display, mw, type) =>
             grabEnd(mw, type)
         );
 
@@ -2164,12 +2164,12 @@ export function hasTransient(metaWindow) {
     if (!metaWindow) {
         return false;
     }
-    let hasTransient = false;
+    let found = false;
     metaWindow.foreach_transient(_t => {
-        hasTransient = true;
+        found = true;
     });
 
-    return hasTransient;
+    return found;
 }
 
 /**
@@ -2265,8 +2265,8 @@ export function registerWindow(metaWindow) {
     clone.targetX = 0;
     clone.meta_window = metaWindow;
 
-    signals.connect(metaWindow, 'focus', (metaWindow, userData) => {
-        focusHandler(metaWindow, userData);
+    signals.connect(metaWindow, 'focus', (mw, userData) => {
+        focusHandler(mw, userData);
     });
     signals.connect(metaWindow, 'size-changed', allocateClone);
     // Note: runs before gnome-shell's minimize handling code
@@ -2289,12 +2289,12 @@ export function registerWindow(metaWindow) {
             delete metaWindow._fullscreen_above;
         }
     });
-    signals.connect(metaWindow, 'notify::minimized', metaWindow => {
-        minimizeHandler(metaWindow);
+    signals.connect(metaWindow, 'notify::minimized', mw => {
+        minimizeHandler(mw);
     });
 
-    signals.connect(actor, 'show', actor => {
-        showHandler(actor);
+    signals.connect(actor, 'show', a => {
+        showHandler(a);
     });
 
     /**
@@ -2468,9 +2468,9 @@ export function resizeHandler(metaWindow) {
         }
     }
 
-    const mover = (x, animate) => {
+    const mover = (mx, animate) => {
         moveTo(space, metaWindow, {
-            x,
+            x: mx,
             animate,
         });
     };
@@ -4085,25 +4085,25 @@ export function takeWindow(metaWindow, space, options = {}) {
     if (!existing && !space.removeWindow(metaWindow)) return;
 
     // setup animate function
-    const animateTake = (window, existing) => {
-        navigator._moving.push(window);
+    const animateTake = (mw, isExisting) => {
+        navigator._moving.push(mw);
         const container = spaces.spaceContainer;
-        if (!existing) {
+        if (!isExisting) {
             Utils.actorAddChild(container, metaWindow.clone);
         }
 
         const lowest = navigator._moving[navigator._moving.length - 2];
-        lowest && container.set_child_below_sibling(window.clone, lowest.clone);
+        lowest && container.set_child_below_sibling(mw.clone, lowest.clone);
         const point = space.cloneContainer.apply_relative_transform_to_point(
             container,
             new Graphene.Point3D({
-                x: window.clone.x,
-                y: window.clone.y,
+                x: mw.clone.x,
+                y: mw.clone.y,
             })
         );
 
-        if (!existing) {
-            window.clone.set_position(point.x, point.y);
+        if (!isExisting) {
+            mw.clone.set_position(point.x, point.y);
         }
 
         let x = Math.round(
@@ -4114,8 +4114,8 @@ export function takeWindow(metaWindow, space, options = {}) {
         let y =
             Math.round(space.monitor.y + (space.monitor.height * 2) / 3) +
             16 * navigator._moving.length;
-        animateWindow(window);
-        Easer.addEase(window.clone, {
+        animateWindow(mw);
+        Easer.addEase(mw.clone, {
             x,
             y,
             time: Settings.prefs.animation_time,
@@ -4127,10 +4127,10 @@ export function takeWindow(metaWindow, space, options = {}) {
         navigator._moving = [];
 
         const selectedSpace = () => spaces.selectedSpace;
-        const changeSpace = metaWindow => {
-            const space = selectedSpace();
-            if (spaces.spaceOfWindow(metaWindow) !== space) {
-                metaWindow.change_workspace(space.workspace);
+        const changeSpace = mw => {
+            const target = selectedSpace();
+            if (spaces.spaceOfWindow(mw) !== target) {
+                mw.change_workspace(target.workspace);
             }
         };
 
@@ -4205,13 +4205,13 @@ export function takeWindow(metaWindow, space, options = {}) {
             Navigator.dismissDispatcher(DispatcherMode.KEYBOARD);
             navigator.showTakeHint(false);
 
-            let selectedSpace = spaces.selectedSpace;
+            let target = spaces.selectedSpace;
             navigator._moving.forEach(w => {
                 changeSpace(w);
                 insertWindow(w, { existing: true, dropping: true });
 
                 // make space selectedWindow (keeps index for next insert)
-                selectedSpace.selectedWindow = w;
+                target.selectedWindow = w;
             });
 
             // activate last metaWindow after taken windows inserted

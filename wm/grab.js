@@ -245,11 +245,11 @@ export class MoveGrab {
 
         let [sx, sy] = space.globalToScroll(gx, gy, { useTarget: true });
 
-        Tiling.spaces.forEach(space => {
+        Tiling.spaces.forEach(s => {
             this.signals.connect(
-                space.background,
+                s.background,
                 'motion-event',
-                this.spaceMotion.bind(this, space)
+                this.spaceMotion.bind(this, s)
             );
         });
         this.selectDndZone(space, sx, sy, single && onSame);
@@ -332,12 +332,12 @@ export class MoveGrab {
 
             // vertically tiled
             for (let i = 0; i < column.length + 1; i++) {
-                let clone;
+                let rowClone;
                 if (i < column.length) {
-                    clone = column[i].clone;
+                    rowClone = column[i].clone;
                 } else {
                     let lastClone = column[i - 1].clone;
-                    clone = {
+                    rowClone = {
                         targetX: lastClone.targetX,
                         targetY: lastClone.targetY + lastClone.height + gap,
                         width: lastClone.width,
@@ -346,7 +346,7 @@ export class MoveGrab {
                 }
                 const isFirst = i === 0;
                 const isLast = i === column.length;
-                const cy = clone.targetY - halfGap;
+                const cy = rowClone.targetY - halfGap;
                 const t = cy - rowZoneMargin;
                 const b = cy + rowZoneMargin;
                 if (t <= y && y <= b) {
@@ -359,8 +359,8 @@ export class MoveGrab {
                         marginB: isLast ? 0 : rowZoneMargin,
                         space,
                         actorParams: {
-                            x: clone.targetX,
-                            width: clone.width,
+                            x: rowClone.targetX,
+                            width: rowClone.width,
                         },
                     };
                     break;
@@ -513,7 +513,7 @@ export class MoveGrab {
         let clone = metaWindow.clone;
         let [gx, gy] = global.get_pointer();
 
-        this.zoneActors.forEach(actor => actor.destroy());
+        this.zoneActors.forEach(zoneActor => zoneActor.destroy());
         let params = {
             time: Settings.prefs.animation_time,
             scale_x: 1,

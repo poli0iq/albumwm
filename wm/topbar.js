@@ -85,6 +85,7 @@ export function disable() {
 }
 
 const BaseIcon = GObject.registerClass(
+    // eslint-disable-next-line no-shadow
     class BaseIcon extends St.Icon {
         _init(
             props = {},
@@ -194,6 +195,7 @@ const BaseIcon = GObject.registerClass(
 );
 
 export const FocusIcon = GObject.registerClass(
+    // eslint-disable-next-line no-shadow
     class FocusIcon extends BaseIcon {
         _init(props = {}, tooltipProps = {}) {
             super._init(
@@ -263,6 +265,7 @@ ${this.getKeybindString('switch-focus-mode')}`);
 );
 
 export const FocusButton = GObject.registerClass(
+    // eslint-disable-next-line no-shadow
     class FocusButton extends panelMenu.Button {
         _init() {
             super._init(0.0, 'FocusMode');
@@ -310,6 +313,7 @@ export const FocusButton = GObject.registerClass(
 );
 
 export const OpenPositionIcon = GObject.registerClass(
+    // eslint-disable-next-line no-shadow
     class OpenPositionIcon extends BaseIcon {
         _init(props = {}, tooltipProps = {}) {
             super._init(
@@ -364,6 +368,7 @@ ${this.getKeybindString('switch-open-window-position')}`);
 );
 
 export const OpenPositionButton = GObject.registerClass(
+    // eslint-disable-next-line no-shadow
     class OpenPositionButton extends panelMenu.Button {
         _init() {
             super._init(0.0, 'OpenPosition');

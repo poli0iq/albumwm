@@ -16,7 +16,7 @@ import {
 } from './imports.js';
 
 const Seat = Clutter.get_default_backend().get_default_seat();
-const display = global.display;
+const Display = global.display;
 
 const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
@@ -30,7 +30,7 @@ export function enable(extension) {
     keybindSettings = extension.getSettings(KEYBINDINGS_KEY);
     setupActions(keybindSettings);
     signals.connect(
-        display,
+        Display,
         'accelerator-activated',
         (display, actionId, deviceId, timestamp) => {
             handleAccelerator(display, actionId, deviceId, timestamp);
@@ -601,7 +601,7 @@ export function getBoundActionId(keystr) {
         throw new Error(`Multiple keycodes ${keycodes} ${keystr}`);
     }
     const rawMask = devirtualizeMask(mask);
-    return display.get_keybinding_action(keycodes[0], rawMask);
+    return Display.get_keybinding_action(keycodes[0], rawMask);
 }
 
 export function handleAccelerator(display, actionId, _deviceId, _timestamp) {
@@ -628,7 +628,7 @@ export function disableAction(action) {
         action.id = Meta.KeyBindingAction.NONE;
         delete actionIdMap[oldId];
     } else {
-        display.ungrab_accelerator(action.id);
+        Display.ungrab_accelerator(action.id);
         action.id = Meta.KeyBindingAction.NONE;
 
         delete nameMap[action.mutterName];
