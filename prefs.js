@@ -4,7 +4,7 @@ import Gtk from 'gi://Gtk';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import * as Settings from './wm/settings.js';
+import * as _Settings from './wm/settings.js';
 // eslint-disable-next-line no-unused-vars
 import * as KeybindingsPane from './preferences/keybindingsPane.js';
 // eslint-disable-next-line no-unused-vars
@@ -45,7 +45,7 @@ class SettingsWidget {
             const builder = this.builder.get_object(builderKey);
             const value = this._settings.get_int(settingKey);
             builder.set_value(value);
-            builder.connect('value-changed', () => {
+            builder.connect('changed', () => {
                 this._settings.set_int(settingKey, builder.get_value());
             });
         };
@@ -87,6 +87,46 @@ class SettingsWidget {
             builder.connect('changed', obj => {
                 const value =
                     optionNumberEnum[obj.get_active_id()] ?? defaultNumber;
+                this._settings.set_int(settingKey, value);
+            });
+        };
+
+        const toggleGroupSelectionChanged = (
+            settingKey,
+            optionNumberEnum,
+            defaultOption,
+            defaultNumber
+        ) => {
+            const builder = this.builder.get_object(settingKey);
+            const setting = this._settings.get_int(settingKey);
+            const numberOptionEnum = Object.fromEntries(
+                Object.entries(optionNumberEnum).map(a => a.reverse())
+            );
+
+            builder.set_active_name(numberOptionEnum[setting] ?? defaultOption);
+            builder.connect('notify::active-name', obj => {
+                const value =
+                    optionNumberEnum[obj.get_active_name()] ?? defaultNumber;
+                this._settings.set_int(settingKey, value);
+            });
+        };
+
+        const comboRowSelectionChanged = (
+            settingKey,
+            indexNumberEnum,
+            defaultIndex,
+            defaultNumber
+        ) => {
+            const builder = this.builder.get_object(settingKey);
+            const setting = this._settings.get_int(settingKey);
+            const numberIndexEnum = Object.fromEntries(
+                Object.entries(indexNumberEnum).map(a => a.reverse())
+            );
+
+            builder.set_selected(numberIndexEnum[setting] ?? defaultIndex);
+            builder.connect('notify::selected', obj => {
+                const value =
+                    indexNumberEnum[obj.get_selected()] ?? defaultNumber;
                 this._settings.set_int(settingKey, value);
             });
         };
@@ -251,39 +291,47 @@ class SettingsWidget {
         intValueChanged('edge_preview_timeout_scale', 'edge-preview-timeout');
         booleanStateChanged('edge-preview-timeout-continual');
 
-        const openWindowPosition = this.builder.get_object(
-            'open-window-position'
+        toggleGroupSelectionChanged(
+            'open-window-position',
+            {
+                right: 0,
+                down: 1,
+            },
+            'right',
+            0
         );
-        const owpos = this._settings.get_int('open-window-position');
-        openWindowPosition.set_active_id(
-            owpos === Settings.OpenWindowPositions.DOWN ? 'down' : 'right'
+        toggleGroupSelectionChanged(
+            'default-focus-mode',
+            {
+                default: 0,
+                center: 1,
+                edge: 2,
+            },
+            'default',
+            0
         );
-        openWindowPosition.connect('changed', obj => {
-            const mode =
-                obj.get_active_id() === 'down'
-                    ? Settings.OpenWindowPositions.DOWN
-                    : Settings.OpenWindowPositions.RIGHT;
-            this._settings.set_int('open-window-position', mode);
-        });
 
         const scratchOverview = this.builder.get_object('scratch-in-overview');
         if (this._settings.get_boolean('only-scratch-in-overview'))
-            scratchOverview.set_active_id('only');
+            scratchOverview.set_selected(1); // 'only'
         else if (this._settings.get_boolean('disable-scratch-in-overview'))
-            scratchOverview.set_active_id('never');
-        else scratchOverview.set_active_id('always');
+            scratchOverview.set_selected(2); // 'never'
+        else scratchOverview.set_selected(0); // 'always'
 
-        scratchOverview.connect('changed', obj => {
-            if (obj.get_active_id() === 'only') {
+        scratchOverview.connect('notify::selected', obj => {
+            if (obj.selected === 1) {
+                // 'only'
                 this._settings.set_boolean('only-scratch-in-overview', true);
                 this._settings.set_boolean(
                     'disable-scratch-in-overview',
                     false
                 );
-            } else if (obj.get_active_id() === 'never') {
+            } else if (obj.selected === 2) {
+                // 'never'
                 this._settings.set_boolean('only-scratch-in-overview', false);
                 this._settings.set_boolean('disable-scratch-in-overview', true);
             } else {
+                // 'always'
                 this._settings.set_boolean('only-scratch-in-overview', false);
                 this._settings.set_boolean(
                     'disable-scratch-in-overview',
@@ -291,6 +339,17 @@ class SettingsWidget {
                 );
             }
         });
+
+        comboRowSelectionChanged(
+            'gesture-horizontal-fingers',
+            {
+                0: 0, // 'fingers-disabled'
+                1: 3, // 'three-fingers'
+                2: 4, // 'four-fingers'
+            },
+            0, // 'fingers-disabled'
+            0
+        );
 
         // Keybindings
         const keybindingsPane = this.builder.get_object('keybindings_pane');
@@ -329,30 +388,6 @@ class SettingsWidget {
 
         // Advanced
         booleanStateChanged('gesture-enabled');
-
-        const fingerOptions = {
-            'fingers-disabled': 0,
-            'three-fingers': 3,
-            'four-fingers': 4,
-        };
-        const fingerOptionDefault = 'fingers-disabled';
-        const fingerNumberDefault = 0;
-        enumOptionsChanged(
-            'gesture-horizontal-fingers',
-            fingerOptions,
-            fingerOptionDefault,
-            fingerNumberDefault
-        );
-        enumOptionsChanged(
-            'default-focus-mode',
-            {
-                default: 0,
-                center: 1,
-                edge: 2,
-            },
-            'default',
-            0
-        );
 
         enumOptionsChanged(
             'overview-ensure-viewport-animation',
