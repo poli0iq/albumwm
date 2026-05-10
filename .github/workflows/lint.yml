@@ -22,3 +22,26 @@ jobs:
 
       - name: Prettier
         run: npm run format:check
+
+  lint-ui:
+    name: Blueprint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install blueprint-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build gettext libgtk-4-dev libadwaita-1-dev
+          git clone --depth=1 https://gitlab.gnome.org/jwestman/blueprint-compiler.git
+          cd blueprint-compiler
+          meson setup build --prefix=/usr
+          meson compile -C build
+          sudo meson install -C build
+
+      - name: Install
+        run: npm ci
+
+      - name: Blueprint lint
+        run: npm run lint:ui
