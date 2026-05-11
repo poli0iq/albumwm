@@ -1,111 +1,6 @@
 using Gtk 4.0;
 using Adw 1;
 
-Adjustment horizontal-friction-adjustment {
-  lower: 0;
-  upper: 10;
-  step-increment: 0.1;
-  page-increment: 1;
-}
-
-Adjustment horizontal-sensitivity-adjustment {
-  lower: 0;
-  upper: 10;
-  step-increment: 0.1;
-  page-increment: 10;
-}
-
-Adjustment vertical-friction-adjustment {
-  lower: 0;
-  upper: 10;
-  step-increment: 0.1;
-  page-increment: 10;
-}
-
-Adjustment vertical-sensitivity-adjustment {
-  lower: 0;
-  upper: 10;
-  step-increment: 0.1;
-  page-increment: 10;
-}
-
-Adjustment animation_time_adjustment {
-  lower: 0.00;
-  upper: 6.00;
-  step-increment: 0.01;
-  page-increment: 0.1;
-}
-
-Adjustment drift_speed_adjustment {
-  lower: 0;
-  upper: 15;
-  step-increment: 1;
-  page-increment: 5;
-}
-
-Adjustment drag_drift_speed_adjustment {
-  lower: 0;
-  upper: 15;
-  step-increment: 1;
-  page-increment: 5;
-}
-
-Adjustment minimap_scale {
-  lower: 0;
-  upper: 95;
-  step-increment: 1;
-  page-increment: 10;
-}
-
-Adjustment minimap_shade_opacity_scale {
-  lower: 0;
-  upper: 255;
-  step-increment: 1;
-  page-increment: 10;
-}
-
-Adjustment edge_preview_scale {
-  lower: 0;
-  upper: 95;
-  step-increment: 1;
-  page-increment: 10;
-}
-
-Adjustment edge_preview_timeout_scale {
-  lower: 0;
-  upper: 10000;
-  step-increment: 100;
-  page-increment: 1000;
-}
-
-Adjustment window_switcher_preview_scale {
-  lower: 5;
-  upper: 95;
-  step-increment: 1;
-  page-increment: 10;
-}
-
-Adjustment maximize_width_percent_scale {
-  lower: 50;
-  upper: 100;
-  step-increment: 1;
-  page-increment: 10;
-}
-
-Adjustment overview_max_window_scale {
-  lower: 10;
-  upper: 95;
-  step-increment: 1;
-  page-increment: 10;
-}
-
-Adjustment overview_min_windows_per_row {
-  lower: 1;
-  upper: 20;
-  step-increment: 1;
-  page-increment: 5;
-}
-
 Adw.PreferencesPage general_page {
   title: _("General");
   icon-name: "text-x-generic-symbolic";
@@ -299,925 +194,285 @@ Adw.PreferencesPage advanced_page {
   icon-name: "emblem-system-symbolic";
 
   Adw.PreferencesGroup {
-    title: _("Animations and Visual");
+    title: _("Interface");
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Sets the duration of AlbumWM animated transitions (e.g. switching windows, workspaces etc.). Lower values result in faster transitions."
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Animation / transition time (seconds)");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton animation_time_spin {
-          width-chars: 3;
-          max-width-chars: 3;
-          adjustment: animation_time_adjustment;
-          numeric: true;
-          digits: 2;
-          snap-to-ticks: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+    Adw.SwitchRow show-focus-mode-icon {
+      title: _("Show focus mode icon in top bar");
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _("Sets the drift speed (px/ms) when using “drifting view to the left/right” keybinds.");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Drift speed (px/ms) when using “viewport drift” keybinds");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton drift_speed_spin {
-          width-chars: 3;
-          max-width-chars: 3;
-          adjustment: drift_speed_adjustment;
-          numeric: true;
-          snap-to-ticks: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+    Adw.SwitchRow show-open-position-icon {
+      title: _("Show open window position icon in top bar");
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow overview_min_windows_per_row_spin {
+      title: _("Minimum number of windows on overview row");
+      subtitle: _("Can make the overview appear more like the current layout");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _("Sets the drift speed (px/ms) when mouse is at edge of montior when dragging windows.");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Drift speed (px/ms) when dragging windows (at edge)");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton drag_drift_speed_spin {
-          width-chars: 3;
-          max-width-chars: 3;
-          adjustment: drag_drift_speed_adjustment;
-          numeric: true;
-          snap-to-ticks: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 1;
+        upper: 20;
+        page-increment: 5;
+        step-increment: 1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow minimap_shade_opacity_spin {
+      title: _("Minimap navigation window dimming");
+      subtitle: _("Inactive window dimming opacity, between 5 and 255");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _("Shows/hides the focus mode icon in TopBar");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 255;
+        page-increment: 10;
+        step-increment: 1;
+      };
+    }
+  }
 
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Show focus mode icon");
-          use-markup: true;
-          xalign: 0;
+  Adw.PreferencesGroup {
+    title: _("Animations");
 
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
+    Adw.SpinRow animation_time_spin {
+      title: _("Transition time (seconds)");
+      subtitle: _("Switching windows");
+      numeric: true;
+      snap-to-ticks: true;
+      digits: 2;
 
-        Switch show-focus-mode-icon {
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 0.00;
+        upper: 6.00;
+        page-increment: 0.1;
+        step-increment: 0.01;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow drift_speed_spin {
+      title: _("Scroll speed (px/ms)");
+      subtitle: _("Scrolling left/right via keybinds");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _("Shows/hides the open window position icon in TopBar");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Show open window position icon");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        Switch show-open-position-icon {
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 15;
+        page-increment: 5;
+        step-increment: 1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow drag_drift_speed_spin {
+      title: _("Edge drag scroll speed (px/ms)");
+      subtitle: _("Dragging windows to the monitor edge");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _("Sets the animation when exiting GNOME overview and ensuring selected window is in view");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("GNOME overview exit <i>select window</i> animation ");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        ComboBoxText overview-ensure-viewport-animation {
-          focusable: false;
-          hexpand: false;
-          width-request: 106;
-
-          items [
-            none: _("None"),
-            translate: _("Translate"),
-            fade: _("Fade"),
-          ]
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 15;
+        page-increment: 5;
+        step-increment: 1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.ComboRow overview-ensure-viewport-animation {
+      title: _("Window switch animation on overview exit");
+      subtitle: _("How activating a window from overview looks like");
 
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Sets the minimum number of windows for each row in Gnome overview. Increasing this can make Gnome overview appear more like the current tiling layout."
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
+      model: Gtk.StringList {
+        strings [
+          _("None"),
+          _("Translate"),
+          _("Fade"),
+        ]
+      };
+    }
+  }
 
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("<i>Minimum</i> number of windows per GNOME overview row");
-          use-markup: true;
-          xalign: 0;
+  Adw.PreferencesGroup {
+    title: _("Tiling edge preview");
+    description: _("Show next window when mouse cursor is on monitor edge.");
 
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
+    header-suffix: Gtk.Switch edge-preview-enable {
+      valign: center;
+    };
 
-        SpinButton overview_min_windows_per_row_spin {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: overview_min_windows_per_row;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
+    Adw.SpinRow edge_scale_spin {
+      title: _("Preview scale (%)");
+      subtitle: _("Relative to the actual window size");
+      numeric: true;
+      snap-to-ticks: true;
 
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 95;
+        page-increment: 10;
+        step-increment: 1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SwitchRow edge-preview-click-enable {
+      title: _("Click edge to activate window");
+    }
 
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Sets the opacity (between 5 and 255) of the dimming/shade used on non-selected windows during mini-map navigation."
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
+    Adw.ExpanderRow {
+      title: _("Hover edge to activate window");
+      subtitle: _("Activate the window after a timeout");
 
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Dimming opacity of windows during mini-map navigation");
-          use-markup: true;
-          xalign: 0;
+      [suffix]
+      Gtk.Switch edge-preview-timeout-enable {
+        valign: center;
+      }
 
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
+      Adw.SpinRow edge-preview-timeout {
+        title: _("Hover activation timeout (ms)");
+        numeric: true;
+        snap-to-ticks: true;
 
-        SpinButton minimap_shade_opacity_spin {
-          width-chars: 3;
-          max-width-chars: 3;
-          adjustment: minimap_shade_opacity_scale;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
+        adjustment: Gtk.Adjustment {
+          lower: 0;
+          upper: 10000;
+          page-increment: 1000;
+          step-increment: 100;
+        };
+      }
 
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
+      Adw.SwitchRow edge-preview-timeout-continual {
+        title: _("Continual hover activation");
+        subtitle: _("Keep activating windows while the pointer is on the edge");
       }
     }
   }
 
   Adw.PreferencesGroup {
-    title: _("Tiling Edge Preview");
+    title: _("Interface scale");
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow minimap_scale_spin {
+      title: _("Minimap scale (%)");
+      subtitle: _("Relative to the actual window sizes, 0 to hide minimap");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _("Enables tiling edge previews");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Enable tiling edge previews");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        Switch edge-preview-enable {
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 95;
+        page-increment: 10;
+        step-increment: 1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow window_switcher_preview_scale_spin {
+      title: _("Window switcher preview scale (%)");
+      subtitle: _("E.g. the Super+Tab switcher");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Controls the “size” of tiling edge window previews, as compared to their actual window size (e.g. “15” corresponds to an edge preview size being approximately 15 % of the actual window size)"
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Tiling edge preview scale (%)");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton edge_scale_spin {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: edge_preview_scale;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 5;
+        upper: 95;
+        page-increment: 10;
+        step-increment: 1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow overview_max_window_scale_spin {
+      title: _("Maximum scale of the overview previews (%)");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _("Enables activating edge window by mouse click");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Click to activate edge window");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        Switch edge-preview-click-enable {
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
-    }
-
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _("Enables activating edge window by hover timeout");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Hover to activate edge window");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        Switch edge-preview-timeout-enable {
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
-    }
-
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _("Sets the timeout before activating window (milliseconds)");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Hover timeout (milliseconds)");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton edge-preview-timeout {
-          width-chars: 5;
-          max-width-chars: 5;
-          adjustment: edge_preview_timeout_scale;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
-    }
-
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _("Enables the continual activation of windows if pointer is still at edge of monitor");
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("<i>Continual </i> edge window activation on hover");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        Switch edge-preview-timeout-continual {
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
-    }
-  }
-
-  Adw.PreferencesGroup {
-    title: _("Component Size");
-
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Controls the “size” of mini-map tiles (as shown during window navigation keybinds), as compared to their actual window size (e.g. “15” corresponds to a mini-map tile size being approximately 15 % of the actual window size)"
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Mini-map scale (%) <i>(0 hides Mini-map)</i>");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton minimap_scale_spin {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: minimap_scale;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
-    }
-
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Controls the “size” of window switcher previews (e.g. Super+Tab switcher), as compared to their actual window size (e.g. “15” corresponds to an edge preview size being approximately 15 % of the actual window size)"
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Window-switcher preview scale (%)");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton window_switcher_preview_scale_spin {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: window_switcher_preview_scale;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
-    }
-
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Controls the maximum window “size” of GNOME overview windows, as compared to their actual window size (e.g. “95” corresponds to an edge preview size being approximately 95 % of the actual window size)"
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("<i>Maximum</i> window scale (%) of GNOME overview windows");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton overview_max_window_scale_spin {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: overview_max_window_scale;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 10;
+        upper: 95;
+        page-increment: 10;
+        step-increment: 1;
+      };
     }
   }
 
   Adw.PreferencesGroup {
     title: _("Other");
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow maximize-width-percent {
+      title: _("Maximized horizontal width (%)");
+      subtitle: _("Maximum width of a tiled window");
+      numeric: true;
+      snap-to-ticks: true;
 
-      Grid {
-        focusable: false;
-        tooltip-text: _(
-          "Sets the percentage of workspace width the “window maximize horizontally” function (default keybind Super+F) uses."
-        );
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Maximised horizontal width");
-          use-markup: true;
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton maximize-width-percent {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: maximize_width_percent_scale;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 50;
+        upper: 100;
+        page-increment: 10;
+        step-increment: 1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
-
-      Grid {
-        focusable: false;
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        column-spacing: 32;
-
-        Label {
-          focusable: false;
-          tooltip-text: _("Enables mouse scrolling on Top Bar to switch window (left/right)");
-          hexpand: true;
-          label: _("Mouse scrolling on Top Bar switches window (left/right)");
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        Switch topbar-mouse-scroll-enable {
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-      }
+    Adw.SwitchRow topbar-mouse-scroll-enable {
+      title: _("Switch windows on top bar scroll");
+      subtitle: _("Scrolling top bar activates the left or right window");
     }
   }
 
   Adw.PreferencesGroup {
     title: _("Gesture");
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow horizontal-sensitivity {
+      title: _("Horizontal sensitivity");
+      numeric: true;
+      snap-to-ticks: true;
+      digits: 1;
 
-      Grid workspace_grid7 {
-        focusable: false;
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 16;
-        row-spacing: 12;
-        column-spacing: 32;
-
-        Label workspace_label1 {
-          focusable: false;
-          hexpand: true;
-          label: _("Horizontal sensitivity");
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
-
-        SpinButton horizontal-sensitivity {
-          can-focus: true;
-          editable: true;
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: horizontal-sensitivity-adjustment;
-          digits: 1;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-
-        Label workspace_label3 {
-          focusable: false;
-          hexpand: true;
-          label: _("Horizontal friction");
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "1";
-          }
-        }
-
-        SpinButton horizontal-friction {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: horizontal-friction-adjustment;
-          digits: 1;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "1";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 10;
+        page-increment: 10;
+        step-increment: 0.1;
+      };
     }
 
-    Adw.PreferencesRow {
-      activatable: false;
-      focusable: false;
+    Adw.SpinRow horizontal-friction {
+      title: _("Horizontal friction");
+      numeric: true;
+      snap-to-ticks: true;
+      digits: 1;
 
-      Grid {
-        focusable: false;
-        margin-start: 12;
-        margin-end: 12;
-        margin-top: 6;
-        margin-bottom: 6;
-        row-spacing: 12;
-        column-spacing: 32;
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 10;
+        page-increment: 1;
+        step-increment: 0.1;
+      };
+    }
 
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Vertical sensitivity");
-          xalign: 0;
+    Adw.SpinRow vertical-sensitivity {
+      title: _("Vertical sensitivity");
+      numeric: true;
+      snap-to-ticks: true;
+      digits: 1;
 
-          layout {
-            column: "0";
-            row: "0";
-          }
-        }
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 10;
+        page-increment: 10;
+        step-increment: 0.1;
+      };
+    }
 
-        SpinButton vertical-sensitivity {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: vertical-sensitivity-adjustment;
-          digits: 1;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
+    Adw.SpinRow vertical-friction {
+      title: _("Vertical friction");
+      numeric: true;
+      snap-to-ticks: true;
+      digits: 1;
 
-          layout {
-            column: "1";
-            row: "0";
-          }
-        }
-
-        Label {
-          focusable: false;
-          hexpand: true;
-          label: _("Vertical friction");
-          xalign: 0;
-
-          layout {
-            column: "0";
-            row: "1";
-          }
-        }
-
-        SpinButton vertical-friction {
-          width-chars: 2;
-          max-width-chars: 2;
-          adjustment: vertical-friction-adjustment;
-          digits: 1;
-          snap-to-ticks: true;
-          numeric: true;
-          update-policy: always;
-
-          layout {
-            column: "1";
-            row: "1";
-          }
-        }
-      }
+      adjustment: Gtk.Adjustment {
+        lower: 0;
+        upper: 10;
+        page-increment: 10;
+        step-increment: 0.1;
+      };
     }
   }
 }

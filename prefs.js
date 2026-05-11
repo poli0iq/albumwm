@@ -30,14 +30,19 @@ class SettingsWidget {
 
         pages.forEach(page => prefsWindow.add(page));
 
-        // value-changed methods
+        // 'changed' methods
         const booleanStateChanged = (key, inverted = false) => {
             const builder = this.builder.get_object(key);
+            console.log('registered');
             builder.active = inverted
                 ? !this._settings.get_boolean(key)
                 : this._settings.get_boolean(key);
-            builder.connect('state-set', (obj, state) => {
-                this._settings.set_boolean(key, inverted ? !state : state);
+            builder.connect('notify::active', obj => {
+                console.log('active');
+                this._settings.set_boolean(
+                    key,
+                    inverted ? !obj.active : obj.active
+                );
             });
         };
 
@@ -54,7 +59,7 @@ class SettingsWidget {
             const builder = this.builder.get_object(builderKey);
             const value = this._settings.get_double(settingKey);
             builder.set_value(value);
-            builder.connect('value-changed', () => {
+            builder.connect('changed', () => {
                 this._settings.set_double(settingKey, builder.get_value());
             });
         };
@@ -63,31 +68,11 @@ class SettingsWidget {
             const builder = this.builder.get_object(builderKey);
             const value = this._settings.get_double(settingKey);
             builder.set_value(value * 100.0);
-            builder.connect('value-changed', () => {
+            builder.connect('changed', () => {
                 this._settings.set_double(
                     settingKey,
                     builder.get_value() / 100.0
                 );
-            });
-        };
-
-        const enumOptionsChanged = (
-            settingKey,
-            optionNumberEnum,
-            defaultOption,
-            defaultNumber
-        ) => {
-            const builder = this.builder.get_object(settingKey);
-            const setting = this._settings.get_int(settingKey);
-            const numberOptionEnum = Object.fromEntries(
-                Object.entries(optionNumberEnum).map(a => a.reverse())
-            );
-
-            builder.set_active_id(numberOptionEnum[setting] ?? defaultOption);
-            builder.connect('changed', obj => {
-                const value =
-                    optionNumberEnum[obj.get_active_id()] ?? defaultNumber;
-                this._settings.set_int(settingKey, value);
             });
         };
 
@@ -237,60 +222,6 @@ class SettingsWidget {
             'cycle_heights_reset_button'
         );
 
-        const vSens = this.builder.get_object('vertical-sensitivity');
-        const hSens = this.builder.get_object('horizontal-sensitivity');
-        const [sx, sy] = this._settings
-            .get_value('swipe-sensitivity')
-            .deep_unpack();
-        hSens.set_value(sx);
-        vSens.set_value(sy);
-        const sensChanged = () => {
-            this._settings.set_value(
-                'swipe-sensitivity',
-                new GLib.Variant('ad', [hSens.get_value(), vSens.get_value()])
-            );
-        };
-        vSens.connect('value-changed', sensChanged);
-        hSens.connect('value-changed', sensChanged);
-
-        const vFric = this.builder.get_object('vertical-friction');
-        const hFric = this.builder.get_object('horizontal-friction');
-        const [fx, fy] = this._settings
-            .get_value('swipe-friction')
-            .deep_unpack();
-        hFric.set_value(fx);
-        vFric.set_value(fy);
-        const fricChanged = () => {
-            this._settings.set_value(
-                'swipe-friction',
-                new GLib.Variant('ad', [hFric.get_value(), vFric.get_value()])
-            );
-        };
-        vFric.connect('value-changed', fricChanged);
-        hFric.connect('value-changed', fricChanged);
-
-        doubleValueChanged('animation_time_spin', 'animation-time');
-        intValueChanged('drift_speed_spin', 'drift-speed');
-        intValueChanged('drag_drift_speed_spin', 'drag-drift-speed');
-        percentValueChanged('minimap_scale_spin', 'minimap-scale');
-        percentValueChanged(
-            'window_switcher_preview_scale_spin',
-            'window-switcher-preview-scale'
-        );
-        percentValueChanged(
-            'overview_max_window_scale_spin',
-            'overview-max-window-scale'
-        );
-        intValueChanged('minimap_shade_opacity_spin', 'minimap-shade-opacity');
-
-        // tiling edge preview settings
-        booleanStateChanged('edge-preview-enable');
-        percentValueChanged('edge_scale_spin', 'edge-preview-scale');
-        booleanStateChanged('edge-preview-click-enable');
-        booleanStateChanged('edge-preview-timeout-enable');
-        intValueChanged('edge_preview_timeout_scale', 'edge-preview-timeout');
-        booleanStateChanged('edge-preview-timeout-continual');
-
         toggleGroupSelectionChanged(
             'open-window-position',
             {
@@ -340,6 +271,8 @@ class SettingsWidget {
             }
         });
 
+        booleanStateChanged('gesture-enabled');
+
         comboRowSelectionChanged(
             'gesture-horizontal-fingers',
             {
@@ -387,27 +320,86 @@ class SettingsWidget {
         });
 
         // Advanced
-        booleanStateChanged('gesture-enabled');
 
-        enumOptionsChanged(
-            'overview-ensure-viewport-animation',
-            {
-                none: 0,
-                translate: 1,
-                fade: 2,
-            },
-            'translate',
-            1
-        );
-
+        // Interface
+        booleanStateChanged('show-focus-mode-icon');
+        booleanStateChanged('show-open-position-icon');
         intValueChanged(
             'overview_min_windows_per_row_spin',
             'overview-min-windows-per-row'
         );
-        booleanStateChanged('show-focus-mode-icon');
-        booleanStateChanged('show-open-position-icon');
+        intValueChanged('minimap_shade_opacity_spin', 'minimap-shade-opacity');
+
+        // Animations
+        doubleValueChanged('animation_time_spin', 'animation-time');
+        intValueChanged('drift_speed_spin', 'drift-speed');
+        intValueChanged('drag_drift_speed_spin', 'drag-drift-speed');
+        comboRowSelectionChanged(
+            'overview-ensure-viewport-animation',
+            {
+                0: 0, // 'none'
+                1: 1, // 'translate'
+                2: 2, // 'fade'
+            },
+            1, // 'translate'
+            1
+        );
+
+        // Tiling edge preview
+        booleanStateChanged('edge-preview-enable');
+        percentValueChanged('edge_scale_spin', 'edge-preview-scale');
+        booleanStateChanged('edge-preview-click-enable');
+        booleanStateChanged('edge-preview-timeout-enable');
+        intValueChanged('edge-preview-timeout', 'edge-preview-timeout');
+        booleanStateChanged('edge-preview-timeout-continual');
+
+        // Interface scale
+        percentValueChanged('minimap_scale_spin', 'minimap-scale');
+        percentValueChanged(
+            'window_switcher_preview_scale_spin',
+            'window-switcher-preview-scale'
+        );
+        percentValueChanged(
+            'overview_max_window_scale_spin',
+            'overview-max-window-scale'
+        );
+
+        // Other
         percentValueChanged('maximize-width-percent', 'maximize-width-percent');
         booleanStateChanged('topbar-mouse-scroll-enable');
+
+        // Gesture
+        const vSens = this.builder.get_object('vertical-sensitivity');
+        const hSens = this.builder.get_object('horizontal-sensitivity');
+        const [sx, sy] = this._settings
+            .get_value('swipe-sensitivity')
+            .deep_unpack();
+        hSens.set_value(sx);
+        vSens.set_value(sy);
+        const sensChanged = () => {
+            this._settings.set_value(
+                'swipe-sensitivity',
+                new GLib.Variant('ad', [hSens.get_value(), vSens.get_value()])
+            );
+        };
+        vSens.connect('changed', sensChanged);
+        hSens.connect('changed', sensChanged);
+
+        const vFric = this.builder.get_object('vertical-friction');
+        const hFric = this.builder.get_object('horizontal-friction');
+        const [fx, fy] = this._settings
+            .get_value('swipe-friction')
+            .deep_unpack();
+        hFric.set_value(fx);
+        vFric.set_value(fy);
+        const fricChanged = () => {
+            this._settings.set_value(
+                'swipe-friction',
+                new GLib.Variant('ad', [hFric.get_value(), vFric.get_value()])
+            );
+        };
+        vFric.connect('changed', fricChanged);
+        hFric.connect('changed', fricChanged);
     }
 }
 
