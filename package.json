@@ -19,7 +19,8 @@
         "lint:fix": "eslint . --fix",
         "lint:ui": "blueprint-compiler lint ui",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "format:ui": "blueprint-compiler format -f ui"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
