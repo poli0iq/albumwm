@@ -23,7 +23,7 @@
           version = "unstable";
           src = ./.;
 
-          npmDepsHash = "sha256-aSh4QLIve1SQl/5OY0rhSpDjxnUpT/EmzZox/64dqjU=";
+          npmDepsHash = "sha256-oJtIC3T38SWJfwLQjis+oiUYNRtMmv0wvW9VgHrxePo=";
 
           nativeBuildInputs = with hostPkgs; [
             glib

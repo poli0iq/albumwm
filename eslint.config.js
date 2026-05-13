@@ -2,12 +2,14 @@
 // SPDX-FileCopyrightText: No rights reserved
 
 import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-export default [
+export default tseslint.config(
     {
         ignores: ['dist/'],
     },
     js.configs.recommended,
+    ...tseslint.configs.recommended.map(c => ({ ...c, files: ['**/*.ts'] })),
     {
         languageOptions: {
             globals: {
@@ -171,5 +173,5 @@ export default [
                 },
             ],
         },
-    },
-];
+    }
+);

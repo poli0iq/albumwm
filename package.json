@@ -15,6 +15,7 @@
         "uninstall:ext": "gnome-extensions uninstall albumwm@0iq.dev 2>/dev/null; rm -rf \"$HOME/.local/share/gnome-shell/extensions/albumwm@0iq.dev\"",
         "clean": "rm -rf dist albumwm@0iq.dev.zip",
         "distclean": "npm run clean && rm -rf node_modules",
+        "typecheck": "tsc --noEmit",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "lint:ui": "blueprint-compiler lint ui",
@@ -24,8 +25,10 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@girs/gnome-shell": "^50.0.0",
         "eslint": "^10.3.0",
         "prettier": "^3.8.3",
-        "typescript": "^6.0.3"
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.59.3"
     }
 }
