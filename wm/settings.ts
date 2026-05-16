@@ -24,7 +24,45 @@ export const OpenWindowPositions = { RIGHT: 0, DOWN: 1 };
 // Animation used when ensuring viewport on a window
 export const EnsureViewportAnimation = { NONE: 0, TRANSLATE: 1, FADE: 2 };
 
-export let prefs: { [pref: string]: unknown } | null;
+export type Prefs = {
+    window_gap: number;
+    vertical_margin: number;
+    vertical_margin_bottom: number;
+    horizontal_margin: number;
+    animation_time: number;
+    drift_speed: number;
+    drag_drift_speed: number;
+    default_show_top_bar: boolean;
+    swipe_sensitivity: number[];
+    swipe_friction: number[];
+    cycle_width_steps: number[];
+    cycle_height_steps: number[];
+    maximize_width_percent: number;
+    minimap_scale: number;
+    minimap_shade_opacity: number;
+    edge_preview_enable: boolean;
+    edge_preview_scale: number;
+    edge_preview_click_enable: boolean;
+    edge_preview_timeout_enable: boolean;
+    edge_preview_timeout: number;
+    edge_preview_timeout_continual: boolean;
+    window_switcher_preview_scale: number;
+    only_scratch_in_overview: boolean;
+    disable_scratch_in_overview: boolean;
+    show_focus_mode_icon: boolean;
+    show_open_position_icon: boolean;
+    topbar_mouse_scroll_enable: boolean;
+    default_focus_mode: number;
+    open_window_position: number;
+    gesture_enabled: boolean;
+    gesture_horizontal_fingers: number;
+    overview_ensure_viewport_animation: number;
+    overview_min_windows_per_row: number;
+    overview_max_window_scale: number;
+    readonly minimum_margin: number;
+};
+
+export let prefs: Prefs | null;
 let gsettings: Gio.Settings | null,
     keybindSettings: Gio.Settings,
     _overridingConflicts: boolean | null;
@@ -35,46 +73,15 @@ export function enable(extension: Extension) {
 
     acceleratorParse = new AcceleratorParse();
     _overridingConflicts = false;
-    prefs = {};
-    [
-        'window-gap',
-        'vertical-margin',
-        'vertical-margin-bottom',
-        'horizontal-margin',
-        'animation-time',
-        'drift-speed',
-        'drag-drift-speed',
-        'default-show-top-bar',
-        'swipe-sensitivity',
-        'swipe-friction',
-        'cycle-width-steps',
-        'cycle-height-steps',
-        'maximize-width-percent',
-        'minimap-scale',
-        'edge-preview-enable',
-        'edge-preview-scale',
-        'edge-preview-click-enable',
-        'edge-preview-timeout-enable',
-        'edge-preview-timeout',
-        'edge-preview-timeout-continual',
-        'window-switcher-preview-scale',
-        'winprops',
-        'show-focus-mode-icon',
-        'show-open-position-icon',
-        'topbar-mouse-scroll-enable',
-        'default-focus-mode',
-        'gesture-enabled',
-        'gesture-horizontal-fingers',
-        'open-window-position',
-        'overview-ensure-viewport-animation',
-        'overview-min-windows-per-row',
-        'overview-max-window-scale',
-        'minimap-shade-opacity',
-    ].forEach(k => setState(null, k));
+    prefs = {} as Prefs;
+    for (const key of gsettings.list_keys()) {
+        if (key.startsWith('restore-') || key === 'winprops') continue;
+        setState(null, key);
+    }
     Object.defineProperty(prefs, 'minimum_margin', {
         enumerable: true,
         configurable: true,
-        get: () => Math.min(15, prefs!.horizontal_margin as number),
+        get: () => Math.min(15, prefs!.horizontal_margin),
     });
     gsettings.connect('changed', setState);
 
@@ -110,7 +117,7 @@ function setState(_: Gio.Settings | null, key: string) {
     const value = gsettings!.get_value(key);
     const name = key.replace(/-/g, '_');
     if (prefs) {
-        prefs[name] = value.deep_unpack();
+        (prefs as Record<string, unknown>)[name] = value.deep_unpack();
     }
 }
 
