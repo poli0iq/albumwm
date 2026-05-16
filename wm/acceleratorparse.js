@@ -16,6 +16,10 @@ export class AcceleratorParse {
         this.GDK_META_MASK = 1 << 28;
     }
 
+    /**
+     * @param {string} keystr
+     * @returns {[boolean, number, number]}
+     */
     accelerator_parse(keystr) {
         let mask = this.accelerator_mask(keystr);
         const mods = this.accelerator_mods(keystr);
