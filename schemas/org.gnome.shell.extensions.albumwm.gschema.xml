@@ -4,11 +4,6 @@
   <schema id="org.gnome.shell.extensions.albumwm.keybindings"
           path="/org/gnome/shell/extensions/albumwm/keybindings/">
 
-    <key type="as" name="new-window">
-      <default><![CDATA[['<Super>Return', '<Super>n']]]></default>
-      <summary>Open new window</summary>
-    </key>
-
     <key type="as" name="live-alt-tab">
       <default><![CDATA[['<Super>Tab', '<Alt>Tab']]]></default>
       <summary>Switch to previously active window</summary>

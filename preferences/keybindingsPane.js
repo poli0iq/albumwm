@@ -18,7 +18,6 @@ const sections = {
 
 const actions = {
     windows: [
-        'new-window',
         'close-window',
         'switch-next',
         'switch-previous',

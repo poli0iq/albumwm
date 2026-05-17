@@ -9,7 +9,6 @@ import {
     Utils,
     Tiling,
     Navigator,
-    App,
     Scratch,
     LiveAltTab,
     Topbar,
@@ -337,12 +336,6 @@ export function setupActions(settings) {
     registerAlbumAction(
         'center',
         (mw, _space) => Tiling.centerWindow(mw, true, true),
-        Meta.KeyBindingFlags.PER_WINDOW
-    );
-
-    registerAlbumAction(
-        'new-window',
-        App.duplicateWindow,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 

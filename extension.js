@@ -14,7 +14,6 @@ import {
     Tiling,
     Topbar,
     Patches,
-    App,
     Grab,
 } from './wm/imports.js';
 
@@ -36,9 +35,6 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
      - stackoverlay is somewhat kludgy. It makes clicking on the left or right
        edge of the screen always activate the partially (or sometimes wholly)
        concealed window at the edges.
-
-     - app creates new windows based on the current application. It's possible
-       to create custom new window handlers.
 
      - Patches is used for monkey patching gnome shell behavior which simply
        doesn't fit albumwm.
@@ -66,7 +62,6 @@ export default class AlbumWM extends Extension {
         Scratch,
         Tiling,
         Topbar,
-        App,
         Grab,
     ];
 
