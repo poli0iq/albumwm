@@ -390,7 +390,7 @@ type WinProp = {
     spaceIndex?: number;
     gsetting?: boolean;
 };
-type WinPropSpec = {
+export type WinPropSpec = {
     wm_class?: string | RegExp;
     title?: string | RegExp;
     scratch_layer?: boolean;
