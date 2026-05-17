@@ -437,7 +437,7 @@ export const Easer = {
             actor.get_transition('x') ||
             actor.get_transition('y') ||
             actor.get_transition('scale-x') ||
-            actor.get_transition('scale-x')
+            actor.get_transition('scale-y')
         );
     },
 };
