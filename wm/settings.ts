@@ -96,7 +96,7 @@ export function enable(extension: Extension) {
         focus: true,
     });
     defwinprop({
-        wm_class: /gnome-screenshot/i,
+        wm_class: '/gnome-screenshot/i',
         scratch_layer: true,
         focus: true,
     });
@@ -391,14 +391,20 @@ type WinProp = {
     gsetting?: boolean;
 };
 export type WinPropSpec = {
-    wm_class?: string | RegExp;
-    title?: string | RegExp;
+    wm_class?: string;
+    title?: string;
     scratch_layer?: boolean;
     focus?: boolean;
     preferredWidth?: string;
     spaceIndex?: number;
     gsetting?: boolean;
 };
+
+function maybeRegex(value: string | undefined): string | RegExp | undefined {
+    if (!value) return value;
+    const match = value.match(/^\/(.+)\/([igmsuy]*)$/);
+    return match ? new RegExp(match[1], match[2]) : value;
+}
 
 /**
    Modelled after notion/ion3's system
@@ -450,10 +456,12 @@ export function findWinprop(metaWindow: Meta.Window) {
     return null;
 }
 
+/* Both hardcoded and gsettings specs come in as strings; values matching
+ * /foo/flags get parsed into a real RegExp. */
 function defwinprop(spec: WinPropSpec) {
     const prop: WinProp = {
-        wm_class: spec.wm_class,
-        title: spec.title,
+        wm_class: maybeRegex(spec.wm_class),
+        title: maybeRegex(spec.title),
         scratch_layer: spec.scratch_layer,
         focus: spec.focus,
         spaceIndex: spec.spaceIndex,
@@ -507,22 +515,7 @@ function addWinpropsFromGSettings() {
         .deep_unpack()
         .map(value => JSON.parse(value))
         .forEach(prop => {
-            // test if wm_class or title is a regex expression
-            if (/^\/.+\/[igmsuy]*$/.test(prop.wm_class)) {
-                // extract inner regex and flags from wm_class
-                const matches = prop.wm_class.match(/^\/(.+)\/([igmsuy]*)$/);
-                const inner = matches[1];
-                const flags = matches[2];
-                prop.wm_class = new RegExp(inner, flags);
-            }
-            if (/^\/.+\/[igmsuy]*$/.test(prop.title)) {
-                // extract inner regex and flags from title
-                const matches = prop.title.match(/^\/(.+)\/([igmsuy]*)$/);
-                const inner = matches[1];
-                const flags = matches[2];
-                prop.title = new RegExp(inner, flags);
-            }
-            prop.gsetting = true; // set property that is from user gsettings
+            prop.gsetting = true;
             defwinprop(prop);
         });
 }
