@@ -11,6 +11,17 @@ export default tseslint.config(
     js.configs.recommended,
     ...tseslint.configs.recommended.map(c => ({ ...c, files: ['**/*.ts'] })),
     {
+        files: ['**/*.ts'],
+        plugins: { '@typescript-eslint': tseslint.plugin },
+        rules: {
+            /* Permits "declare namespace" for ConstructorProps class-namespace merging */
+            '@typescript-eslint/no-namespace': [
+                'error',
+                { allowDeclarations: true },
+            ],
+        },
+    },
+    {
         languageOptions: {
             globals: {
                 ARGV: 'readonly',
