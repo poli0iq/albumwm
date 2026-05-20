@@ -4,16 +4,26 @@ import Gtk from 'gi://Gtk';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import * as _Settings from './wm/settings.js';
-// eslint-disable-next-line no-unused-vars
-import * as KeybindingsPane from './preferences/keybindingsPane.js';
-// eslint-disable-next-line no-unused-vars
-import * as WinpropsPane from './preferences/winpropsPane.js';
+// For GObject.registerClass side effects
+import './preferences/keybindingsPane.js';
+import './preferences/winpropsPane.js';
 
-const _ = s => s;
+import type Gio from 'gi://Gio?version=2.0';
+import type Adw from 'gi://Adw?version=1';
+import type { KeybindingsPane } from './preferences/keybindingsPane.js';
+import type { WinpropsPane } from './preferences/winpropsPane.js';
+import type { WinPropSpec } from './wm/settings.js';
 
 class SettingsWidget {
-    constructor(extension, prefsWindow) {
+    extension: ExtensionPreferences;
+    _settings: Gio.Settings;
+    builder: Gtk.Builder;
+    window: Adw.PreferencesWindow;
+
+    constructor(
+        extension: ExtensionPreferences,
+        prefsWindow: Adw.PreferencesWindow
+    ) {
         this.extension = extension;
         this._settings = extension.getSettings();
         this.builder = Gtk.Builder.new_from_file(
@@ -22,23 +32,21 @@ class SettingsWidget {
         this.window = prefsWindow;
 
         const pages = [
-            this.builder.get_object('general_page'),
-            this.builder.get_object('keybindings_page'),
-            this.builder.get_object('winprops_page'),
-            this.builder.get_object('advanced_page'),
+            this.builder.get_object<Adw.PreferencesPage>('general_page'),
+            this.builder.get_object<Adw.PreferencesPage>('keybindings_page'),
+            this.builder.get_object<Adw.PreferencesPage>('winprops_page'),
+            this.builder.get_object<Adw.PreferencesPage>('advanced_page'),
         ];
 
         pages.forEach(page => prefsWindow.add(page));
 
         // 'changed' methods
-        const booleanStateChanged = (key, inverted = false) => {
-            const builder = this.builder.get_object(key);
-            console.log('registered');
+        const booleanStateChanged = (key: string, inverted = false) => {
+            const builder = this.builder.get_object<Adw.SwitchRow>(key);
             builder.active = inverted
                 ? !this._settings.get_boolean(key)
                 : this._settings.get_boolean(key);
             builder.connect('notify::active', obj => {
-                console.log('active');
                 this._settings.set_boolean(
                     key,
                     inverted ? !obj.active : obj.active
@@ -46,8 +54,8 @@ class SettingsWidget {
             });
         };
 
-        const intValueChanged = (builderKey, settingKey) => {
-            const builder = this.builder.get_object(builderKey);
+        const intValueChanged = (builderKey: string, settingKey: string) => {
+            const builder = this.builder.get_object<Adw.SpinRow>(builderKey);
             const value = this._settings.get_int(settingKey);
             builder.set_value(value);
             builder.connect('changed', () => {
@@ -55,8 +63,8 @@ class SettingsWidget {
             });
         };
 
-        const doubleValueChanged = (builderKey, settingKey) => {
-            const builder = this.builder.get_object(builderKey);
+        const doubleValueChanged = (builderKey: string, settingKey: string) => {
+            const builder = this.builder.get_object<Adw.SpinRow>(builderKey);
             const value = this._settings.get_double(settingKey);
             builder.set_value(value);
             builder.connect('changed', () => {
@@ -64,8 +72,11 @@ class SettingsWidget {
             });
         };
 
-        const percentValueChanged = (builderKey, settingKey) => {
-            const builder = this.builder.get_object(builderKey);
+        const percentValueChanged = (
+            builderKey: string,
+            settingKey: string
+        ) => {
+            const builder = this.builder.get_object<Adw.SpinRow>(builderKey);
             const value = this._settings.get_double(settingKey);
             builder.set_value(value * 100.0);
             builder.connect('changed', () => {
@@ -77,12 +88,13 @@ class SettingsWidget {
         };
 
         const toggleGroupSelectionChanged = (
-            settingKey,
-            optionNumberEnum,
-            defaultOption,
-            defaultNumber
+            settingKey: string,
+            optionNumberEnum: { [key: string]: number },
+            defaultOption: string,
+            defaultNumber: number
         ) => {
-            const builder = this.builder.get_object(settingKey);
+            const builder =
+                this.builder.get_object<Adw.ToggleGroup>(settingKey);
             const setting = this._settings.get_int(settingKey);
             const numberOptionEnum = Object.fromEntries(
                 Object.entries(optionNumberEnum).map(a => a.reverse())
@@ -91,18 +103,18 @@ class SettingsWidget {
             builder.set_active_name(numberOptionEnum[setting] ?? defaultOption);
             builder.connect('notify::active-name', obj => {
                 const value =
-                    optionNumberEnum[obj.get_active_name()] ?? defaultNumber;
+                    optionNumberEnum[obj.get_active_name()!] ?? defaultNumber;
                 this._settings.set_int(settingKey, value);
             });
         };
 
         const comboRowSelectionChanged = (
-            settingKey,
-            indexNumberEnum,
-            defaultIndex,
-            defaultNumber
+            settingKey: string,
+            indexNumberEnum: { [key: number]: number },
+            defaultIndex: number,
+            defaultNumber: number
         ) => {
-            const builder = this.builder.get_object(settingKey);
+            const builder = this.builder.get_object<Adw.ComboRow>(settingKey);
             const setting = this._settings.get_int(settingKey);
             const numberIndexEnum = Object.fromEntries(
                 Object.entries(indexNumberEnum).map(a => a.reverse())
@@ -142,9 +154,15 @@ class SettingsWidget {
         intValueChanged('bottom_margin_spinner', 'vertical-margin-bottom');
 
         // processing function for cycle values
-        const cycleProcessor = (elementName, settingName, resetElementName) => {
-            const element = this.builder.get_object(elementName);
-            const steps = this._settings.get_value(settingName).deep_unpack();
+        const cycleProcessor = (
+            elementName: string,
+            settingName: string,
+            resetElementName: string
+        ) => {
+            const element = this.builder.get_object<Adw.EntryRow>(elementName);
+            const steps = this._settings
+                .get_value<'ad'>(settingName)
+                .deep_unpack();
 
             // need to check if current values are ratio or pixel ==> assume if all <=1 is ratio
             const isRatio = steps.every(v => v <= 1);
@@ -242,7 +260,9 @@ class SettingsWidget {
             0
         );
 
-        const scratchOverview = this.builder.get_object('scratch-in-overview');
+        const scratchOverview = this.builder.get_object<Adw.ComboRow>(
+            'scratch-in-overview'
+        );
         if (this._settings.get_boolean('only-scratch-in-overview'))
             scratchOverview.set_selected(1); // 'only'
         else if (this._settings.get_boolean('disable-scratch-in-overview'))
@@ -285,16 +305,17 @@ class SettingsWidget {
         );
 
         // Keybindings
-        const keybindingsPane = this.builder.get_object('keybindings_pane');
+        const keybindingsPane =
+            this.builder.get_object<KeybindingsPane>('keybindings_pane');
         keybindingsPane.init(extension);
 
         // Winprops
-        const winprops = this._settings
-            .get_value('winprops')
+        const winprops: WinPropSpec[] = this._settings
+            .get_value<'as'>('winprops')
             .deep_unpack()
             .map(p => JSON.parse(p));
         // sort a little nicer
-        const valueFn = wp => {
+        const valueFn = (wp: WinPropSpec) => {
             if (wp.wm_class) {
                 return wp.wm_class;
             }
@@ -308,7 +329,8 @@ class SettingsWidget {
             const bb = valueFn(b).replaceAll(/[/]/g, '');
             return aa.localeCompare(bb);
         });
-        const winpropsPane = this.builder.get_object('winpropsPane');
+        const winpropsPane =
+            this.builder.get_object<WinpropsPane>('winpropsPane');
         winpropsPane.addWinprops(winprops);
         winpropsPane.connect('changed', () => {
             // update gsettings with changes
@@ -369,10 +391,14 @@ class SettingsWidget {
         booleanStateChanged('topbar-mouse-scroll-enable');
 
         // Gesture
-        const vSens = this.builder.get_object('vertical-sensitivity');
-        const hSens = this.builder.get_object('horizontal-sensitivity');
+        const vSens = this.builder.get_object<Adw.SpinRow>(
+            'vertical-sensitivity'
+        );
+        const hSens = this.builder.get_object<Adw.SpinRow>(
+            'horizontal-sensitivity'
+        );
         const [sx, sy] = this._settings
-            .get_value('swipe-sensitivity')
+            .get_value<'ad'>('swipe-sensitivity')
             .deep_unpack();
         hSens.set_value(sx);
         vSens.set_value(sy);
@@ -385,10 +411,12 @@ class SettingsWidget {
         vSens.connect('changed', sensChanged);
         hSens.connect('changed', sensChanged);
 
-        const vFric = this.builder.get_object('vertical-friction');
-        const hFric = this.builder.get_object('horizontal-friction');
+        const vFric = this.builder.get_object<Adw.SpinRow>('vertical-friction');
+        const hFric = this.builder.get_object<Adw.SpinRow>(
+            'horizontal-friction'
+        );
         const [fx, fy] = this._settings
-            .get_value('swipe-friction')
+            .get_value<'ad'>('swipe-friction')
             .deep_unpack();
         hFric.set_value(fx);
         vFric.set_value(fy);
@@ -404,11 +432,11 @@ class SettingsWidget {
 }
 
 export default class AlbumWMPrefs extends ExtensionPreferences {
-    fillPreferencesWindow(window) {
+    async fillPreferencesWindow(window: Adw.PreferencesWindow) {
         const provider = new Gtk.CssProvider();
         provider.load_from_path(`${this.path}/resources/prefs.css`);
         Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(),
+            Gdk.Display.get_default()!,
             provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         );
