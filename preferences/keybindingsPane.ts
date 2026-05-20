@@ -6,7 +6,7 @@ import Gtk from 'gi://Gtk';
 
 import { AcceleratorParse } from '../wm/acceleratorparse.js';
 
-import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import type { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 const _ = (s: string) => s;
 
@@ -1188,7 +1188,7 @@ export class KeybindingsPane extends Gtk.Box {
         super._init(params);
     }
 
-    init(extension: Extension) {
+    init(extension: ExtensionPreferences) {
         this._settings = extension.getSettings(KEYBINDINGS_KEY);
         this.acceleratorParse = new AcceleratorParse();
         this._model = new KeybindingsModel(this.acceleratorParse);
