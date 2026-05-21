@@ -11,17 +11,6 @@ export default tseslint.config(
     js.configs.recommended,
     ...tseslint.configs.recommended.map(c => ({ ...c, files: ['**/*.ts'] })),
     {
-        files: ['**/*.ts'],
-        plugins: { '@typescript-eslint': tseslint.plugin },
-        rules: {
-            /* Permits "declare namespace" for ConstructorProps class-namespace merging */
-            '@typescript-eslint/no-namespace': [
-                'error',
-                { allowDeclarations: true },
-            ],
-        },
-    },
-    {
         languageOptions: {
             globals: {
                 ARGV: 'readonly',
@@ -181,6 +170,41 @@ export default tseslint.config(
                     selector:
                         'BinaryExpression[operator="instanceof"][right.name="Array"]',
                     message: 'Use Array.isArray()',
+                },
+            ],
+        },
+    },
+    // TypeScript overrides. Must come last
+    {
+        files: ['**/*.ts'],
+        plugins: { '@typescript-eslint': tseslint.plugin },
+        rules: {
+            // Permits "declare namespace" for ConstructorProps class-namespace merging
+            '@typescript-eslint/no-namespace': [
+                'error',
+                { allowDeclarations: true },
+            ],
+            /* These core rules are type-blind; typescript-eslint ships
+             * type-aware replacements. Swap each one for .ts files. */
+            'no-unused-vars': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    varsIgnorePattern: '^_',
+                    argsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_',
+                },
+            ],
+            'no-shadow': 'off',
+            '@typescript-eslint/no-shadow': 'warn',
+            'no-use-before-define': 'off',
+            '@typescript-eslint/no-use-before-define': [
+                'error',
+                {
+                    functions: false,
+                    classes: true,
+                    variables: true,
+                    allowNamedExports: true,
                 },
             ],
         },
