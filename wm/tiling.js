@@ -254,12 +254,25 @@ export function setInGrab(value) {
     inGrab = value;
 }
 
+/**
+ * A GNOME Shell monitor, augmented by AlbumWM with a click overlay.
+ * @typedef {NonNullable<import('@girs/gnome-shell/ui/layout').LayoutManager['primaryMonitor']> & {
+ *     clickOverlay: import('./stackoverlay.js').ClickOverlay,
+ * }} Monitor
+ */
+
 export class Space extends Array {
     /** @type {import('@gi-types/clutter10').Actor} */
     actor;
 
     /** @type {import('@gi-types/clutter').Actor} */
     background;
+
+    /** @type {Meta.Window | null} */
+    selectedWindow;
+
+    /** @type {Monitor} */
+    monitor;
 
     constructor(workspace, container, doInit) {
         super(0);

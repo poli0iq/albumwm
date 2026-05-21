@@ -27,10 +27,9 @@ import {
 const { signals: Signals } = imports;
 const display = global.display;
 
-let index = 0,
-    grab;
-let dispatcher, signals;
-export let navigator, navigating;
+let grab: Clutter.Grab | null;
+let dispatcher: ActionDispatcher | null, signals: Utils.Signals | null;
+export let navigator: NavigatorClass | null, navigating: boolean;
 
 export function enable() {
     navigating = false;
@@ -49,12 +48,22 @@ export function disable() {
     navigating = false;
     grab = null;
     dispatcher = null;
-    signals.destroy();
+    signals!.destroy();
     signals = null;
-    index = null;
 }
 
 class NavigatorClass {
+    takeHint: St.Label;
+    was_accepted: boolean;
+    space: Tiling.Space;
+    _startWindow: Meta.Window | null;
+    from: Tiling.Space;
+    monitor: Tiling.Monitor;
+    minimaps: Map<Tiling.Space, Minimap.Minimap | number>;
+
+    // Added to the prototype by Signals.addSignalMethods below
+    declare emit: (signal: 'destroy', accepted: boolean) => void;
+
     constructor() {
         console.debug('#navigator', 'nav created');
 
@@ -72,11 +81,7 @@ class NavigatorClass {
         navigating = true;
 
         this.was_accepted = false;
-        this.index = index++;
 
-        this._block = Main.wm._blockAnimations;
-        Main.wm._blockAnimations = true;
-        // Meta.disable_unredirect_for_screen(screen);
         this.space = Tiling.spaces.activeSpace;
 
         this._startWindow = this.space.selectedWindow;
@@ -91,25 +96,28 @@ class NavigatorClass {
         this.space.startAnimate();
     }
 
-    showMinimap(space) {
+    showMinimap(space: Tiling.Space) {
         let minimap = this.minimaps.get(space);
         if (!minimap) {
-            let minimapId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
-                minimap = new Minimap.Minimap(space, this.monitor);
-                space.startAnimate();
-                minimap.show(false);
-                this.minimaps.set(space, minimap);
-                return false; // on return false destroys timeout
-            });
+            const minimapId = GLib.timeout_add(
+                GLib.PRIORITY_DEFAULT,
+                200,
+                () => {
+                    minimap = new Minimap.Minimap(space, this.monitor);
+                    space.startAnimate();
+                    minimap.show(false);
+                    this.minimaps.set(space, minimap);
+                    return GLib.SOURCE_REMOVE;
+                }
+            );
             this.minimaps.set(space, minimapId);
         } else {
-            typeof minimap !== 'number' && minimap.show();
+            if (typeof minimap !== 'number') minimap.show();
         }
     }
 
     /**
      * Shows the "take window" hint.
-     * @param {Boolean} show
      */
     showTakeHint(show = true) {
         if (show) {
@@ -124,7 +132,7 @@ class NavigatorClass {
             this.takeHint.set_position(x, y);
 
             Utils.Easer.addEase(this.takeHint, {
-                time: Settings.prefs.animation_time,
+                time: Settings.prefs!.animation_time,
                 opacity: 255,
             });
         } else {
@@ -132,7 +140,7 @@ class NavigatorClass {
             // global.stage.add_child(this.takeHint);
             Utils.actorAddChild(global.stage, this.takeHint);
             Utils.Easer.addEase(this.takeHint, {
-                time: Settings.prefs.animation_time,
+                time: Settings.prefs!.animation_time,
                 opacity: 0,
                 onComplete: () => {
                     // global.stage.remove_child(this.takeHint);
@@ -170,15 +178,15 @@ class NavigatorClass {
 
         navigating = false;
 
-        let space = Tiling.spaces.selectedSpace;
+        const space = Tiling.spaces.selectedSpace;
         this.space = space;
 
-        let from = this.from;
+        const from = this.from;
         let selected = this.space.selectedWindow;
         if (!this.was_accepted) {
             // Abort the navigation
             this.space = from;
-            if (this.startWindow && this._startWindow.get_compositor_private())
+            if (this._startWindow && this._startWindow.get_compositor_private())
                 selected = this._startWindow;
             else selected = display.focus_window;
         }
@@ -197,9 +205,10 @@ class NavigatorClass {
                 : this.space.selectedWindow;
 
         if (selected && !Tiling.inGrab) {
-            let hasFocus = selected && selected.has_focus();
+            let hasFocus = selected.has_focus();
             selected.foreach_transient(mw => {
                 hasFocus = mw.has_focus() || hasFocus;
+                return true;
             });
             if (hasFocus) {
                 Tiling.focusHandler(selected);
@@ -215,17 +224,16 @@ class NavigatorClass {
 
         Topbar.fixTopBar();
 
-        Main.wm._blockAnimations = this._block;
         this.space.moveDone();
 
         this.emit('destroy', this.was_accepted);
-        navigator = false;
+        navigator = null;
     }
 }
-export let Navigator = NavigatorClass;
+export const Navigator = NavigatorClass;
 Signals.addSignalMethods(Navigator.prototype);
 
-export function primaryModifier(mask) {
+export function primaryModifier(mask: number) {
     if (mask === 0) return 0;
 
     let primary = 1;
@@ -242,8 +250,22 @@ export function primaryModifier(mask) {
    Adapted from SwitcherPopup, without any visual handling.
  */
 class ActionDispatcher {
-    /** @type {number} DispatcherMode bitmask */
-    mode;
+    /** DispatcherMode bitmask */
+    mode: number = DispatcherMode.NONE;
+
+    signals: Utils.Signals;
+    actor: Meta.BackgroundGroup;
+    navigator: NavigatorClass;
+    keyPressCallbacks: ((
+        modmask: number,
+        keysym: number,
+        event: Clutter.Event
+    ) => boolean)[] = [];
+    keyReleaseCallbacks: (() => void)[] = [];
+    _noModsTimeoutId: number | null = null;
+    _doActionTimeout: number | null = null;
+    _modifierMask: number | null = null;
+    _destroy = false;
 
     constructor() {
         console.debug('#dispatch', 'created');
@@ -273,19 +295,19 @@ class ActionDispatcher {
             'key-release-event',
             this._keyReleaseEvent.bind(this)
         );
-
-        this.keyPressCallbacks = [];
-        this.keyReleaseCallbacks = [];
-
-        this._noModsTimeoutId = null;
-        this._doActionTimeout = null;
     }
 
     /**
      * Adds a signal to this dispatcher.  Will be destroyed when this
      * dispatcher is destroyed.
      */
-    addKeypressCallback(handler) {
+    addKeypressCallback(
+        handler: (
+            modmask: number,
+            keysym: number,
+            event: Clutter.Event
+        ) => boolean
+    ) {
         this.keyPressCallbacks.push(handler);
         return this;
     }
@@ -294,20 +316,20 @@ class ActionDispatcher {
      * Adds a signal to this dispatcher.  Will be destroyed when this
      * dispatcher is destroyed.
      */
-    addKeyReleaseCallback(handler) {
+    addKeyReleaseCallback(handler: () => void) {
         this.keyReleaseCallbacks.push(handler);
         return this;
     }
 
-    show(_backward, binding, mask) {
-        this._modifierMask = primaryModifier(mask);
+    show(_isReversed: boolean, bindingName: string, bindingMask: number) {
+        this._modifierMask = primaryModifier(bindingMask);
         this.navigator = getNavigator();
         Topbar.fixTopBar();
-        let actionId = Keybindings.idOf(binding);
+        let actionId = Keybindings.idOf(bindingName);
         if (actionId === Meta.KeyBindingAction.NONE) {
             try {
                 // Check for built-in actions
-                actionId = Meta.prefs_get_keybinding_action(binding);
+                actionId = Meta.prefs_get_keybinding_action(bindingName);
             } catch (e) {
                 console.debug("Couldn't resolve action name: ", e);
                 return false;
@@ -321,7 +343,7 @@ class ActionDispatcher {
         // https://bugzilla.gnome.org/show_bug.cgi?id=596695 for
         // details.) So we check now. (straight from SwitcherPopup)
         if (this._modifierMask) {
-            let [, , mods] = global.get_pointer();
+            const [, , mods] = global.get_pointer();
             if (!(mods & this._modifierMask)) {
                 this._finish(global.get_current_time());
                 return false;
@@ -341,17 +363,17 @@ class ActionDispatcher {
             () => {
                 this._finish(global.get_current_time());
                 this._noModsTimeoutId = null;
-                return false; // stops timeout recurrence
+                return GLib.SOURCE_REMOVE;
             }
         );
     }
 
-    _keyPressEvent(_actor, event) {
+    _keyPressEvent(_actor: Clutter.Actor, event: Clutter.Event) {
         if (!this._modifierMask) {
             this._modifierMask = primaryModifier(event.get_state());
         }
-        let keysym = event.get_key_symbol();
-        let action = global.display.get_keybinding_action(
+        const keysym = event.get_key_symbol();
+        const action = global.display.get_keybinding_action(
             event.get_key_code(),
             event.get_state()
         );
@@ -359,7 +381,7 @@ class ActionDispatcher {
         // run callbacks and if any return true, stop bubbling
         if (
             this.keyPressCallbacks.some(callback => {
-                return callback(this._modifierMask, keysym, event);
+                return callback(this._modifierMask!, keysym, event);
             })
         ) {
             return Clutter.EVENT_STOP;
@@ -382,14 +404,14 @@ class ActionDispatcher {
         return Clutter.EVENT_STOP;
     }
 
-    _keyReleaseEvent(_actor, event) {
+    _keyReleaseEvent(_actor: Clutter.Actor, event: Clutter.Event) {
         if (this._destroy) {
             dismissDispatcher(DispatcherMode.KEYBOARD);
         }
 
         if (this._modifierMask) {
-            let [, , mods] = global.get_pointer();
-            let state = mods & this._modifierMask;
+            const [, , mods] = global.get_pointer();
+            const state = mods & this._modifierMask;
 
             if (state === 0) this._finish(event.get_time());
         } else {
@@ -400,10 +422,10 @@ class ActionDispatcher {
         return Clutter.EVENT_STOP;
     }
 
-    _doAction(mutterActionId) {
-        let action = Keybindings.byId(mutterActionId);
-        let space = Tiling.spaces.selectedSpace;
-        let metaWindow = space.selectedWindow;
+    _doAction(mutterActionId: number | Meta.KeyBindingAction) {
+        const action = Keybindings.byId(mutterActionId);
+        const space = Tiling.spaces.selectedSpace;
+        const metaWindow = space.selectedWindow;
         const nav = getNavigator();
 
         if (mutterActionId === Meta.KeyBindingAction.MINIMIZE) {
@@ -439,24 +461,22 @@ class ActionDispatcher {
                 () => {
                     action.handler(metaWindow, space);
                     this._doActionTimeout = null;
-                    return false; // on return false destroys timeout
+                    return GLib.SOURCE_REMOVE;
                 }
             );
         }
     }
 
-    _finish(_timestamp) {
-        let nav = getNavigator();
+    _finish(_timestamp: number) {
+        const nav = getNavigator();
         nav.accept();
-        !this._destroy && nav.destroy();
+        if (!this._destroy) nav.destroy();
         dismissDispatcher(DispatcherMode.KEYBOARD);
     }
 
     destroy() {
         Utils.timeoutRemove(this._noModsTimeoutId);
-        this._noModsTimeoutId = null;
         Utils.timeoutRemove(this._doActionTimeout);
-        this._doActionTimeout = null;
 
         try {
             if (grab) {
@@ -469,7 +489,6 @@ class ActionDispatcher {
 
         this.actor.reactive = false;
         this.signals.destroy();
-        this.signals = null;
         // We have already destroyed the navigator
         getNavigator().destroy();
         dispatcher = null;
@@ -494,10 +513,9 @@ export function finishNavigation(force = true) {
 }
 
 /**
- * @param {number} mode - DispatcherMode bitmask
- * @returns {ActionDispatcher}
+ * @param mode - DispatcherMode bitmask
  */
-export function getActionDispatcher(mode) {
+export function getActionDispatcher(mode: number): ActionDispatcher {
     if (dispatcher) {
         dispatcher.mode |= mode;
         return dispatcher;
@@ -514,9 +532,9 @@ export function finishDispatching() {
 }
 
 /**
- * @param {number} mode - DispatcherMode bitmask
+ * @param mode - DispatcherMode bitmask
  */
-export function dismissDispatcher(mode) {
+export function dismissDispatcher(mode: number) {
     if (!dispatcher) {
         return;
     }
@@ -527,12 +545,23 @@ export function dismissDispatcher(mode) {
     }
 }
 
+/**
+ * Minimal binding shape consumed here. Satisfied both by a real
+ * `Meta.KeyBinding` (passed via `Keybindings.asKeyHandler`) and by the
+ * synthetic binding built in `Keybindings.openNavigatorHandler`.
+ */
+interface NavigatorBinding {
+    get_name(): string;
+    get_mask(): number;
+    is_reversed(): boolean;
+}
+
 export function previewNavigate(
-    metaWindow,
-    space,
-    { _display, _screen, binding }
+    _metaWindow: Meta.Window | null,
+    _space: Tiling.Space | null,
+    { binding }: { binding: NavigatorBinding }
 ) {
-    let tabPopup = getActionDispatcher(DispatcherMode.KEYBOARD);
+    const tabPopup = getActionDispatcher(DispatcherMode.KEYBOARD);
     tabPopup.show(
         binding.is_reversed(),
         binding.get_name(),
