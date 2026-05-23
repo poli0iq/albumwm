@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 
@@ -21,6 +22,13 @@ const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
 let signals, actions, nameMap, actionIdMap, keycomboMap;
 let keybindSettings;
+/**
+ * Pending close-window invocations, keyed by fail-safe timeout id. Tracked
+ * so disable() can cancel the timeout and disconnect the `unmanaging`
+ * signal we connected on the window being closed.
+ * @type {Map<number, {metaWindow: Meta.Window, unmanagingId: number, sourceMonitor: number}>}
+ */
+let pendingCloses;
 
 export function enable(extension) {
     // restore previous keybinds (in case failed to restore last time, e.g. gnome crash etc)
@@ -61,6 +69,14 @@ export function disable() {
     actions.forEach(disableAction);
     Settings.restoreConflicts();
 
+    pendingCloses.forEach((entry, id) => {
+        Utils.timeoutRemove(id);
+        if (entry.metaWindow?.get_compositor_private()) {
+            entry.metaWindow.disconnect(entry.unmanagingId);
+        }
+    });
+    pendingCloses = null;
+
     keybindSettings = null;
     actions = null;
     nameMap = null;
@@ -94,6 +110,7 @@ export function registerMinimapAction(name, handler) {
 
 export function setupActions(settings) {
     signals = new Utils.Signals();
+    pendingCloses = new Map();
     actions = [];
     nameMap = {}; // mutter keybinding action name -> action
     actionIdMap = {}; // actionID   -> action
@@ -341,7 +358,49 @@ export function setupActions(settings) {
 
     registerAlbumAction(
         'close-window',
-        metaWindow => metaWindow.delete(global.get_current_time()),
+        metaWindow => {
+            /* Warp the pointer to the next window.
+             * Wait until the window is actually unmanaged, because trying to
+             * close the window isn't guaranteed to succeed (e.g. a save-changes
+             * dialog could pop up). */
+            const sourceMonitor = metaWindow.get_monitor();
+            let timeoutId = 0;
+            const unmanagingId = metaWindow.connect('unmanaging', () => {
+                metaWindow.disconnect(unmanagingId);
+                if (timeoutId) {
+                    pendingCloses.delete(timeoutId);
+                    Utils.timeoutRemove(timeoutId);
+                    timeoutId = 0;
+                }
+                Utils.laterAdd(Meta.LaterType.IDLE, () => {
+                    /* Could fire after disable. */
+                    if (!Settings.prefs) return GLib.SOURCE_REMOVE;
+                    const next = global.display.focus_window;
+                    /* Skip cross-monitor mutter MRU fallbacks: warping pointer
+                     * to a window on a different monitor is disorienting. */
+                    if (
+                        next &&
+                        next !== metaWindow &&
+                        next.get_monitor() === sourceMonitor
+                    ) {
+                        Tiling.maybeWarpPointerToWindow(next);
+                    }
+                    return GLib.SOURCE_REMOVE;
+                });
+            });
+            timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
+                pendingCloses.delete(timeoutId);
+                metaWindow.disconnect(unmanagingId);
+                timeoutId = 0;
+                return GLib.SOURCE_REMOVE;
+            });
+            pendingCloses.set(timeoutId, {
+                metaWindow,
+                unmanagingId,
+                sourceMonitor,
+            });
+            metaWindow.delete(global.get_current_time());
+        },
         Meta.KeyBindingFlags.PER_WINDOW
     );
 

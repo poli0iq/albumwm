@@ -198,7 +198,7 @@
         <default><![CDATA[[]]]></default>
         <summary>Switch to the eleventh window</summary>
     </key>
-    
+
     <key type="as" name="switch-last">
         <default><![CDATA[['<Super>End']]]></default>
         <summary>Switch to the last window</summary>
@@ -396,6 +396,11 @@
     <key type="d" name="window-switcher-preview-scale">
       <default>0.15</default>
       <summary>Scale of window switch previews.  Scale is percent of actual window size</summary>
+    </key>
+
+    <key type="b" name="warp-pointer-on-focus">
+      <default>false</default>
+      <summary>Warp pointer onto window on focus change</summary>
     </key>
 
     <key type="b" name="only-scratch-in-overview">

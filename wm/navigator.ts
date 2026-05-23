@@ -219,6 +219,9 @@ class NavigatorClass {
         if (selected && Tiling.inGrab && !this.was_accepted) {
             Tiling.focusHandler(selected);
         }
+        if (selected) {
+            Tiling.maybeWarpPointerToWindow(selected);
+        }
 
         if (!Tiling.inGrab) Scratch.showWindows();
 

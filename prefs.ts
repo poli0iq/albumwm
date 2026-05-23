@@ -260,6 +260,8 @@ class SettingsWidget {
             0
         );
 
+        booleanStateChanged('warp-pointer-on-focus');
+
         const scratchOverview = this.builder.get_object<Adw.ComboRow>(
             'scratch-in-overview'
         );

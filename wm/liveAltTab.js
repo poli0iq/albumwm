@@ -175,6 +175,7 @@ export const LiveAltTab = GObject.registerClass(
             let index = this.was_accepted ? this._selectedIndex : 0;
             let to = this._switcherList.windows[index];
             Tiling.focusHandler(to);
+            Tiling.maybeWarpPointerToWindow(to);
             let actor = to.get_compositor_private();
             if (this.was_accepted) {
                 actor.x = this.clone.x;

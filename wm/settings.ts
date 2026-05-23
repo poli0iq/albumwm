@@ -47,6 +47,7 @@ export type Prefs = {
     edge_preview_timeout: number;
     edge_preview_timeout_continual: boolean;
     window_switcher_preview_scale: number;
+    warp_pointer_on_focus: boolean;
     only_scratch_in_overview: boolean;
     disable_scratch_in_overview: boolean;
     show_focus_mode_icon: boolean;

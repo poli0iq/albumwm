@@ -2603,6 +2603,7 @@ export function switchMonitor(direction) {
     }
     if (focusTarget) {
         Main.activateWindow(focusTarget);
+        maybeWarpPointerToWindow(focusTarget);
     } else {
         Utils.warpPointerToMonitor(target);
     }
@@ -2935,6 +2936,7 @@ Opening "${metaWindow?.title}" on current space.`
 
             Main.activateWindow(metaWindow);
             ensureViewport(space.selectedWindow, space);
+            maybeWarpPointerToWindow(metaWindow);
 
             slurpCheck(true);
         });
@@ -3370,6 +3372,43 @@ export function focusHandler(metaWindow) {
     ensureViewport(metaWindow, space, { moveto: !Main.overview.visible });
 
     Topbar.fixTopBar();
+}
+
+/**
+ * Invoked by our callsites where the focus warp is appropriate
+ * (focus movement keybindings, close-window, insertWindow, LiveAltTab etc.).
+ * Checks if "warp-pointer-on-focus" is true, and has a lot of other safeguards
+ * and logic.
+ */
+export function maybeWarpPointerToWindow(metaWindow) {
+    if (!Settings.prefs.warp_pointer_on_focus) return;
+    if (Main.overview.visible) return;
+    if (!metaWindow) return;
+    /* visibleX/Y read metaWindow.clone.targetX/targetY, which is only kept in
+     * sync for tiled windows; skip the rest. */
+    if (Scratch.isScratchWindow(metaWindow)) return;
+    if (isTransient(metaWindow)) return;
+    if (isFloating(metaWindow)) return;
+    if (!metaWindow.clone) return;
+
+    const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
+
+    /* Use post-scroll coordinates instead of the current frame_rect, which
+     * only catches up at moveDone (end of strip animation). */
+    const f = metaWindow.get_frame_rect();
+    const tx = space.visibleX(metaWindow) + space.monitor.x;
+    const ty = space.visibleY(metaWindow);
+    const [px, py] = global.get_pointer();
+    const inside =
+        px >= tx && px < tx + f.width && py >= ty && py < ty + f.height;
+    if (inside) return;
+
+    Utils.warpPointer(
+        tx + Math.floor(f.width / 2),
+        ty + Math.floor(f.height / 2),
+        false
+    );
 }
 
 /**
