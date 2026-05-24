@@ -548,21 +548,10 @@ export function dismissDispatcher(mode: number) {
     }
 }
 
-/**
- * Minimal binding shape consumed here. Satisfied both by a real
- * `Meta.KeyBinding` (passed via `Keybindings.asKeyHandler`) and by the
- * synthetic binding built in `Keybindings.openNavigatorHandler`.
- */
-interface NavigatorBinding {
-    get_name(): string;
-    get_mask(): number;
-    is_reversed(): boolean;
-}
-
 export function previewNavigate(
     _metaWindow: Meta.Window | null,
     _space: Tiling.Space | null,
-    { binding }: { binding: NavigatorBinding }
+    { binding }: { binding: Keybindings.KeyBindingLike }
 ) {
     const tabPopup = getActionDispatcher(DispatcherMode.KEYBOARD);
     tabPopup.show(

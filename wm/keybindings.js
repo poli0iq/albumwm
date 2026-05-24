@@ -459,6 +459,17 @@ export function byId(mutterId) {
     return actionIdMap[mutterId];
 }
 
+/**
+ * Minimal binding shape consumed by action handlers invoked through
+ * `asKeyHandler`. Satisfied both by a real `Meta.KeyBinding` and by the
+ * synthetic binding built in `openNavigatorHandler`.
+ * @typedef {{
+ *     get_name(): string,
+ *     get_mask(): number,
+ *     is_reversed(): boolean,
+ * }} KeyBindingLike
+ */
+
 export function asKeyHandler(actionHandler) {
     if (Utils.version[0] >= 48) {
         return (display, mw, evt, binding) =>
