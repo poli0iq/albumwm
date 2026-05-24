@@ -6,30 +6,26 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as WindowMenu from 'resource:///org/gnome/shell/ui/windowMenu.js';
 
 import { Settings, Utils, Tiling, Topbar } from './imports.js';
-import { Easer } from './utils.js';
+import { Easer, EaserParams } from './utils.js';
 
-let originalBuildMenu;
-let float, scratchFrame; // symbols used for expando properties on metawindow
+let originalBuildMenu: ((window: Tiling.Window) => void) | null;
 export function enable() {
     originalBuildMenu = WindowMenu.WindowMenu.prototype._buildMenu;
-    float = Symbol();
-    scratchFrame = Symbol();
-    WindowMenu.WindowMenu.prototype._buildMenu = function (window) {
-        let item;
-        item = this.addAction(_('Scratch'), () => {
+    WindowMenu.WindowMenu.prototype._buildMenu = function (
+        window: Tiling.Window
+    ) {
+        const item = this.addAction(_('Scratch'), () => {
             toggle(window);
         });
         if (isScratchWindow(window)) item.setOrnament(PopupMenu.Ornament.CHECK);
 
-        originalBuildMenu.call(this, window);
+        originalBuildMenu!.call(this, window);
     };
 }
 
 export function disable() {
-    WindowMenu.WindowMenu.prototype._buildMenu = originalBuildMenu;
+    WindowMenu.WindowMenu.prototype._buildMenu = originalBuildMenu!;
     originalBuildMenu = null;
-    float = null;
-    scratchFrame = null;
 }
 
 /**
@@ -39,7 +35,12 @@ export function disable() {
    The actual window actor (not clone) is tweened to ensure it's on top of the
    other windows/clones (clones if the space animates)
  */
-export function easeScratch(metaWindow, targetX, targetY, params = {}) {
+export function easeScratch(
+    metaWindow: Tiling.Window,
+    targetX: number,
+    targetY: number,
+    params: EaserParams = {}
+) {
     const complete = params?.onComplete ?? function () {};
     const f = metaWindow.get_frame_rect();
     const b = metaWindow.get_buffer_rect();
@@ -49,7 +50,7 @@ export function easeScratch(metaWindow, targetX, targetY, params = {}) {
     Easer.addEase(metaWindow.get_compositor_private(), {
         x: targetX - dx,
         y: targetY - dy,
-        time: Settings.prefs.animation_time,
+        time: Settings.prefs!.animation_time,
         onComplete: () => {
             metaWindow.move_frame(true, targetX, targetY);
             complete();
@@ -57,15 +58,15 @@ export function easeScratch(metaWindow, targetX, targetY, params = {}) {
     });
 }
 
-export function makeScratch(metaWindow) {
-    let fromNonScratch = !metaWindow[float];
+export function makeScratch(metaWindow: Tiling.Window) {
+    const fromNonScratch = !metaWindow._scratch;
     let fromTiling = false;
     // Relevant when called while navigating. Use the position the user actually sees.
-    let windowPositionSeen;
+    let windowPositionSeen: number[];
 
     if (fromNonScratch) {
         // Figure out some stuff before the window is removed from the tiling
-        let space = Tiling.spaces.spaceOfWindow(metaWindow);
+        const space = Tiling.spaces.spaceOfWindow(metaWindow);
         fromTiling = space.indexOf(metaWindow) > -1;
         if (fromTiling) {
             windowPositionSeen = metaWindow.clone
@@ -74,18 +75,18 @@ export function makeScratch(metaWindow) {
         }
     }
 
-    metaWindow[float] = true;
+    metaWindow._scratch = true;
     metaWindow.make_above();
     metaWindow.stick(); // NB! Removes the window from the tiling (synchronously)
 
     if (!metaWindow.minimized) Tiling.showWindow(metaWindow);
 
     if (fromTiling) {
-        let f = metaWindow.get_frame_rect();
+        const f = metaWindow.get_frame_rect();
         let targetFrame = null;
 
-        if (metaWindow[scratchFrame]) {
-            let sf = metaWindow[scratchFrame];
+        if (metaWindow._scratchFrame) {
+            const sf = metaWindow._scratchFrame;
             if (
                 Utils.monitorOfPoint(sf.x, sf.y) ===
                 Main.layoutManager.primaryMonitor
@@ -96,8 +97,8 @@ export function makeScratch(metaWindow) {
 
         if (!targetFrame) {
             // Default to moving the window slightly down and reducing the height
-            let vDisplacement = 30;
-            let [x, y] = windowPositionSeen; // The window could be non-placable so can't use frame
+            const vDisplacement = 30;
+            const [x, y] = windowPositionSeen!; // The window could be non-placable so can't use frame
 
             targetFrame = new Mtk.Rectangle({
                 x,
@@ -120,15 +121,15 @@ export function makeScratch(metaWindow) {
             );
             easeScratch(metaWindow, targetFrame.x, targetFrame.y, {
                 onComplete: () => {
-                    delete metaWindow[scratchFrame];
+                    delete metaWindow._scratchFrame;
                     Main.activateWindow(metaWindow);
                 },
             });
         } else {
             // Can't restore the scratch geometry immediately since it distort the minimize animation
             // ASSUMPTION: minimize animation is not disabled and not already done
-            let actor = metaWindow.get_compositor_private();
-            let signal = actor.connect('effects-completed', () => {
+            const actor = metaWindow.get_compositor_private();
+            const signal = actor.connect('effects-completed', () => {
                 metaWindow.move_resize_frame(
                     true,
                     targetFrame.x,
@@ -141,18 +142,20 @@ export function makeScratch(metaWindow) {
         }
     }
 
-    Main.layoutManager.primaryMonitor?.clickOverlay?.hide();
+    (
+        Main.layoutManager.primaryMonitor as Tiling.Monitor | null
+    )?.clickOverlay?.hide();
 }
 
-export function unmakeScratch(metaWindow) {
-    if (!metaWindow[scratchFrame])
-        metaWindow[scratchFrame] = metaWindow.get_frame_rect();
-    metaWindow[float] = false;
+export function unmakeScratch(metaWindow: Tiling.Window) {
+    if (!metaWindow._scratchFrame)
+        metaWindow._scratchFrame = metaWindow.get_frame_rect();
+    metaWindow._scratch = false;
     metaWindow.unmake_above();
     metaWindow.unstick();
 }
 
-export function toggle(metaWindow) {
+export function toggle(metaWindow: Tiling.Window) {
     if (isScratchWindow(metaWindow)) {
         unmakeScratch(metaWindow);
     } else {
@@ -160,15 +163,15 @@ export function toggle(metaWindow) {
     }
 }
 
-export function isScratchWindow(metaWindow) {
-    return metaWindow && metaWindow[float];
+export function isScratchWindow(metaWindow: Meta.Window) {
+    return metaWindow && (metaWindow as Tiling.Window)._scratch;
 }
 
 /** Return scratch windows in MRU order */
-export function getScratchWindows() {
+export function getScratchWindows(): Tiling.Window[] {
     return global.display
         .get_tab_list(Meta.TabList.NORMAL, null)
-        .filter(isScratchWindow);
+        .filter(isScratchWindow) as Tiling.Window[];
 }
 
 export function isScratchActive() {
@@ -181,12 +184,12 @@ export function toggleScratch() {
 }
 
 export function toggleScratchWindow() {
-    let focus = global.display.focus_window;
+    const focus = global.display.focus_window;
     if (isScratchWindow(focus)) hide();
     else show(true);
 }
 
-export function show(top) {
+export function show(top?: boolean) {
     let windows = getScratchWindows();
     if (windows.length === 0) {
         return;
@@ -201,15 +204,17 @@ export function show(top) {
         .forEach(metaWindow => {
             metaWindow.unminimize();
             metaWindow.make_above();
-            metaWindow.get_compositor_private().show();
+            metaWindow.get_compositor_private<Meta.WindowActor>().show();
         });
     windows[0].activate(global.get_current_time());
 
-    Main.layoutManager.primaryMonitor?.clickOverlay?.hide();
+    (
+        Main.layoutManager.primaryMonitor as Tiling.Monitor | null
+    )?.clickOverlay?.hide();
 }
 
 export function hide() {
-    let windows = getScratchWindows();
+    const windows = getScratchWindows();
     windows.forEach(metaWindow => {
         metaWindow.minimize();
     });
@@ -217,20 +222,23 @@ export function hide() {
 
 export function animateWindows() {
     let ws = getScratchWindows().filter(w => !w.minimized);
-    ws = global.display.sort_windows_by_stacking(ws);
-    for (let w of ws) {
+    ws = global.display.sort_windows_by_stacking(ws) as Tiling.Window[];
+    for (const w of ws) {
         // let parent = w.clone.get_parent();
         // parent && parent.remove_child(w.clone);
         Utils.actorRemoveParent(w.clone);
 
-        Main.uiGroup.insert_child_above(w.clone, global.window_group);
-        let f = w.get_frame_rect();
+        Main.layoutManager.uiGroup.insert_child_above(
+            w.clone,
+            global.window_group
+        );
+        const f = w.get_frame_rect();
         w.clone.set_position(f.x, f.y);
         Tiling.animateWindow(w);
     }
 }
 
 export function showWindows() {
-    let ws = getScratchWindows().filter(w => !w.minimized);
+    const ws = getScratchWindows().filter(w => !w.minimized);
     ws.forEach(Tiling.showWindow);
 }
