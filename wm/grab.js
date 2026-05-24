@@ -22,21 +22,9 @@ export let grabbed = false;
  * Sets the cursor type to Grabbing or Default, going through each enum type.
  */
 function setCursorGrabbing(cursorType) {
-    if (Utils.version[0] >= 50) {
-        global.stage.set_cursor_type(
-            cursorType
-                ? Clutter.CursorType.GRABBING
-                : Clutter.CursorType.DEFAULT
-        );
-    } else if (Utils.version[0] >= 48) {
-        global.display.set_cursor(
-            cursorType ? Meta.Cursor.GRABBING : Meta.Cursor.DEFAULT
-        );
-    } else {
-        global.display.set_cursor(
-            cursorType ? Meta.Cursor.MOVE_OR_RESIZE_WINDOW : Meta.Cursor.DEFAULT
-        );
-    }
+    global.stage.set_cursor_type(
+        cursorType ? Clutter.CursorType.GRABBING : Clutter.CursorType.DEFAULT
+    );
 }
 
 let dragDriftTimeout;

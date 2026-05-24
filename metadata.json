@@ -4,6 +4,6 @@
     "description": "Scrollable tiling extension for GNOME Shell",
     "url": "https://albumwm.0iq.dev",
     "settings-schema": "org.gnome.shell.extensions.albumwm",
-    "shell-version": ["49", "50"],
+    "shell-version": ["50"],
     "version-name": "50.0.0"
 }
