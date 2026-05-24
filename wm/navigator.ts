@@ -56,7 +56,7 @@ class NavigatorClass {
     takeHint: St.Label;
     was_accepted: boolean;
     space: Tiling.Space;
-    _startWindow: Meta.Window | null;
+    _startWindow: Tiling.Window | null;
     from: Tiling.Space;
     monitor: Tiling.Monitor;
     minimaps: Map<Tiling.Space, Minimap.Minimap | number>;
@@ -188,7 +188,7 @@ class NavigatorClass {
             this.space = from;
             if (this._startWindow && this._startWindow.get_compositor_private())
                 selected = this._startWindow;
-            else selected = display.focus_window;
+            else selected = display.focus_window as Tiling.Window | null;
         }
 
         if (this.space !== from) {

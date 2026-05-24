@@ -261,6 +261,18 @@ export function setInGrab(value) {
  * }} Monitor
  */
 
+/**
+ * Meta.Window with our extra fields
+ * @typedef {Meta.Window & {
+ *     clone: Clutter.Actor & {
+ *         cloneActor: Clutter.Clone,
+ *         shade: St.Widget,
+ *     },
+ *     _scratch?: boolean, // Used by `scratch.ts`
+ *     _scratchFrame?: import('@girs/mtk-18').default.Rectangle,
+ * }} Window
+ */
+
 export class Space extends Array {
     /** @type {import('@gi-types/clutter10').Actor} */
     actor;
@@ -268,7 +280,7 @@ export class Space extends Array {
     /** @type {import('@gi-types/clutter').Actor} */
     background;
 
-    /** @type {Meta.Window | null} */
+    /** @type {Window | null} */
     selectedWindow;
 
     /** @type {Monitor} */
@@ -1385,7 +1397,7 @@ export class Space extends Array {
 
     /**
      * Applies clipping to metaWindow's clone.
-     * @param {Meta.Window} metaWindow
+     * @param {Window} metaWindow
      */
     applyClipToClone(metaWindow) {
         if (!metaWindow) {
@@ -2247,6 +2259,9 @@ export function isOverrideRedirect(metaWindow) {
     );
 }
 
+/**
+ * @param {Window} metaWindow
+ */
 export function registerWindow(metaWindow) {
     if (isOverrideRedirect(metaWindow)) {
         return false;
@@ -2393,7 +2408,7 @@ export function destroyHandler(actor) {
 
 /**
  * Removes resize, position, and other flags.  Used during cleanup etc.
- * @param {Meta.Window} metaWindow
+ * @param {Window} metaWindow
  */
 export function removeAlbumWMFlags(w) {
     delete w._targetWidth;
@@ -2405,6 +2420,8 @@ export function removeAlbumWMFlags(w) {
     delete w._fullscreen_frame;
     delete w._fullscreen_lock;
     delete w._fullscreen_above;
+    delete w._scratch;
+    delete w._scratchFrame;
 }
 
 export function addPositionHandler(metaWindow) {
@@ -2564,7 +2581,7 @@ export function nonTiledSizeHandler(metaWindow) {
 /**
  * Saves a metaWindow's frame x, y ,width, and height for restoring
  * after exiting fullscreen mode.
- * @param {Meta.Window} metaWindow
+ * @param {Window} metaWindow
  */
 export function saveFullscreenFrame(metaWindow, tiled) {
     const f = metaWindow.get_frame_rect();
@@ -4012,7 +4029,7 @@ export function allocateEqualHeight(column, available) {
 /**
  * "Slurps" a window into the currently active column, vertically
  * stacking it.
- * @param {Meta.Window} metaWindow
+ * @param {Window} metaWindow
  * @param {Boolean} below
  * @returns
  */
@@ -4090,7 +4107,7 @@ export function slurp(metaWindow, insertAt = SlurpInsertPosition.BOTTOM) {
 
 /**
  * Barfs (expels) a specific window from a column.
- * @param {Meta.Window} metaWindow
+ * @param {Window} metaWindow
  * @returns
  */
 export function barf(metaWindow, expelWindow) {
