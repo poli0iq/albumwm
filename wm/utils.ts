@@ -376,6 +376,11 @@ export function periodicTimeout(options?: TimeoutOptions) {
     });
 }
 
+export type EaserParams = Parameters<Clutter.Actor['ease']>[0] & {
+    time?: number;
+    instant?: boolean;
+};
+
 /**
  * Note the name 'Tweener' used previously was just a legacy name, we're actually using
  * Widget.ease here.  This was renamed to avoid confusion with the deprecated `Tweener`
@@ -396,13 +401,7 @@ export const Easer = {
      */
     ANIMATION_INSTANT_TIME: 0.0001,
 
-    addEase(
-        actor: Clutter.Actor,
-        params: Parameters<Clutter.Actor['ease']>[0] & {
-            time?: number;
-            instant?: boolean;
-        }
-    ) {
+    addEase(actor: Clutter.Actor, params: EaserParams) {
         if (params.time) {
             params.duration = this._safeDuration(params.time, params.instant);
             delete params.time;
