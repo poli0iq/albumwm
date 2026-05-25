@@ -252,7 +252,7 @@ export function primaryModifier(mask: number) {
 
    Adapted from SwitcherPopup, without any visual handling.
  */
-class ActionDispatcher {
+export class ActionDispatcher {
     /** DispatcherMode bitmask */
     mode: number = DispatcherMode.NONE;
 
