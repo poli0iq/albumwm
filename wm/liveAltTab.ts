@@ -151,7 +151,7 @@ export class LiveAltTab extends AltTab.WindowSwitcherPopup {
         const clone = new Clutter.Clone({ source: actor });
         clone.position = actor.position;
 
-        const space = Tiling.spaces.spaceOfWindow(to);
+        const space = Tiling.spaces.spaceOfWindow(to)!;
         if (space.indexOf(to) !== -1) {
             clone.x = Tiling.ensuredX(to, space) + space.monitor.x;
             clone.x -= frame.x - actor.x;

@@ -267,6 +267,8 @@ export function setInGrab(value) {
  *     clone: Clutter.Actor & {
  *         cloneActor: Clutter.Clone,
  *         shade: St.Widget,
+ *         targetY: number,
+ *         __oldOpacity: number, // Used by `grab.ts`
  *     },
  *     _scratch?: boolean, // Used by `scratch.ts`
  *     _scratchFrame?: import('@girs/mtk-18').default.Rectangle,
@@ -828,6 +830,7 @@ export class Space extends Array {
         }
     }
 
+    /** @returns {Window[]} */
     getWindows() {
         return this.reduce((ws, column) => ws.concat(column), []);
     }
@@ -1721,9 +1724,10 @@ export class Space extends Array {
 Signals.addSignalMethods(Space.prototype);
 
 /**
-   A `Map` to store all `Spaces`'s, indexed by the corresponding workspace.
-*/
-export const Spaces = class Spaces extends Map {
+ * A `Map` to store all `Spaces`'s, indexed by the corresponding workspace.
+ * @extends {Map<Meta.Workspace, Space>}
+ */
+export class Spaces extends Map {
     // Fix for eg. space.map, see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Species
     static get [Symbol.species]() {
         return Map;
@@ -2142,7 +2146,7 @@ export const Spaces = class Spaces extends Map {
             insertWindow(metaWindow, { existing: false });
         });
     }
-};
+}
 Signals.addSignalMethods(Spaces.prototype);
 
 /**
