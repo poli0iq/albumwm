@@ -7,7 +7,6 @@ import * as Workspace from 'resource:///org/gnome/shell/ui/workspace.js';
 import * as WorkspaceThumbnail from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
 import * as AltTab from 'resource:///org/gnome/shell/ui/altTab.js';
 import * as WindowManager from 'resource:///org/gnome/shell/ui/windowManager.js';
-import * as WindowPreview from 'resource:///org/gnome/shell/ui/windowPreview.js';
 import * as Screenshot from 'resource:///org/gnome/shell/ui/screenshot.js';
 
 import { Utils, Tiling, Scratch, Settings, OverviewLayout } from './imports.js';
@@ -194,26 +193,6 @@ export function setupOverrides() {
 
         return upstreamValue;
     });
-
-    /**
-     * Resolve issue where window that is set to minimise-on-close should be removed
-     * from tiling (stick) before closing.  See https://github.com/paperwm/PaperWM/issues/608.
-     */
-    registerOverridePrototype(
-        WindowPreview.WindowPreview,
-        '_deleteAll',
-        function () {
-            const windows = this.window_container.layout_manager.get_windows();
-
-            // Delete all windows, starting from the bottom-most (most-modal) one
-            for (const window of windows.reverse()) {
-                window.stick();
-                window.delete(global.get_current_time());
-            }
-
-            this._closeRequested = true;
-        }
-    );
 
     /**
      * Always show workspace thumbnails in overview if more than one workspace.
