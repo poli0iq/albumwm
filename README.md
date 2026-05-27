@@ -56,6 +56,23 @@ The flake provides a `gnome-shell-extension-albumwm` package,
 which can be installed and enabled like any regular GNOME extension package from nixpkgs,
 for example, via `programs.gnome-shell.extensions` in Home Manager configuration.
 
+`flake.nix`:
+
+```nix
+albumwm = {
+  url = "github:poli0iq/albumwm";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+```
+
+Home Manager:
+
+```nix
+programs.gnome-shell.extensions = [
+  { package = inputs.albumwm.packages.${pkgs.stdenv.hostPlatform.system}.default; }
+];
+```
+
 ## Related projects
 
 Some projects also implement scrollable tiling, namely:
