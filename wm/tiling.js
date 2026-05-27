@@ -3975,7 +3975,7 @@ export function setFocusMode(mode, space) {
 
 /**
  * Switches to the next focus mode for a space.
- * @param {Space} space
+ * @param {Space=} space
  */
 export function switchToNextFocusMode(space) {
     space = space ?? spaces.activeSpace;
