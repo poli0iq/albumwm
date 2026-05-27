@@ -8,6 +8,7 @@ import * as WorkspaceThumbnail from 'resource:///org/gnome/shell/ui/workspaceThu
 import * as AltTab from 'resource:///org/gnome/shell/ui/altTab.js';
 import * as WindowManager from 'resource:///org/gnome/shell/ui/windowManager.js';
 import * as Screenshot from 'resource:///org/gnome/shell/ui/screenshot.js';
+import * as WindowPreview from 'resource:///org/gnome/shell/ui/windowPreview.js';
 
 import { Utils, Tiling, Scratch, Settings, OverviewLayout } from './imports.js';
 
@@ -56,6 +57,34 @@ export function registerOverridePrototype(obj, name, override) {
     registerOverrideProp(obj.prototype, name, override);
 }
 
+/**
+ * Override an accessor property (getter). registerOverrideProp can't handle
+ * this because it reads obj[name] (invoking the getter) and restores by
+ * assignment, which would replace the getter with a plain value.
+ */
+export function registerOverrideGetter(obj, name, getter) {
+    if (!obj) return;
+
+    const saved = Object.getOwnPropertyDescriptor(obj, name);
+    if (!saved || typeof saved.get !== 'function') {
+        console.warn(
+            `#AlbumWM: attempt to override getter for '${name}' failed: not an accessor property`
+        );
+        return;
+    }
+
+    let props = savedProps.get(obj);
+    if (!props) {
+        props = {};
+        savedProps.set(obj, props);
+    }
+    props[name] = {
+        saved,
+        override: { configurable: true, get: getter },
+        isAccessor: true,
+    };
+}
+
 export function makeFallback(obj, method, ...args) {
     let fallback = getSavedPrototype(obj, method);
     return fallback.bind(...args);
@@ -81,12 +110,22 @@ export function getSavedPrototype(obj, name) {
 }
 
 export function disableOverride(obj, name) {
+    const prop = savedProps.get(obj)?.[name];
+    if (prop?.isAccessor) {
+        Object.defineProperty(obj, name, prop.saved);
+        return;
+    }
     obj[name] = getSavedProp(obj, name);
 }
 
 export function enableOverride(obj, name) {
     let props = savedProps.get(obj);
-    let override = props[name].override;
+    let prop = props[name];
+    if (prop.isAccessor) {
+        Object.defineProperty(obj, name, prop.override);
+        return;
+    }
+    let override = prop.override;
     if (override !== undefined) {
         obj[name] = override;
     }
@@ -193,6 +232,29 @@ export function setupOverrides() {
 
         return upstreamValue;
     });
+
+    /**
+     * Make the overview open/close animation interpolate to the AlbumWM
+     * clone's stage rect instead of `meta_window_get_frame_rect()`. The
+     * upstream getter targets `frame_rect`, which lies for non-placeable
+     * windows (clone sits off-monitor while frame is clamped on-monitor)
+     * and for fullscreen/maximized windows (frame fills the whole
+     * monitor while the clone occupies a smaller column slot).
+     */
+    registerOverrideGetter(
+        WindowPreview.WindowPreview.prototype,
+        'boundingBox',
+        function () {
+            const w = this.metaWindow;
+            const rect = Tiling.spaces?.spaceOfWindow(w)?.cloneStageRect(w);
+            if (rect) return rect;
+            const saved = getSavedProp(
+                WindowPreview.WindowPreview.prototype,
+                'boundingBox'
+            );
+            return saved.get.call(this);
+        }
+    );
 
     /**
      * Always show workspace thumbnails in overview if more than one workspace.
@@ -343,7 +405,7 @@ export function enableOverrides() {
 export function disableOverrides() {
     for (let [obj, props] of savedProps) {
         for (let name in props) {
-            obj[name] = props[name].saved;
+            disableOverride(obj, name);
         }
     }
 }

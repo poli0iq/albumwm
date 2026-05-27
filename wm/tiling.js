@@ -1249,6 +1249,24 @@ export class Space extends Array {
         return metaWindow.clone.targetY + this.monitor.y;
     }
 
+    /**
+     * Stage rect of the AlbumWM clone for this window. Used by the
+     * `WindowPreview.boundingBox` override in patches.js so the overview
+     * open/close animation interpolates toward where the clone visually
+     * sits in the tiling grid rather than `meta_window_get_frame_rect()`
+     * (which lies for non-placeable / fullscreen / maximized windows).
+     */
+    cloneStageRect(metaWindow) {
+        const clone = metaWindow?.clone;
+        if (!clone) return null;
+        return {
+            x: this.monitor.x + this.cloneContainer.x + clone.x,
+            y: this.monitor.y + clone.y,
+            width: clone.width,
+            height: clone.height,
+        };
+    }
+
     positionOf(metaWindow) {
         metaWindow = metaWindow || this.selectedWindow;
         for (let i = 0; i < this.length; i++) {
