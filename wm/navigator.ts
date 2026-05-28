@@ -52,7 +52,7 @@ export function disable() {
     signals = null;
 }
 
-class NavigatorClass {
+export class NavigatorClass {
     takeHint: St.Label;
     was_accepted: boolean;
     space: Tiling.Space;
