@@ -1,7 +1,3 @@
-import GLib from 'gi://GLib';
-
-import * as Util from 'resource:///org/gnome/shell/misc/util.js';
-
 import {
     Utils,
     Settings,
@@ -88,10 +84,5 @@ export default class AlbumWM extends Extension {
         // Finishing navigation here avoids leaving AlbumWM in a broken state
         // if disable hits mid-navigation (e.g. workspace switch view).
         Navigator.finishNavigation();
-    }
-
-    spawnPager(content) {
-        const quoted = GLib.shell_quote(content);
-        Util.spawn(['sh', '-c', `echo -En ${quoted} | gedit --new-window -`]);
     }
 }
