@@ -4130,6 +4130,7 @@ export function slurp(metaWindow, insertAt = SlurpInsertPosition.BOTTOM) {
 /**
  * Barfs (expels) a specific window from a column.
  * @param {Window} metaWindow
+ * @param {Window=} expelWindow
  * @returns
  */
 export function barf(metaWindow, expelWindow) {
