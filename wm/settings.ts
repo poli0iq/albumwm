@@ -184,7 +184,7 @@ export function keystrToKeycombo(keystr: string) {
     return `${aboveTab ? META_KEY_ABOVE_TAB : key}|${mask}`;
 }
 
-type KeycomboMap = { [key: string]: string[] };
+export type KeycomboMap = { [key: string]: string[] };
 
 function generateKeycomboMap(settings: Gio.Settings): KeycomboMap {
     const map: KeycomboMap = {};

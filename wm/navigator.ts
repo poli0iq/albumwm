@@ -437,7 +437,7 @@ export class ActionDispatcher {
             // action is performed while navigator is open (e.g. switch-left)
             if (
                 !metaWindow &&
-                action.options.mutterFlags & Meta.KeyBindingFlags.PER_WINDOW
+                action.options.mutterFlags! & Meta.KeyBindingFlags.PER_WINDOW
             ) {
                 return;
             }
@@ -551,8 +551,9 @@ export function dismissDispatcher(mode: number) {
 export function previewNavigate(
     _metaWindow: Meta.Window | null,
     _space: Tiling.Space | null,
-    { binding }: { binding: Keybindings.KeyBindingLike }
+    options?: { binding?: Keybindings.KeyBindingLike }
 ) {
+    const binding = options!.binding!;
     const tabPopup = getActionDispatcher(DispatcherMode.KEYBOARD);
     tabPopup.show(
         binding.is_reversed(),

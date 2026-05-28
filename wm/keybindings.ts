@@ -15,43 +15,72 @@ import {
     Topbar,
 } from './imports.js';
 
-const Seat = Clutter.get_default_backend().get_default_seat();
+import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import type Gio from 'gi://Gio?version=2.0';
+
 const Display = global.display;
 
 const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
-let signals, actions, nameMap, actionIdMap, keycomboMap;
-let keybindSettings;
+type KeyBindingHandler = (
+    mw: Tiling.Window,
+    space: Tiling.Space,
+    options?: {
+        binding?: KeyBindingLike;
+        display?: Meta.Display;
+        navigator?: Navigator.NavigatorClass;
+    }
+) => void;
+
+type KeyBindingAction = {
+    id: Meta.KeyBindingAction;
+    name: string;
+    keystr?: string;
+    keycombo?: string;
+    mutterName?: string;
+    keyHandler?: StoredKeyHandler;
+    handler: KeyBindingHandler;
+    options: KeyBindingOptions;
+};
+
+let signals: Utils.Signals | null,
+    actions: KeyBindingAction[] | null,
+    nameMap: { [mutterKeybindingActionName: string]: KeyBindingAction } | null,
+    actionIdMap: { [metaKeyBindingActionId: number]: KeyBindingAction } | null,
+    keycomboMap: { [keycombo: string]: KeyBindingAction } | null;
+let keybindSettings: Gio.Settings | null;
 /**
  * Pending close-window invocations, keyed by fail-safe timeout id. Tracked
  * so disable() can cancel the timeout and disconnect the `unmanaging`
  * signal we connected on the window being closed.
- * @type {Map<number, {metaWindow: Meta.Window, unmanagingId: number, sourceMonitor: number}>}
  */
-let pendingCloses;
+let pendingCloses: Map<
+    number,
+    { metaWindow: Meta.Window; unmanagingId: number; sourceMonitor: number }
+> | null;
 
-export function enable(extension) {
+export function enable(extension: Extension) {
     // restore previous keybinds (in case failed to restore last time, e.g. gnome crash etc)
     Settings.updateOverrides();
 
     keybindSettings = extension.getSettings(KEYBINDINGS_KEY);
     setupActions(keybindSettings);
-    signals.connect(
+    signals!.connect(
         Display,
         'accelerator-activated',
         (display, actionId, deviceId, timestamp) => {
             handleAccelerator(display, actionId, deviceId, timestamp);
         }
     );
-    actions.forEach(enableAction);
+    actions!.forEach(enableAction);
     Settings.overrideConflicts();
 
-    let schemas = [
+    const schemas = [
         ...Settings.getConflictSettings(),
         extension.getSettings(KEYBINDINGS_KEY),
     ];
     schemas.forEach(schema => {
-        signals.connect(schema, 'changed', (settings, key) => {
+        signals!.connect(schema, 'changed', (settings, key) => {
             const overrode = Settings.conflictKeyChanged(settings, key);
             if (overrode) {
                 Main.notifyError(
@@ -64,12 +93,12 @@ export function enable(extension) {
 }
 
 export function disable() {
-    signals.destroy();
+    signals!.destroy();
     signals = null;
-    actions.forEach(disableAction);
+    actions!.forEach(disableAction);
     Settings.restoreConflicts();
 
-    pendingCloses.forEach((entry, id) => {
+    pendingCloses!.forEach((entry, id) => {
         Utils.timeoutRemove(id);
         if (entry.metaWindow?.get_compositor_private()) {
             entry.metaWindow.disconnect(entry.unmanagingId);
@@ -84,37 +113,47 @@ export function disable() {
     keycomboMap = null;
 }
 
-export function registerAlbumAction(actionName, handler, flags) {
+export function registerAlbumAction(
+    actionName: string,
+    handler: KeyBindingHandler,
+    flags?: Meta.KeyBindingFlags
+) {
     registerAction(actionName, handler, {
-        settings: keybindSettings,
+        settings: keybindSettings!,
         mutterFlags: flags,
         activeInNavigator: true,
     });
 }
 
-export function registerNavigatorAction(name, handler) {
+export function registerNavigatorAction(
+    name: string,
+    handler: KeyBindingHandler
+) {
     registerAction(name, handler, {
-        settings: keybindSettings,
+        settings: keybindSettings!,
         opensNavigator: true,
     });
 }
 
-export function registerMinimapAction(name, handler) {
+export function registerMinimapAction(
+    name: string,
+    handler: KeyBindingHandler
+) {
     registerAction(name, handler, {
-        settings: keybindSettings,
+        settings: keybindSettings!,
         opensNavigator: true,
         opensMinimap: true,
         mutterFlags: Meta.KeyBindingFlags.PER_WINDOW,
     });
 }
 
-export function setupActions(settings) {
+export function setupActions(settings: Gio.Settings) {
     signals = new Utils.Signals();
     pendingCloses = new Map();
     actions = [];
-    nameMap = {}; // mutter keybinding action name -> action
+    nameMap = {};
     actionIdMap = {}; // actionID   -> action
-    keycomboMap = {}; // keycombo   -> action
+    keycomboMap = {};
 
     /* Initialize keybindings */
     registerAction('live-alt-tab', LiveAltTab.liveAltTab, { settings });
@@ -163,89 +202,89 @@ export function setupActions(settings) {
 
     registerNavigatorAction('take-window', Tiling.takeWindow);
 
-    registerMinimapAction('switch-next', (mw, space) =>
+    registerMinimapAction('switch-next', (_mw, space) =>
         space.switchLinear(1, false)
     );
-    registerMinimapAction('switch-previous', (mw, space) =>
+    registerMinimapAction('switch-previous', (_mw, space) =>
         space.switchLinear(-1, false)
     );
-    registerMinimapAction('switch-next-loop', (mw, space) =>
+    registerMinimapAction('switch-next-loop', (_mw, space) =>
         space.switchLinear(1, true)
     );
-    registerMinimapAction('switch-previous-loop', (mw, space) =>
+    registerMinimapAction('switch-previous-loop', (_mw, space) =>
         space.switchLinear(-1, true)
     );
 
-    registerMinimapAction('switch-right', (mw, space) =>
+    registerMinimapAction('switch-right', (_mw, space) =>
         space.switchRight(false)
     );
-    registerMinimapAction('switch-left', (mw, space) =>
+    registerMinimapAction('switch-left', (_mw, space) =>
         space.switchLeft(false)
     );
-    registerMinimapAction('switch-up', (mw, space) => space.switchUp(false));
-    registerMinimapAction('switch-down', (mw, space) =>
+    registerMinimapAction('switch-up', (_mw, space) => space.switchUp(false));
+    registerMinimapAction('switch-down', (_mw, space) =>
         space.switchDown(false)
     );
 
-    registerNavigatorAction('drift-left', (mw, space) => space.driftLeft());
-    registerNavigatorAction('drift-right', (mw, space) => space.driftRight());
+    registerNavigatorAction('drift-left', (_mw, space) => space.driftLeft());
+    registerNavigatorAction('drift-right', (_mw, space) => space.driftRight());
 
-    registerMinimapAction('switch-right-loop', (mw, space) =>
+    registerMinimapAction('switch-right-loop', (_mw, space) =>
         space.switchRight(true)
     );
-    registerMinimapAction('switch-left-loop', (mw, space) =>
+    registerMinimapAction('switch-left-loop', (_mw, space) =>
         space.switchLeft(true)
     );
-    registerMinimapAction('switch-up-loop', (mw, space) =>
+    registerMinimapAction('switch-up-loop', (_mw, space) =>
         space.switchUp(true)
     );
-    registerMinimapAction('switch-down-loop', (mw, space) =>
+    registerMinimapAction('switch-down-loop', (_mw, space) =>
         space.switchDown(true)
     );
 
     registerMinimapAction('switch-first', Tiling.activateFirstWindow);
-    registerMinimapAction('switch-second', (mw, space) =>
+    registerMinimapAction('switch-second', (_mw, space) =>
         Tiling.activateNthWindow(1, space)
     );
-    registerMinimapAction('switch-third', (mw, space) =>
+    registerMinimapAction('switch-third', (_mw, space) =>
         Tiling.activateNthWindow(2, space)
     );
-    registerMinimapAction('switch-fourth', (mw, space) =>
+    registerMinimapAction('switch-fourth', (_mw, space) =>
         Tiling.activateNthWindow(3, space)
     );
-    registerMinimapAction('switch-fifth', (mw, space) =>
+    registerMinimapAction('switch-fifth', (_mw, space) =>
         Tiling.activateNthWindow(4, space)
     );
-    registerMinimapAction('switch-sixth', (mw, space) =>
+    registerMinimapAction('switch-sixth', (_mw, space) =>
         Tiling.activateNthWindow(5, space)
     );
-    registerMinimapAction('switch-seventh', (mw, space) =>
+    registerMinimapAction('switch-seventh', (_mw, space) =>
         Tiling.activateNthWindow(6, space)
     );
-    registerMinimapAction('switch-eighth', (mw, space) =>
+    registerMinimapAction('switch-eighth', (_mw, space) =>
         Tiling.activateNthWindow(7, space)
     );
-    registerMinimapAction('switch-ninth', (mw, space) =>
+    registerMinimapAction('switch-ninth', (_mw, space) =>
         Tiling.activateNthWindow(8, space)
     );
-    registerMinimapAction('switch-tenth', (mw, space) =>
+    registerMinimapAction('switch-tenth', (_mw, space) =>
         Tiling.activateNthWindow(9, space)
     );
-    registerMinimapAction('switch-eleventh', (mw, space) =>
+    registerMinimapAction('switch-eleventh', (_mw, space) =>
         Tiling.activateNthWindow(10, space)
     );
     registerMinimapAction('switch-last', Tiling.activateLastWindow);
 
-    registerMinimapAction('switch-global-right', (mw, space) =>
+    registerMinimapAction('switch-global-right', (_mw, space) =>
         space.switchGlobalRight()
     );
-    registerMinimapAction('switch-global-left', (mw, space) =>
+    registerMinimapAction('switch-global-left', (_mw, space) =>
         space.switchGlobalLeft()
     );
-    registerMinimapAction('switch-global-up', (mw, space) =>
+    registerMinimapAction('switch-global-up', (_mw, space) =>
         space.switchGlobalUp()
     );
-    registerMinimapAction('switch-global-down', (mw, space) =>
+    registerMinimapAction('switch-global-down', (_mw, space) =>
         space.switchGlobalDown()
     );
 
@@ -277,7 +316,9 @@ export function setupActions(settings) {
         Tiling.activateWindowUnderCursor
     );
 
-    registerAlbumAction('switch-focus-mode', Tiling.switchToNextFocusMode);
+    registerAlbumAction('switch-focus-mode', (_mw, space) =>
+        Tiling.switchToNextFocusMode(space)
+    );
 
     registerAlbumAction(
         'switch-open-window-position',
@@ -368,7 +409,7 @@ export function setupActions(settings) {
             const unmanagingId = metaWindow.connect('unmanaging', () => {
                 metaWindow.disconnect(unmanagingId);
                 if (timeoutId) {
-                    pendingCloses.delete(timeoutId);
+                    pendingCloses!.delete(timeoutId);
                     Utils.timeoutRemove(timeoutId);
                     timeoutId = 0;
                 }
@@ -389,12 +430,12 @@ export function setupActions(settings) {
                 });
             });
             timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
-                pendingCloses.delete(timeoutId);
+                pendingCloses!.delete(timeoutId);
                 metaWindow.disconnect(unmanagingId);
                 timeoutId = 0;
                 return GLib.SOURCE_REMOVE;
             });
-            pendingCloses.set(timeoutId, {
+            pendingCloses!.set(timeoutId, {
                 metaWindow,
                 unmanagingId,
                 sourceMonitor,
@@ -442,8 +483,8 @@ export function setupActions(settings) {
     );
 }
 
-export function idOf(mutterName) {
-    let action = byMutterName(mutterName);
+export function idOf(mutterName: string) {
+    const action = byMutterName(mutterName);
     if (action) {
         return action.id;
     } else {
@@ -451,34 +492,61 @@ export function idOf(mutterName) {
     }
 }
 
-export function byMutterName(name) {
-    return nameMap[name];
+export function byMutterName(name: string) {
+    return nameMap![name];
 }
 
-export function byId(mutterId) {
-    return actionIdMap[mutterId];
+export function byId(mutterId: number) {
+    return actionIdMap![mutterId];
 }
 
 /**
  * Minimal binding shape consumed by action handlers invoked through
  * `asKeyHandler`. Satisfied both by a real `Meta.KeyBinding` and by the
  * synthetic binding built in `openNavigatorHandler`.
- * @typedef {{
- *     get_name(): string,
- *     get_mask(): number,
- *     is_reversed(): boolean,
- * }} KeyBindingLike
  */
+export interface KeyBindingLike {
+    get_name(): string;
+    get_mask(): number;
+    is_reversed(): boolean;
+}
 
-export function asKeyHandler(actionHandler) {
-    return (display, mw, evt, binding) =>
-        actionHandler(mw, Tiling.spaces.selectedSpace, {
+type StoredKeyHandler = (
+    display: Meta.Display,
+    window: Meta.Window,
+    event?: Clutter.Event,
+    binding?: Meta.KeyBinding
+) => void;
+
+export function asKeyHandler(
+    actionHandler: KeyBindingHandler
+): StoredKeyHandler {
+    return (display, mw, _evt, binding) =>
+        actionHandler(mw as Tiling.Window, Tiling.spaces.selectedSpace, {
             display,
             binding,
         });
 }
 
-export function impliedOptions(options) {
+/**
+ * Action behavior flags. `settings` distinguishes a schema-backed action
+ * (bound via Main.wm.addKeybinding) from a schemaless one.
+ */
+type KeyBindingOptions = {
+    settings?: Gio.Settings;
+    /** Start navigation and open the minimap. Implies `opensNavigator`. */
+    opensMinimap?: boolean;
+    /**
+     * Start navigation (e.g. Esc restores the selected space and window).
+     * Implies `activeInNavigator`.
+     * */
+    opensNavigator?: boolean;
+    /** Action stays available during navigation. */
+    activeInNavigator?: boolean;
+    mutterFlags?: Meta.KeyBindingFlags;
+};
+
+export function impliedOptions(options: KeyBindingOptions) {
     options = Object.assign(
         { mutterFlags: Meta.KeyBindingFlags.NONE },
         options
@@ -491,16 +559,11 @@ export function impliedOptions(options) {
     return options;
 }
 
-/**
- * handler: function(metaWindow, space, {binding, display, screen}) -> ignored
- * options: {
- *   opensMinimap:      true|false Start navigation and open the minimap
- *   opensNavigator:    true|false Start navigation (eg. Esc will restore selected space and window)
- *   activeInNavigator: true|false Action is available during navigation
- *   ...
- * }
- */
-export function registerAction(actionName, handler, options) {
+export function registerAction(
+    actionName: string,
+    handler: KeyBindingHandler,
+    options: KeyBindingOptions
+) {
     options = impliedOptions(options);
 
     const { settings, opensNavigator } = options;
@@ -516,7 +579,7 @@ export function registerAction(actionName, handler, options) {
         // actionId, mutterName and keyHandler will be set if/when the action is bound
     }
 
-    const action = {
+    const action: KeyBindingAction = {
         id: Meta.KeyBindingAction.NONE,
         name: actionName,
         mutterName,
@@ -525,8 +588,8 @@ export function registerAction(actionName, handler, options) {
         options,
     };
 
-    actions.push(action);
-    if (actionName) nameMap[actionName] = action;
+    actions!.push(action);
+    if (actionName) nameMap![actionName] = action;
 
     return action;
 }
@@ -535,24 +598,23 @@ export function registerAction(actionName, handler, options) {
  * Bind a key to an action (possibly creating a new action)
  */
 export function bindkey(
-    keystr,
-    actionName = null,
-    handler = null,
-    options = {}
+    keystr: string,
+    actionName?: string,
+    handler?: KeyBindingHandler,
+    options: KeyBindingOptions = {}
 ) {
     Utils.assert(
         !options.settings,
-        "Can only bind schemaless actions - change action's settings instead",
-        actionName
+        `Can only bind schemaless actions - change action's settings instead (${actionName})`
     );
 
-    let action = actionName && actions.find(a => a.name === actionName);
-    let keycombo = Settings.keystrToKeycombo(keystr);
+    let action = actionName && actions!.find(a => a.name === actionName);
+    const keycombo = Settings.keystrToKeycombo(keystr);
 
     if (!action) {
-        action = registerAction(actionName, handler, options);
+        action = registerAction(actionName!, handler!, options);
     } else {
-        let boundAction = keycomboMap[keycombo];
+        const boundAction = keycomboMap![keycombo];
         if (boundAction && boundAction !== action) {
             console.debug(
                 'Rebinding',
@@ -567,7 +629,7 @@ export function bindkey(
 
         disableAction(action);
 
-        action.handler = handler;
+        action.handler = handler!;
         action.options = impliedOptions(options);
     }
 
@@ -577,15 +639,15 @@ export function bindkey(
     if (enableAction(action) === Meta.KeyBindingAction.NONE) {
         // Keybinding failed: try to supply a useful error message
         let message;
-        let boundAction = keycomboMap[keycombo];
+        const boundAction = keycomboMap![keycombo];
         if (boundAction) {
             message = `${keystr} already bound to albumwm action: ${boundAction.name}`;
         } else {
-            let boundId = getBoundActionId(keystr);
+            const boundId = getBoundActionId(keystr);
             if (boundId !== Meta.KeyBindingAction.NONE) {
-                let builtInAction = Object.entries(Meta.KeyBindingAction).find(
-                    ([_name, id]) => id === boundId
-                );
+                const builtInAction = Object.entries(
+                    Meta.KeyBindingAction
+                ).find(([_name, id]) => id === boundId);
                 if (builtInAction) {
                     message = `${keystr} already bound to built-in action: ${builtInAction[0]}`;
                 } else {
@@ -608,59 +670,61 @@ export function bindkey(
     return action.id;
 }
 
-export function unbindkey(actionIdOrKeystr) {
+export function unbindkey(actionIdOrKeystr: Meta.KeyBindingAction | string) {
     let actionId;
     if (typeof actionIdOrKeystr === 'string') {
-        const action = keycomboMap[Settings.keystrToKeycombo(actionIdOrKeystr)];
+        const action =
+            keycomboMap![Settings.keystrToKeycombo(actionIdOrKeystr)];
         actionId = action && action.id;
     } else {
         actionId = actionIdOrKeystr;
     }
 
-    disableAction(actionIdMap[actionId]);
+    disableAction(actionIdMap![actionId]);
 }
 
-export function devirtualizeMask(gdkVirtualMask) {
-    const keymap = Seat.get_keymap();
-    let [success, rawMask] = keymap.map_virtual_modifiers(gdkVirtualMask);
-    if (!success)
-        throw new Error(`Couldn't devirtualize mask ${gdkVirtualMask}`);
-    return rawMask;
+/**
+ * TODO: drop together with the schemaless keybindings subsystem.
+ */
+export function devirtualizeMask(_gdkVirtualMask: number): number {
+    throw new Error(
+        'devirtualizeMask: map_virtual_modifiers was removed from Clutter.Keymap'
+    );
 }
 
-export function rawMaskOfKeystr(keystr) {
-    let [, , mask] = Settings.parseAccelerator(keystr);
+export function rawMaskOfKeystr(keystr: string) {
+    const [, , mask] = Settings.parseAccelerator(keystr);
     return devirtualizeMask(mask);
 }
 
-export function openNavigatorHandler(actionName, keystr) {
+export function openNavigatorHandler(actionName: string, keystr: string) {
     const mask = rawMaskOfKeystr(keystr) & 0xff;
 
-    const binding = {
+    const binding: KeyBindingLike = {
         get_name: () => actionName,
         get_mask: () => mask,
         is_reversed: () => false,
     };
-    return function (display, screen, metaWindow) {
+    return function (_display: Meta.Display, metaWindow: Meta.Window) {
         return Navigator.previewNavigate(metaWindow, null, {
-            screen,
-            display,
             binding,
         });
     };
 }
 
-export function getBoundActionId(keystr) {
-    let [, keycodes, mask] = Settings.parseAccelerator(keystr);
-    if (keycodes.length > 1) {
-        throw new Error(`Multiple keycodes ${keycodes} ${keystr}`);
-    }
+export function getBoundActionId(keystr: string) {
+    const [, keyval, mask] = Settings.parseAccelerator(keystr);
     const rawMask = devirtualizeMask(mask);
-    return Display.get_keybinding_action(keycodes[0], rawMask);
+    return Display.get_keybinding_action(keyval, rawMask);
 }
 
-export function handleAccelerator(display, actionId, _deviceId, _timestamp) {
-    const action = actionIdMap[actionId];
+export function handleAccelerator(
+    display: Meta.Display,
+    actionId: number,
+    _deviceId: number,
+    _timestamp: number
+) {
+    const action = actionIdMap![actionId];
     if (action) {
         console.debug(
             '#keybindings',
@@ -668,79 +732,82 @@ export function handleAccelerator(display, actionId, _deviceId, _timestamp) {
             actionId,
             action.name
         );
-        action.keyHandler(display, display.focus_window);
+        action.keyHandler!(display, display.focus_window);
     }
 }
 
-export function disableAction(action) {
+export function disableAction(action: KeyBindingAction) {
     if (action.id === Meta.KeyBindingAction.NONE) {
         return;
     }
 
     const oldId = action.id;
     if (action.options.settings) {
-        Main.wm.removeKeybinding(action.mutterName);
+        Main.wm.removeKeybinding(action.mutterName!);
         action.id = Meta.KeyBindingAction.NONE;
-        delete actionIdMap[oldId];
+        delete actionIdMap![oldId];
     } else {
         Display.ungrab_accelerator(action.id);
         action.id = Meta.KeyBindingAction.NONE;
 
-        delete nameMap[action.mutterName];
-        delete actionIdMap[oldId];
-        delete keycomboMap[action.keycombo];
+        delete nameMap![action.mutterName!];
+        delete actionIdMap![oldId];
+        delete keycomboMap![action.keycombo!];
 
         action.mutterName = undefined;
     }
 }
 
-export function enableAction(action) {
+export function enableAction(action: KeyBindingAction) {
     if (action.id !== Meta.KeyBindingAction.NONE) return action.id; // Already enabled (happens on enable right after init)
 
     if (action.options.settings) {
-        let actionId = Main.wm.addKeybinding(
-            action.mutterName,
+        const actionId = Main.wm.addKeybinding(
+            action.mutterName!,
             action.options.settings,
             action.options.mutterFlags || Meta.KeyBindingFlags.NONE,
             Shell.ActionMode.NORMAL,
-            action.keyHandler
+            action.keyHandler!
         );
 
         if (actionId !== Meta.KeyBindingAction.NONE) {
             action.id = actionId;
-            actionIdMap[actionId] = action;
+            actionIdMap![actionId] = action;
             return action.id;
         } else {
             console.warn('Could not enable action', action.name);
             return null;
         }
     } else {
-        if (keycomboMap[action.keycombo]) {
+        if (keycomboMap![action.keycombo!]) {
             console.warn(
                 'Other action bound to',
                 action.keystr,
-                keycomboMap[action.keycombo].name
+                keycomboMap![action.keycombo!].name
             );
             return Meta.KeyBindingAction.NONE;
         }
 
-        let actionId = Utils.grabAccelerator(action.keystr);
+        const actionId = Utils.grabAccelerator(action.keystr!);
         if (actionId === Meta.KeyBindingAction.NONE) {
             console.warn('Failed to grab. Binding probably already taken');
             return Meta.KeyBindingAction.NONE;
         }
 
-        let mutterName = Meta.external_binding_name_for_action(actionId);
+        const mutterName = Meta.external_binding_name_for_action(actionId);
 
         action.id = actionId;
         action.mutterName = mutterName;
 
-        actionIdMap[actionId] = action;
-        keycomboMap[action.keycombo] = action;
-        nameMap[mutterName] = action;
+        actionIdMap![actionId] = action;
+        keycomboMap![action.keycombo!] = action;
+        nameMap![mutterName] = action;
 
         if (action.options.opensNavigator) {
-            action.keyHandler = openNavigatorHandler(mutterName, action.keystr);
+            action.keyHandler = openNavigatorHandler(
+                mutterName,
+                action.keystr!
+            );
         } else {
             action.keyHandler = asKeyHandler(action.handler);
         }

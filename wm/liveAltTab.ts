@@ -210,8 +210,9 @@ export class LiveAltTab extends AltTab.WindowSwitcherPopup {
 export function liveAltTab(
     _metaWindow: Meta.Window,
     _space: Tiling.Space,
-    { binding }: { binding: Keybindings.KeyBindingLike }
+    options?: { binding?: Keybindings.KeyBindingLike }
 ) {
+    const binding = options!.binding!;
     const tabPopup = new LiveAltTab(binding.is_reversed(), false);
     tabPopup.show(
         binding.is_reversed(),
@@ -223,8 +224,9 @@ export function liveAltTab(
 export function liveAltTabScratch(
     _metaWindow: Meta.Window,
     _space: Tiling.Space,
-    { binding }: { binding: Keybindings.KeyBindingLike }
+    options?: { binding?: Keybindings.KeyBindingLike }
 ) {
+    const binding = options!.binding!;
     const tabPopup = new LiveAltTab(binding.is_reversed(), true);
     tabPopup.show(
         binding.is_reversed(),
