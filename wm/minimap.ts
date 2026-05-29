@@ -7,16 +7,32 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Settings, Utils, Lib } from './imports.js';
 import { Easer } from './utils.js';
 
-export function calcOffset(metaWindow) {
-    let buffer = metaWindow.get_buffer_rect();
-    let frame = metaWindow.get_frame_rect();
-    let offsetX = frame.x - buffer.x;
-    let offsetY = frame.y - buffer.y;
+import type Meta from 'gi://Meta';
+import type * as Tiling from './tiling.js';
+
+export function calcOffset(metaWindow: Meta.Window) {
+    const buffer = metaWindow.get_buffer_rect();
+    const frame = metaWindow.get_frame_rect();
+    const offsetX = frame.x - buffer.x;
+    const offsetY = frame.y - buffer.y;
     return [offsetX, offsetY];
 }
 
-export class Minimap extends Array {
-    constructor(space, monitor) {
+type Clone = Clutter.Clone & { meta_window: Meta.Window };
+type Container = Clutter.Actor & { clone: Clone; meta_window: Meta.Window };
+
+export class Minimap extends Array<Array<Container>> {
+    space: Tiling.Space;
+    monitor: Tiling.Monitor;
+    actor: Clutter.Actor;
+    highlight: St.Widget;
+    label: St.Label;
+    clip: St.Widget;
+    container: St.Widget;
+    signals: Utils.Signals;
+    destroyed: boolean = false;
+
+    constructor(space: Tiling.Space, monitor: Tiling.Monitor) {
         super();
         this.space = space;
         // initial fade
@@ -27,32 +43,32 @@ export class Minimap extends Array {
             }
 
             Easer.addEase(w.clone?.shade, {
-                time: Settings.prefs.animation_time,
-                opacity: Settings.prefs.minimap_shade_opacity,
+                time: Settings.prefs!.animation_time,
+                opacity: Settings.prefs!.minimap_shade_opacity,
             });
         });
 
         this.monitor = monitor;
-        let actor = new St.Widget({
+        const actor = new St.Widget({
             name: 'minimap',
             style_class: 'albumwm-minimap switcher-list',
         });
         this.actor = actor;
         actor.height = space.height * 0.2;
 
-        let highlight = new St.Widget({
+        const highlight = new St.Widget({
             name: 'minimap-selection',
             style_class: 'albumwm-minimap-selection item-box',
         });
         highlight.add_style_pseudo_class('selected');
         this.highlight = highlight;
-        let label = new St.Label({ style_class: 'albumwm-minimap-label' });
+        const label = new St.Label({ style_class: 'albumwm-minimap-label' });
         label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
         this.label = label;
 
-        let clip = new St.Widget({ name: 'container-clip' });
+        const clip = new St.Widget({ name: 'container-clip' });
         this.clip = clip;
-        let container = new St.Widget({ name: 'minimap-container' });
+        const container = new St.Widget({ name: 'minimap-container' });
         this.container = container;
 
         actor.add_child(highlight);
@@ -60,24 +76,30 @@ export class Minimap extends Array {
         actor.add_child(clip);
         clip.add_child(container);
         clip.set_position(
-            12 + Settings.prefs.window_gap,
-            12 + Math.round(1.5 * Settings.prefs.window_gap)
+            12 + Settings.prefs!.window_gap,
+            12 + Math.round(1.5 * Settings.prefs!.window_gap)
         );
         highlight.y = clip.y - 10;
-        Main.uiGroup.add_child(this.actor);
+        Main.layoutManager.uiGroup.add_child(this.actor);
         this.actor.opacity = 0;
         this.createClones();
 
         this.signals = new Utils.Signals();
+        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'select', this.select.bind(this));
+        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'window-added', this.addWindow.bind(this));
         this.signals.connect(
+            // @ts-expect-error tiling.js missing interface merge
             space,
             'window-removed',
             this.removeWindow.bind(this)
         );
+        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'layout', this.layout.bind(this));
+        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'swapped', this.swapped.bind(this));
+        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'full-layout', this.reset.bind(this));
 
         this.layout();
@@ -93,10 +115,15 @@ export class Minimap extends Array {
         this.layout();
     }
 
-    addWindow(space, metaWindow, index, row) {
-        let clone = this.createClone(metaWindow);
+    addWindow(
+        _space: Tiling.Space,
+        metaWindow: Meta.Window,
+        index: number,
+        row: number
+    ) {
+        const clone = this.createClone(metaWindow);
         if (row !== undefined && this[index]) {
-            let column = this[index];
+            const column = this[index];
             column.splice(row, 0, clone);
         } else {
             this.splice(index, 0, [clone]);
@@ -104,9 +131,14 @@ export class Minimap extends Array {
         this.layout();
     }
 
-    removeWindow(space, metaWindow, index, row) {
-        let clone = this[index][row];
-        let column = this[index];
+    removeWindow(
+        _space: Tiling.Space,
+        _metaWindow: Meta.Window,
+        index: number,
+        row: number
+    ) {
+        const clone = this[index][row];
+        const column = this[index];
         column.splice(row, 1);
         if (column.length === 0) this.splice(index, 1);
         // this.container.remove_child(clone);
@@ -114,23 +146,29 @@ export class Minimap extends Array {
         this.layout();
     }
 
-    swapped(space, index, targetIndex, row, targetRow) {
-        let column = this[index];
+    swapped(
+        _space: Tiling.Space,
+        index: number,
+        targetIndex: number,
+        row: number,
+        targetRow: number
+    ) {
+        const column = this[index];
         Lib.swap(this, index, targetIndex);
         Lib.swap(column, row, targetRow);
         this.layout();
     }
 
-    show(animate) {
+    show(animate?: boolean) {
         if (this.destroyed) return;
 
         // if minimap_scale preference is 0, then don't show
-        if (Settings.prefs.minimap_scale <= 0) {
+        if (Settings.prefs!.minimap_scale <= 0) {
             return;
         }
 
         this.layout();
-        let time = animate ? Settings.prefs.animation_time : 0;
+        const time = animate ? Settings.prefs!.animation_time : 0;
         this.actor.show();
         Easer.addEase(this.actor, {
             opacity: 255,
@@ -139,9 +177,9 @@ export class Minimap extends Array {
         });
     }
 
-    hide(animate) {
+    hide(animate?: boolean) {
         if (this.destroyed) return;
-        let time = animate ? Settings.prefs.animation_time : 0;
+        const time = animate ? Settings.prefs!.animation_time : 0;
         Easer.addEase(this.actor, {
             opacity: 0,
             time,
@@ -151,18 +189,27 @@ export class Minimap extends Array {
     }
 
     createClones() {
-        for (let column of this.space) {
+        for (const column of this.space) {
             this.push(column.map(this.createClone.bind(this)));
         }
     }
 
-    createClone(mw) {
-        const windowActor = mw.get_compositor_private();
-        const clone = new Clutter.Clone({ source: windowActor });
-        const container = new Clutter.Actor({
-            // layout_manager: new WindowCloneLayout(this),
-            name: 'window-clone-container',
-        });
+    createClone(mw: Meta.Window) {
+        const windowActor = mw.get_compositor_private<Clutter.Actor>();
+        const clone: Clone = Object.assign(
+            new Clutter.Clone({ source: windowActor }),
+            { meta_window: mw }
+        );
+        const container: Container = Object.assign(
+            new Clutter.Actor({
+                // layout_manager: new WindowCloneLayout(this),
+                name: 'window-clone-container',
+            }),
+            {
+                clone: clone,
+                meta_window: mw,
+            }
+        );
         clone.meta_window = mw;
         container.clone = clone;
         container.meta_window = mw;
@@ -171,15 +218,15 @@ export class Minimap extends Array {
         return container;
     }
 
-    _allocateClone(container) {
-        let clone = container.clone;
-        let metaWindow = clone.meta_window;
-        let buffer = metaWindow.get_buffer_rect();
-        let frame = metaWindow.get_frame_rect();
-        let scale = Settings.prefs.minimap_scale;
+    _allocateClone(container: Container) {
+        const clone = container.clone;
+        const metaWindow = clone.meta_window;
+        const buffer = metaWindow.get_buffer_rect();
+        const frame = metaWindow.get_frame_rect();
+        const scale = Settings.prefs!.minimap_scale;
         clone.set_size(
             buffer.width * scale,
-            buffer.height * scale - Settings.prefs.window_gap
+            buffer.height * scale - Settings.prefs!.window_gap
         );
         clone.set_position(
             (buffer.x - frame.x) * scale,
@@ -190,12 +237,12 @@ export class Minimap extends Array {
 
     layout() {
         if (this.destroyed) return;
-        let gap = Settings.prefs.window_gap;
+        const gap = Settings.prefs!.window_gap;
         let x = 0;
-        for (let column of this) {
+        for (const column of this) {
             let y = 0,
                 w = 0;
-            for (let c of column) {
+            for (const c of column) {
                 c.set_position(x, y);
                 this._allocateClone(c);
                 w = Math.max(w, c.width);
@@ -221,19 +268,19 @@ export class Minimap extends Array {
     }
 
     select() {
-        let position = this.space.positionOf();
-        let highlight = this.highlight;
+        const position = this.space.positionOf();
+        const highlight = this.highlight;
         if (!position) {
             this.highlight.hide();
             return;
         }
-        let [index, row] = position;
+        const [index, row] = position;
         if (!(index in this && row in this[index])) return;
         highlight.show();
-        let clip = this.clip;
-        let container = this.container;
-        let label = this.label;
-        let selected = this[index][row];
+        const clip = this.clip;
+        const container = this.container;
+        const label = this.label;
+        const selected = this[index][row];
         if (!selected) return;
 
         this.space.getWindows().forEach(w => {
@@ -246,8 +293,8 @@ export class Minimap extends Array {
 
             // others
             Easer.addEase(shade, {
-                time: Settings.prefs.animation_time,
-                opacity: Settings.prefs.minimap_shade_opacity,
+                time: Settings.prefs!.animation_time,
+                opacity: Settings.prefs!.minimap_shade_opacity,
             });
         });
 
@@ -269,10 +316,10 @@ export class Minimap extends Array {
 
         if (container.x > 0) container.x = 0;
 
-        let gap = Settings.prefs.window_gap;
+        const gap = Settings.prefs!.window_gap;
         highlight.x = Math.round(clip.x + container.x + selected.x - gap / 2);
         highlight.y = Math.round(
-            clip.y + selected.y - Settings.prefs.window_gap
+            clip.y + selected.y - Settings.prefs!.window_gap
         );
         highlight.set_size(
             Math.round(selected.width + gap),
@@ -292,16 +339,14 @@ export class Minimap extends Array {
         if (this.destroyed) return;
         this.space.getWindows().forEach(w => {
             Easer.addEase(w.clone?.shade, {
-                time: Settings.prefs.animation_time,
+                time: Settings.prefs!.animation_time,
                 opacity: 0,
                 onComplete: () => w.clone?.shade.hide(),
             });
         });
         this.destroyed = true;
         this.signals.destroy();
-        this.signals = null;
         this.splice(0, this.length);
         this.actor.destroy();
-        this.actor = null;
     }
 }
