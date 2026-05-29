@@ -1,8 +1,36 @@
 import * as Workspace from 'resource:///org/gnome/shell/ui/workspace.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
-import * as Params from 'resource:///org/gnome/shell/misc/params.js';
 
 import { Settings, Tiling } from './imports.js';
+
+import type { WindowPreview } from 'resource:///org/gnome/shell/ui/windowPreview.js';
+
+type Row = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fullWidth: number;
+    fullHeight: number;
+    windows: WindowPreview[];
+    /** Assigned per row in computeWindowSlots. */
+    additionalScale: number;
+};
+
+/**
+ * The strategy-specific layout object and its rows. Upstream documents
+ * computeLayout's return as opaque and never inspects it, so these shapes are
+ * entirely ours to define.
+ */
+type Layout = {
+    numRows: number;
+    rows: Row[];
+    maxColumns: number;
+    gridWidth: number;
+    gridHeight: number;
+    /** Overall layout scale, finalized by computeScaleAndSpace. */
+    scale: number;
+};
 
 /**
  * Gnome 45's UnalignedLayoutStrategy is not exported.  Hence, we recreate this class
@@ -11,7 +39,7 @@ import { Settings, Tiling } from './imports.js';
  * See https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/gnome-45/js/ui/workspace.js
  */
 export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
-    _newRow() {
+    _newRow(): Row {
         // Row properties:
         //
         // * x, y are the position of row, relative to area
@@ -31,17 +59,18 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
             fullWidth: 0,
             fullHeight: 0,
             windows: [],
+            additionalScale: 1,
         };
     }
 
     // Computes and returns an individual scaling factor for @window,
     // to be applied in addition to the overall layout scale.
-    _computeWindowScale(window) {
+    _computeWindowScale(window: WindowPreview): number {
         // Since we align windows next to each other, the height of the
         // thumbnails is much more important to preserve than the width of
         // them, so two windows with equal height, but maybe differering
         // widths line up.
-        let ratio = window.boundingBox.height / this._monitor.height;
+        const ratio = window.boundingBox.height / this._monitor.height;
 
         // The purpose of this manipulation here is to prevent windows
         // from getting too small. For something like a calculator window,
@@ -52,10 +81,10 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         return Util.lerp(1.5, 1, ratio);
     }
 
-    _computeRowSizes(layout) {
-        let { rows, scale } = layout;
+    _computeRowSizes(layout: Layout) {
+        const { rows, scale } = layout;
         for (let i = 0; i < rows.length; i++) {
-            let row = rows[i];
+            const row = rows[i];
             row.width =
                 row.fullWidth * scale +
                 (row.windows.length - 1) * this._columnSpacing;
@@ -63,63 +92,60 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         }
     }
 
-    _keepSameRow(row, window, width, idealRowWidth) {
+    _keepSameRow(row: Row, width: number, idealRowWidth: number): boolean {
         // enforce a minimum number of windows per overview row
-        if (row.windows.length < Settings.prefs.overview_min_windows_per_row) {
+        if (row.windows.length < Settings.prefs!.overview_min_windows_per_row) {
             return true;
         }
 
         if (row.fullWidth + width <= idealRowWidth) return true;
 
-        let oldRatio = row.fullWidth / idealRowWidth;
-        let newRatio = (row.fullWidth + width) / idealRowWidth;
+        const oldRatio = row.fullWidth / idealRowWidth;
+        const newRatio = (row.fullWidth + width) / idealRowWidth;
 
         if (Math.abs(1 - newRatio) < Math.abs(1 - oldRatio)) return true;
 
         return false;
     }
 
-    computeLayout(windows, layoutParams) {
-        layoutParams = Params.parse(layoutParams, {
-            numRows: 0,
-        });
-
-        if (layoutParams.numRows === 0)
+    computeLayout(
+        windows: WindowPreview[],
+        { numRows }: { numRows: number }
+    ): Layout {
+        if (!numRows)
             throw new Error(
                 `${this.constructor.name}: No numRows given in layout params`
             );
 
-        let numRows = layoutParams.numRows;
-
-        let rows = [];
+        const rows: Row[] = [];
         let totalWidth = 0;
         for (let i = 0; i < windows.length; i++) {
-            let window = windows[i];
-            let s = this._computeWindowScale(window);
+            const window = windows[i];
+            const s = this._computeWindowScale(window);
             totalWidth += window.boundingBox.width * s;
         }
 
-        let idealRowWidth = totalWidth / numRows;
+        const idealRowWidth = totalWidth / numRows;
 
-        let sortedWindows = windows.slice();
+        const sortedWindows = windows.slice();
         // sorting needs to be done here to address moved windows
         sortedWindows.sort(sortWindows);
 
         let windowIdx = 0;
         for (let i = 0; i < numRows; i++) {
-            let row = this._newRow();
+            const row = this._newRow();
             rows.push(row);
 
             for (; windowIdx < sortedWindows.length; windowIdx++) {
-                let window = sortedWindows[windowIdx];
-                let s = this._computeWindowScale(window);
-                let width = window.boundingBox.width * s;
-                let height = window.boundingBox.height * s;
+                const window = sortedWindows[windowIdx];
+                const s = this._computeWindowScale(window);
+                const width = window.boundingBox.width * s;
+                const height = window.boundingBox.height * s;
                 row.fullHeight = Math.max(row.fullHeight, height);
 
                 // either new width is < idealWidth or new width is nearer from idealWidth then oldWidth
                 if (
-                    this._keepSameRow(row, window, width, idealRowWidth) ||
+                    this._keepSameRow(row, width, idealRowWidth) ||
                     i === numRows - 1
                 ) {
                     row.windows.push(window);
@@ -131,11 +157,11 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         }
 
         let gridHeight = 0;
-        let maxRow;
+        let maxRow = rows[0];
         for (let i = 0; i < numRows; i++) {
-            let row = rows[i];
+            const row = rows[i];
 
-            if (!maxRow || row.fullWidth > maxRow.fullWidth) maxRow = row;
+            if (row.fullWidth > maxRow.fullWidth) maxRow = row;
             gridHeight += row.fullHeight;
         }
 
@@ -145,29 +171,33 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
             maxColumns: maxRow.windows.length,
             gridWidth: maxRow.fullWidth,
             gridHeight,
+            scale: 0,
         };
     }
 
-    computeScaleAndSpace(layout, area) {
-        let hspacing = (layout.maxColumns - 1) * this._columnSpacing;
-        let vspacing = (layout.numRows - 1) * this._rowSpacing;
+    computeScaleAndSpace(
+        layout: Layout,
+        area: Workspace.Rect
+    ): [number, number] {
+        const hspacing = (layout.maxColumns - 1) * this._columnSpacing;
+        const vspacing = (layout.numRows - 1) * this._rowSpacing;
 
-        let spacedWidth = area.width - hspacing;
-        let spacedHeight = area.height - vspacing;
+        const spacedWidth = area.width - hspacing;
+        const spacedHeight = area.height - vspacing;
 
-        let horizontalScale = spacedWidth / layout.gridWidth;
-        let verticalScale = spacedHeight / layout.gridHeight;
+        const horizontalScale = spacedWidth / layout.gridWidth;
+        const verticalScale = spacedHeight / layout.gridHeight;
 
         // Thumbnails should be less than 70% of the original size
-        let scale = Math.min(
+        const scale = Math.min(
             horizontalScale,
             verticalScale,
-            Settings.prefs.overview_max_window_scale
+            Settings.prefs!.overview_max_window_scale
         );
 
-        let scaledLayoutWidth = layout.gridWidth * scale + hspacing;
-        let scaledLayoutHeight = layout.gridHeight * scale + vspacing;
-        let space =
+        const scaledLayoutWidth = layout.gridWidth * scale + hspacing;
+        const scaledLayoutHeight = layout.gridHeight * scale + vspacing;
+        const space =
             (scaledLayoutWidth * scaledLayoutHeight) /
             (area.width * area.height);
 
@@ -176,22 +206,25 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         return [scale, space];
     }
 
-    computeWindowSlots(layout, area) {
+    computeWindowSlots(
+        layout: Layout,
+        area: Workspace.Rect
+    ): Workspace.WindowSlot[] {
         this._computeRowSizes(layout);
 
-        let { rows, scale } = layout;
+        const { rows, scale } = layout;
 
-        let slots = [];
+        const slots: Workspace.WindowSlot[] = [];
 
         // Do this in three parts.
         let heightWithoutSpacing = 0;
         for (let i = 0; i < rows.length; i++) {
-            let row = rows[i];
+            const row = rows[i];
             heightWithoutSpacing += row.height;
         }
 
-        let verticalSpacing = (rows.length - 1) * this._rowSpacing;
-        let additionalVerticalScale = Math.min(
+        const verticalSpacing = (rows.length - 1) * this._rowSpacing;
+        const additionalVerticalScale = Math.min(
             1,
             (area.height - verticalSpacing) / heightWithoutSpacing
         );
@@ -202,14 +235,14 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
         let y = 0;
 
         for (let i = 0; i < rows.length; i++) {
-            let row = rows[i];
+            const row = rows[i];
 
             // If this window layout row doesn't fit in the actual
             // geometry, then apply an additional scale to it.
-            let horizontalSpacing =
+            const horizontalSpacing =
                 (row.windows.length - 1) * this._columnSpacing;
-            let widthWithoutSpacing = row.width - horizontalSpacing;
-            let additionalHorizontalScale = Math.min(
+            const widthWithoutSpacing = row.width - horizontalSpacing;
+            const additionalHorizontalScale = Math.min(
                 1,
                 (area.width - horizontalSpacing) / widthWithoutSpacing
             );
@@ -255,17 +288,17 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
 
             let x = row.x;
             for (let j = 0; j < row.windows.length; j++) {
-                let window = row.windows[j];
+                const window = row.windows[j];
 
                 let s =
                     scale *
                     this._computeWindowScale(window) *
                     row.additionalScale;
-                let cellWidth = window.boundingBox.width * s;
-                let cellHeight = window.boundingBox.height * s;
+                const cellWidth = window.boundingBox.width * s;
+                const cellHeight = window.boundingBox.height * s;
 
-                s = Math.min(s, Settings.prefs.overview_max_window_scale);
-                let cloneWidth = window.boundingBox.width * s;
+                s = Math.min(s, Settings.prefs!.overview_max_window_scale);
+                const cloneWidth = window.boundingBox.width * s;
                 const cloneHeight = window.boundingBox.height * s;
 
                 let cloneX = x + (cellWidth - cloneWidth) / 2;
@@ -292,9 +325,9 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
 /**
  * Ensures windows are sorted correctly in overview (correctly being the tiled order in the space).
  */
-export function sortWindows(a, b) {
-    let aw = a.metaWindow;
-    let bw = b.metaWindow;
+export function sortWindows(a: WindowPreview, b: WindowPreview): number {
+    const aw = a.metaWindow;
+    const bw = b.metaWindow;
     if (!aw && !bw) {
         return 0;
     }
@@ -305,10 +338,10 @@ export function sortWindows(a, b) {
         return 1;
     }
 
-    let spaceA = Tiling.spaces.spaceOfWindow(aw);
-    let spaceB = Tiling.spaces.spaceOfWindow(bw);
-    let ia = spaceA.indexOf(aw);
-    let ib = spaceB.indexOf(bw);
+    const spaceA = Tiling.spaces.spaceOfWindow(aw)!;
+    const spaceB = Tiling.spaces.spaceOfWindow(bw)!;
+    const ia = spaceA.indexOf(aw);
+    const ib = spaceB.indexOf(bw);
     if (ia === -1 && ib === -1) {
         return aw.get_stable_sequence() - bw.get_stable_sequence();
     }
