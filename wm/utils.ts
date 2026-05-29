@@ -20,12 +20,22 @@ let touchSignals: Signals | null = null;
 let touchCoords: [number, number] | undefined;
 let inTouch = false;
 
-export class Signals extends Map<GObject.Object, number[]> {
+type SignalHandler = Parameters<GObject.Object['connect']>[1];
+
+/**
+ * Anything connectable (a GObject or any object with Signals.addSignalMethods).
+ */
+export interface Connectable {
+    connect(signal: string, handler: SignalHandler): number;
+    disconnect(id: number): void;
+}
+
+export class Signals extends Map<Connectable, number[]> {
     static get [Symbol.species]() {
         return Map;
     }
 
-    _getOrCreateSignals(object: GObject.Object) {
+    _getOrCreateSignals(object: Connectable) {
         let signals = this.get(object);
         if (!signals) {
             signals = [];
@@ -35,9 +45,9 @@ export class Signals extends Map<GObject.Object, number[]> {
     }
 
     connectOneShot(
-        object: GObject.Object,
+        object: Connectable,
         signal: string,
-        handler: Parameters<GObject.Object['connect']>[1]
+        handler: SignalHandler
     ) {
         const id = this.connect(object, signal, (...args) => {
             this.disconnect(object, id);
@@ -46,9 +56,9 @@ export class Signals extends Map<GObject.Object, number[]> {
     }
 
     connect(
-        object: GObject.Object,
+        object: Connectable,
         signal: string,
-        handler: Parameters<GObject.Object['connect']>[1]
+        handler: SignalHandler
     ): number {
         const id = object.connect(signal, handler);
         const signals = this._getOrCreateSignals(object);
@@ -56,7 +66,7 @@ export class Signals extends Map<GObject.Object, number[]> {
         return id;
     }
 
-    disconnect(object: GObject.Object, id: number | null = null) {
+    disconnect(object: Connectable, id: number | null = null) {
         const ids = this.get(object);
         if (!ids) return;
         if (id === null) {
