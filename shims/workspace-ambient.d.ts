@@ -34,5 +34,36 @@ declare module 'resource:///org/gnome/shell/ui/workspace.js' {
             rowSpacing?: number;
             columnSpacing?: number;
         });
+
+        /* Subclasses pin the layout/scale shapes; from here they stay opaque
+         * pass-through values, the way upstream treats them. */
+        computeLayout(
+            windows: WindowPreview[],
+            params: { numRows: number }
+        ): unknown;
+        computeScaleAndSpace(layout: unknown, area: Rect): [number, number];
+    }
+
+    export class WorkspaceLayout extends Clutter.LayoutManager {
+        _spacing: number;
+        _monitorIndex: number;
+        _sortedWindows: WindowPreview[];
+        _layoutStrategy: LayoutStrategy;
+        _adjustSpacingAndPadding(
+            rowSpacing: number,
+            columnSpacing: number,
+            containerBox: Clutter.ActorBox | null
+        ): [number, number];
+        _isBetterScaleAndSpace(
+            oldScale: number,
+            oldSpace: number,
+            newScale: number,
+            newSpace: number
+        ): boolean;
+        _createBestLayout(area: Rect): unknown;
+    }
+
+    interface Workspace {
+        _isOverviewWindow(window: Meta.Window): boolean;
     }
 }
