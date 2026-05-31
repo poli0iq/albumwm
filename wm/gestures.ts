@@ -7,18 +7,22 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Patches, Settings, Tiling, Utils, Lib, Navigator } from './imports.js';
 import { Easer } from './utils.js';
 
-const DIRECTIONS = {
-    Horizontal: true,
-    Vertical: false,
-};
+import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-let navigator, direction, signals;
+enum DIRECTIONS {
+    Horizontal = 1,
+    Vertical = 0,
+}
+
+let navigator: Navigator.NavigatorClass | null,
+    direction: DIRECTIONS | undefined,
+    signals: Utils.Signals | null;
 // 1 is natural scrolling, -1 is unnatural
 let natural = 1;
 export let gliding = false; // exported
 
-let touchpadSettings;
-export function enable(extension) {
+let touchpadSettings: Gio.Settings | null;
+export function enable(extension: Extension) {
     signals = new Utils.Signals();
 
     touchpadSettings = new Gio.Settings({
@@ -28,7 +32,8 @@ export function enable(extension) {
     // monitor gesture-enabled for changes
     const gsettings = extension.getSettings();
     signals.connect(gsettings, 'changed::gesture-enabled', () => {
-        gestureEnabled() ? swipeTrackersEnable(false) : swipeTrackersEnable();
+        if (gestureEnabled()) swipeTrackersEnable(false);
+        else swipeTrackersEnable();
     });
 
     /**
@@ -46,34 +51,45 @@ export function enable(extension) {
      * the cursor. The handler only sets up state on BEGIN; horizontal
      * scrolling is delegated to each space.background via horizontalScroll.
      */
-    signals.connect(global.stage, 'captured-event', (actor, event) => {
-        if (event.type() !== Clutter.EventType.TOUCHPAD_SWIPE) {
-            return Clutter.EVENT_PROPAGATE;
-        }
-
-        const fingers = event.get_touchpad_gesture_finger_count();
-        if (fingers <= 2 || (Main.actionMode & Shell.ActionMode.OVERVIEW) > 0) {
-            return Clutter.EVENT_PROPAGATE;
-        }
-
-        if (!gestureEnabled()) {
-            swipeTrackersEnable();
-        }
-
-        if (event.get_gesture_phase() === Clutter.TouchpadGesturePhase.BEGIN) {
-            if (shouldPropagate(fingers)) {
+    signals.connect(
+        global.stage,
+        'captured-event',
+        (_actor: Clutter.Actor, event: Clutter.Event) => {
+            if (event.type() !== Clutter.EventType.TOUCHPAD_SWIPE) {
                 return Clutter.EVENT_PROPAGATE;
             }
-            natural = touchpadSettings.get_boolean('natural-scroll') ? 1 : -1;
-            direction = undefined;
-            navigator = Navigator.getNavigator();
-            return Clutter.EVENT_STOP;
+
+            const fingers = event.get_touchpad_gesture_finger_count();
+            if (
+                fingers <= 2 ||
+                (Main.actionMode & Shell.ActionMode.OVERVIEW) > 0
+            ) {
+                return Clutter.EVENT_PROPAGATE;
+            }
+
+            if (!gestureEnabled()) {
+                swipeTrackersEnable();
+            }
+
+            if (
+                event.get_gesture_phase() === Clutter.TouchpadGesturePhase.BEGIN
+            ) {
+                if (shouldPropagate(fingers)) {
+                    return Clutter.EVENT_PROPAGATE;
+                }
+                natural = touchpadSettings!.get_boolean('natural-scroll')
+                    ? 1
+                    : -1;
+                direction = undefined;
+                navigator = Navigator.getNavigator();
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
         }
-        return Clutter.EVENT_PROPAGATE;
-    });
+    );
 }
 
-function shouldPropagate(fingers) {
+function shouldPropagate(fingers: number) {
     if (
         // gestures disabled ==> gnome default behaviour
         !gestureEnabled()
@@ -95,27 +111,31 @@ function shouldPropagate(fingers) {
 }
 
 export function disable() {
-    signals.destroy();
+    signals!.destroy();
     signals = null;
     touchpadSettings = null;
 }
 
 export function gestureEnabled() {
-    return Settings.prefs.gesture_enabled;
+    return Settings.prefs!.gesture_enabled;
 }
 
 export function gestureHorizontalFingers() {
-    return Settings.prefs.gesture_horizontal_fingers;
+    return Settings.prefs!.gesture_horizontal_fingers;
 }
 
 /**
    Handle scrolling horizontally in a space. The handler is meant to be
    connected from each space.background and bound to the space.
  */
-let start,
-    dxs = [],
-    dts = [];
-export function horizontalScroll(space, _actor, event) {
+let start: number,
+    dxs: number[] = [],
+    dts: number[] = [];
+export function horizontalScroll(
+    space: Tiling.Space,
+    _actor: Clutter.Actor,
+    event: Clutter.Event
+) {
     if (event.type() !== Clutter.EventType.TOUCHPAD_SWIPE) {
         return Clutter.EVENT_PROPAGATE;
     }
@@ -156,7 +176,7 @@ export function horizontalScroll(space, _actor, event) {
             }
             return update(
                 space,
-                -dx * natural * Settings.prefs.swipe_sensitivity[0],
+                -dx * natural * Settings.prefs!.swipe_sensitivity[0],
                 event.get_time()
             );
         case Clutter.TouchpadGesturePhase.CANCEL:
@@ -165,7 +185,7 @@ export function horizontalScroll(space, _actor, event) {
                 return Clutter.EVENT_PROPAGATE;
             }
             space.hState = phase;
-            done(space, event);
+            done(space);
             dxs = [];
             dts = [];
             direction = undefined;
@@ -181,8 +201,12 @@ export function horizontalScroll(space, _actor, event) {
    is changed.
  */
 let walk = 0;
-let sdx = null;
-export function horizontalTouchScroll(_actor, event) {
+let sdx: number | null = null;
+export function horizontalTouchScroll(
+    this: Tiling.Space,
+    _actor: Clutter.Actor,
+    event: Clutter.Event
+) {
     const type = event.type();
     const [myx] = event.get_coords();
 
@@ -218,7 +242,7 @@ export function horizontalTouchScroll(_actor, event) {
         }
         case Clutter.EventType.TOUCH_CANCEL:
         case Clutter.EventType.TOUCH_END:
-            done(this, event);
+            done(this);
             dxs = [];
             dts = [];
             sdx = null;
@@ -232,7 +256,7 @@ export function horizontalTouchScroll(_actor, event) {
     }
 }
 
-export function update(space, dx, t) {
+export function update(space: Tiling.Space, dx: number, t: number) {
     dxs.push(dx);
     dts.push(t);
 
@@ -242,49 +266,50 @@ export function update(space, dx, t) {
     // Check which target window will be selected if we release the swipe at this
     // moment
     dx = Lib.sum(dxs.slice(-3));
-    let v = dx / (t - dts.slice(-3)[0]);
+    const v = dx / (t - dts.slice(-3)[0]);
     if (Number.isFinite(v)) {
         space.vx = v;
     }
 
-    let accel = Settings.prefs.swipe_friction[0] / 16; // px/ms^2
+    let accel = Settings.prefs!.swipe_friction[0] / 16; // px/ms^2
     accel = space.vx > 0 ? -accel : accel;
-    let duration = -space.vx / accel;
-    let d = space.vx * duration + 0.5 * accel * duration ** 2;
-    let target = Math.round(space.targetX - d);
+    const duration = -space.vx / accel;
+    const d = space.vx * duration + 0.5 * accel * duration ** 2;
+    const target = Math.round(space.targetX - d);
 
     space.targetX = target;
     const selected = findTargetWindow(space, start - space.targetX > 0);
     space.targetX = space.cloneContainer.x;
     space.selectedWindow = selected;
+    // @ts-expect-error tiling.js missing interface merge
     space.emit('select');
 
     return Clutter.EVENT_STOP;
 }
 
-export function done(space) {
+export function done(space: Tiling.Space) {
     if (!Number.isFinite(space.vx) || space.length === 0) {
         navigator?.finish();
         space.hState = -1;
         return;
     }
 
-    let startGlide = space.targetX;
+    const startGlide = space.targetX;
 
     // timetravel
-    let accel = Settings.prefs.swipe_friction[0] / 16; // px/ms^2
+    let accel = Settings.prefs!.swipe_friction[0] / 16; // px/ms^2
     accel = space.vx > 0 ? -accel : accel;
     let t = -space.vx / accel;
-    let d = space.vx * t + 0.5 * accel * t ** 2;
+    const d = space.vx * t + 0.5 * accel * t ** 2;
     let target = Math.round(space.targetX - d);
 
     let mode = Clutter.AnimationMode.EASE_OUT_QUAD;
     let first;
     let last;
 
-    let full = space.cloneContainer.width > space.width;
+    const full = space.cloneContainer.width > space.width;
     // Only snap to the edges if we started gliding when the viewport is fully covered
-    let snap = !(
+    const snap = !(
         space.targetX >= 0 ||
         space.targetX + space.cloneContainer.width <= space.width
     );
@@ -304,15 +329,15 @@ export function done(space) {
     }
 
     // Adjust for target window
-    let selected;
     space.targetX = Math.round(target);
-    selected = last || first || findTargetWindow(space, start - target > 0);
+    const selected =
+        last || first || findTargetWindow(space, start - target > 0);
     delete selected.lastFrame; // Invalidate frame information
-    let x = Tiling.ensuredX(selected, space);
+    const x = Tiling.ensuredX(selected, space);
     target = x - selected.clone.targetX;
 
     // Scale down travel time if we've cut down the discance to travel
-    let newD = Math.abs(startGlide - target);
+    const newD = Math.abs(startGlide - target);
     if (newD < Math.abs(d)) t *= Math.abs(newD / d);
 
     // Use a minimum duration if we've adjusted travel
@@ -325,6 +350,7 @@ export function done(space) {
     space.targetX = target;
 
     space.selectedWindow = selected;
+    // @ts-expect-error tiling.js missing interface merge
     space.emit('select');
     gliding = true;
     Easer.addEase(space.cloneContainer, {
@@ -342,12 +368,9 @@ export function done(space) {
 
 /**
  * Finds a target window given a space and direction (-1 is left, 1 is right)
- * @param {Tiling.Space} space
- * @param {Boolean} dir
- * @returns
  */
-export function findTargetWindow(space, dir) {
-    let selected = space.selectedWindow?.clone;
+export function findTargetWindow(space: Tiling.Space, dir: boolean) {
+    const selected = space.selectedWindow?.clone;
     if (!selected) {
         return false;
     }
@@ -358,20 +381,20 @@ export function findTargetWindow(space, dir) {
     ) {
         return selected.meta_window;
     }
-    let workArea = space.workArea();
-    let min = workArea.x;
+    const workArea = space.workArea();
+    const min = workArea.x;
 
-    let windows = space.getWindows().filter(w => {
-        let clone = w.clone;
-        let x = clone.targetX + space.targetX;
+    const windows = space.getWindows().filter(w => {
+        const clone = w.clone;
+        const x = clone.targetX + space.targetX;
         return !(x + clone.width < min || x > min + workArea.width);
     });
     if (!dir)
         // scroll left
         windows.reverse();
-    let visible = windows.filter(w => {
-        let clone = w.clone;
-        let x = clone.targetX + space.targetX;
+    const visible = windows.filter(w => {
+        const clone = w.clone;
+        const x = clone.targetX + space.targetX;
         return x >= 0 && x + clone.width <= min + workArea.width;
     });
     if (visible.length > 0) {
@@ -379,8 +402,8 @@ export function findTargetWindow(space, dir) {
     }
 
     if (windows.length === 0) {
-        let first = space.getWindow(0, 0);
-        let last = space.getWindow(space.length - 1, 0);
+        const first = space.getWindow(0, 0);
+        const last = space.getWindow(space.length - 1, 0);
         if (dir) {
             return last;
         } else {
@@ -390,8 +413,8 @@ export function findTargetWindow(space, dir) {
 
     if (windows.length === 1) return windows[0];
 
-    let closest = windows[0].clone;
-    let next = windows[1].clone;
+    const closest = windows[0].clone;
+    const next = windows[1].clone;
     let r1, r2;
     if (dir) {
         // ->
@@ -413,9 +436,8 @@ export function findTargetWindow(space, dir) {
 /**
  * Enables (or disables) gnome swipe trackers which take care of the
  * default 3 finger swipe actions.
- * @param {Boolean} option
  */
-export function swipeTrackersEnable(option) {
-    let enabled = option ?? true;
-    Patches.swipeTrackers.forEach(t => (t.enabled = enabled));
+export function swipeTrackersEnable(option?: boolean) {
+    const enabled = option ?? true;
+    Patches.swipeTrackers!.forEach(t => (t.enabled = enabled));
 }
