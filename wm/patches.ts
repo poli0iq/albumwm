@@ -12,15 +12,33 @@ import * as WindowPreview from 'resource:///org/gnome/shell/ui/windowPreview.js'
 
 import { Utils, Tiling, Scratch, Settings, OverviewLayout } from './imports.js';
 
-/**
-  Some of Gnome Shell's default behavior is really sub-optimal when using
-  albumWM. Other features are simply not possible to implement without monkey
-  patching. This is a collection of monkey patches and preferences which works
-  around these problems and facilitates new features.
+import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import type GObject from 'gi://GObject?version=2.0';
+import type Meta from 'gi://Meta';
+
+/*
+ * Some of Gnome Shell's default behavior is really sub-optimal when using
+ * albumWM. Other features are simply not possible to implement without monkey
+ * patching. This is a collection of monkey patches and preferences which works
+ * around these problems and facilitates new features.
  */
 
-let savedProps;
-export function registerOverrideProp(obj, name, override, warn = true) {
+type PropOverride<T> =
+    | {
+          isAccessor?: false;
+          saved: T;
+          override: T;
+      }
+    | {
+          isAccessor: true;
+          saved: PropertyDescriptor;
+          override: PropertyDescriptor;
+      };
+let savedProps: Map<object, Record<string, PropOverride<unknown>>> | null;
+export function registerOverrideProp<
+    T extends object,
+    K extends keyof T & string,
+>(obj: T, name: K, override: T[K], warn = true) {
     if (!obj) return;
 
     // check if prop exists
@@ -31,11 +49,11 @@ export function registerOverrideProp(obj, name, override, warn = true) {
         );
     }
 
-    let saved = getSavedProp(obj, name) ?? obj[name];
-    let props = savedProps.get(obj);
+    const saved = getSavedProp(obj, name) ?? obj[name];
+    let props = savedProps!.get(obj);
     if (!props) {
         props = {};
-        savedProps.set(obj, props);
+        savedProps!.set(obj, props);
     }
     props[name] = {
         saved,
@@ -43,9 +61,10 @@ export function registerOverrideProp(obj, name, override, warn = true) {
     };
 }
 
-export function registerOverridePrototype(obj, name, override) {
-    if (!obj) return;
-
+export function registerOverridePrototype<
+    P extends object,
+    K extends keyof P & string,
+>(obj: { prototype: P }, name: K, override: P[K]) {
     // check if method for prototype exists
     const exists = obj?.prototype?.[name];
     if (!exists) {
@@ -62,9 +81,10 @@ export function registerOverridePrototype(obj, name, override) {
  * this because it reads obj[name] (invoking the getter) and restores by
  * assignment, which would replace the getter with a plain value.
  */
-export function registerOverrideGetter(obj, name, getter) {
-    if (!obj) return;
-
+export function registerOverrideGetter<
+    T extends object,
+    K extends keyof T & string,
+>(obj: T, name: K, getter: (this: T) => T[K]) {
     const saved = Object.getOwnPropertyDescriptor(obj, name);
     if (!saved || typeof saved.get !== 'function') {
         console.warn(
@@ -73,10 +93,10 @@ export function registerOverrideGetter(obj, name, getter) {
         return;
     }
 
-    let props = savedProps.get(obj);
+    let props = savedProps!.get(obj);
     if (!props) {
         props = {};
-        savedProps.set(obj, props);
+        savedProps!.set(obj, props);
     }
     props[name] = {
         saved,
@@ -85,47 +105,60 @@ export function registerOverrideGetter(obj, name, getter) {
     };
 }
 
-export function makeFallback(obj, method, ...args) {
-    let fallback = getSavedPrototype(obj, method);
-    return fallback.bind(...args);
-}
-
-export function overrideWithFallback(obj, method, body) {
-    registerOverridePrototype(obj, method, function (...args) {
-        let fallback = makeFallback(obj, method, this, ...args);
-        body(fallback, this, ...args);
-    });
-}
-
-export function getSavedProp(obj, name) {
-    let props = savedProps.get(obj);
+export function getSavedProp<T extends object, K extends keyof T & string>(
+    obj: T,
+    name: K
+): T[K] | undefined {
+    const props = savedProps!.get(obj);
     if (!props) return undefined;
-    let prop = props[name];
+    const prop = props[name] as PropOverride<T[K]>;
     if (!prop) return undefined;
-    return prop.saved;
+    return !prop.isAccessor ? prop.saved : undefined;
 }
 
-export function getSavedPrototype(obj, name) {
+export function getSavedPrototype<P extends object, K extends keyof P & string>(
+    obj: { prototype: P },
+    name: K
+): P[K] | undefined {
     return getSavedProp(obj.prototype, name);
 }
 
-export function disableOverride(obj, name) {
-    const prop = savedProps.get(obj)?.[name];
+/**
+ * The saved descriptor behind an accessor override. getSavedProp can't return
+ * this: it yields plain values and reports undefined for accessors, whereas a
+ * getter override still needs the original descriptor to fall back to.
+ */
+export function getSavedDescriptor<
+    T extends object,
+    K extends keyof T & string,
+>(obj: T, name: K): PropertyDescriptor | undefined {
+    const prop = savedProps!.get(obj)?.[name];
+    return prop?.isAccessor ? prop.saved : undefined;
+}
+
+export function disableOverride<T extends object, K extends keyof T & string>(
+    obj: T,
+    name: K
+) {
+    const prop = savedProps!.get(obj)?.[name] as PropOverride<T[K]> | undefined;
     if (prop?.isAccessor) {
         Object.defineProperty(obj, name, prop.saved);
         return;
     }
-    obj[name] = getSavedProp(obj, name);
+    obj[name] = getSavedProp(obj, name)!;
 }
 
-export function enableOverride(obj, name) {
-    let props = savedProps.get(obj);
-    let prop = props[name];
+export function enableOverride<T extends object, K extends keyof T & string>(
+    obj: T,
+    name: K
+) {
+    const props = savedProps!.get(obj)!;
+    const prop = props[name] as PropOverride<T[K]>;
     if (prop.isAccessor) {
         Object.defineProperty(obj, name, prop.override);
         return;
     }
-    let override = prop.override;
+    const override = prop.override;
     if (override !== undefined) {
         obj[name] = override;
     }
@@ -135,7 +168,7 @@ export function enableOverride(obj, name) {
  * Sets up AlbumWM overrides (needed for operations).  These overrides are registered and restored
  * on AlbumWM disable.
  */
-let gsettings;
+let gsettings: Gio.Settings | null;
 export function setupOverrides() {
     /**
      * Used on overview layout.  UnalignedLayoutStrategy is not exported in Gnome 45, and hence
@@ -145,7 +178,7 @@ export function setupOverrides() {
     registerOverridePrototype(
         Workspace.WorkspaceLayout,
         '_createBestLayout',
-        function (area) {
+        function (this: Workspace.WorkspaceLayout, area: Workspace.Rect) {
             const [rowSpacing, columnSpacing] = this._adjustSpacingAndPadding(
                 this._spacing,
                 this._spacing,
@@ -206,32 +239,37 @@ export function setupOverrides() {
         }
     );
 
-    registerOverridePrototype(Workspace.Workspace, '_isOverviewWindow', win => {
-        win = win.meta_window ?? win; // should be metawindow, but get if not
-        // upstream (gnome value result - whta it would have done)
-        const saved = getSavedPrototype(
-            Workspace.Workspace,
-            '_isOverviewWindow'
-        );
-        const upstreamValue = saved?.call(this, win) ?? !win.skip_taskbar;
+    registerOverridePrototype(
+        Workspace.Workspace,
+        '_isOverviewWindow',
+        function (this: Workspace.Workspace, win: Meta.Window) {
+            // Should be a Meta.Window, unwrap a clone if we get one
+            win = (win as { meta_window?: Meta.Window }).meta_window ?? win;
+            // upstream (gnome value result - what it would have done)
+            const saved = getSavedPrototype(
+                Workspace.Workspace,
+                '_isOverviewWindow'
+            );
+            const upstreamValue = saved?.call(this, win) ?? !win.skip_taskbar;
 
-        if (Scratch.isScratchWindow(win)) {
-            if (gsettings.get_boolean('only-scratch-in-overview')) {
-                return upstreamValue;
+            if (Scratch.isScratchWindow(win)) {
+                if (gsettings!.get_boolean('only-scratch-in-overview')) {
+                    return upstreamValue;
+                }
+
+                if (gsettings!.get_boolean('disable-scratch-in-overview')) {
+                    return false;
+                }
             }
 
-            if (gsettings.get_boolean('disable-scratch-in-overview')) {
+            // if here then not scratch
+            if (gsettings!.get_boolean('only-scratch-in-overview')) {
                 return false;
             }
-        }
 
-        // if here then not scratch
-        if (gsettings.get_boolean('only-scratch-in-overview')) {
-            return false;
+            return upstreamValue;
         }
-
-        return upstreamValue;
-    });
+    );
 
     /**
      * Make the overview open/close animation interpolate to the AlbumWM
@@ -248,11 +286,11 @@ export function setupOverrides() {
             const w = this.metaWindow;
             const rect = Tiling.spaces?.spaceOfWindow(w)?.cloneStageRect(w);
             if (rect) return rect;
-            const saved = getSavedProp(
+            const saved = getSavedDescriptor(
                 WindowPreview.WindowPreview.prototype,
                 'boundingBox'
             );
-            return saved.get.call(this);
+            return saved!.get!.call(this);
         }
     );
 
@@ -264,7 +302,7 @@ export function setupOverrides() {
     registerOverridePrototype(
         WorkspaceThumbnail.ThumbnailsBox,
         '_updateShouldShow',
-        function () {
+        function (this: WorkspaceThumbnail.ThumbnailsBox) {
             const { nWorkspaces } = global.workspace_manager;
             const shouldShow = nWorkspaces > 1;
 
@@ -282,9 +320,9 @@ export function setupOverrides() {
     registerOverridePrototype(
         AltTab.WindowIcon,
         '_init',
-        function (window, mode) {
+        function (this: AltTab.WindowIcon, window: Meta.Window, mode: number) {
             const saved = getSavedPrototype(AltTab.WindowIcon, '_init');
-            saved.call(this, window, mode);
+            saved!.call(this, window, mode);
 
             const WINDOW_PREVIEW_SIZE = 128;
             const AppIconMode = {
@@ -295,14 +333,18 @@ export function setupOverrides() {
             const APP_ICON_SIZE = 96;
             const APP_ICON_SIZE_SMALL = 48;
 
-            let mutterWindow = this.window.get_compositor_private();
+            const mutterWindow =
+                this.window.get_compositor_private<Clutter.Actor>();
 
             this._icon.destroy_all_children();
 
-            this.monitor = Tiling.spaces.selectedSpace.monitor;
-            let _createWindowClone = (windowActor, size) => {
-                let [width, height] = windowActor.get_size();
-                let scale = Math.min(1.0, size / width, size / height);
+            const monitor = Tiling.spaces.selectedSpace.monitor;
+            const _createWindowClone = (
+                windowActor: Clutter.Actor,
+                size: number
+            ) => {
+                const [width, height] = windowActor.get_size();
+                const scale = Math.min(1.0, size / width, size / height);
                 return new Clutter.Clone({
                     source: windowActor,
                     width: width * scale,
@@ -316,13 +358,13 @@ export function setupOverrides() {
             };
 
             let size;
-            let scaleFactor = St.ThemeContext.get_for_stage(
+            const scaleFactor = St.ThemeContext.get_for_stage(
                 global.stage
             ).scale_factor;
-            const scale = Settings.prefs.window_switcher_preview_scale;
+            const scale = Settings.prefs!.window_switcher_preview_scale;
             // scale size based on AlbumWM's minimap-scale
             if (scale > 0) {
-                size = Math.round(this.monitor.height * scale);
+                size = Math.round(monitor.height * scale);
             } else {
                 size = WINDOW_PREVIEW_SIZE;
             }
@@ -357,7 +399,7 @@ export function setupOverrides() {
     registerOverridePrototype(
         Screenshot.ScreenshotUI,
         'open',
-        async function (mode) {
+        async function (this: Screenshot.ScreenshotUI, mode: number) {
             const saved = getSavedPrototype(Screenshot.ScreenshotUI, 'open');
 
             if (!Main.overview.visible) {
@@ -368,14 +410,14 @@ export function setupOverrides() {
                 });
             }
 
-            await saved.call(this, mode);
+            await saved!.call(this, mode);
         }
     );
 
     registerOverridePrototype(
         Screenshot.ScreenshotUI,
         'close',
-        function (instantly) {
+        function (this: Screenshot.ScreenshotUI, instantly?: boolean) {
             const saved = getSavedPrototype(Screenshot.ScreenshotUI, 'close');
 
             if (!Main.overview.visible) {
@@ -386,7 +428,7 @@ export function setupOverrides() {
                 });
             }
 
-            saved.call(this, instantly);
+            saved!.call(this, instantly);
         }
     );
 }
@@ -395,59 +437,62 @@ export function setupOverrides() {
  * Enables any registered overrides.
  */
 export function enableOverrides() {
-    for (let [obj, props] of savedProps) {
-        for (let name in props) {
-            enableOverride(obj, name);
+    for (const [obj, props] of savedProps!) {
+        for (const name in props) {
+            enableOverride(obj as Record<string, unknown>, name);
         }
     }
 }
 
 export function disableOverrides() {
-    for (let [obj, props] of savedProps) {
-        for (let name in props) {
-            disableOverride(obj, name);
+    for (const [obj, props] of savedProps!) {
+        for (const name in props) {
+            disableOverride(obj as Record<string, unknown>, name);
         }
     }
 }
 
+const runtimeDisables: (() => void)[] = [];
 /**
  * Saves the original setting value (boolean) to restore on disable.
  * We save a backup of the user's setting to AlbumWM settings (schema)
  * for safety (in case gnome terminates etc.).  This ensures original
  * user settings will be restored on next AlbumWM disable.
- * @param key
  */
-let runtimeDisables = [];
-export function saveRuntimeDisable(schemaSettings, key, disableValue) {
+export function saveRuntimeDisable(
+    schemaSettings: Gio.Settings,
+    key: string,
+    disableValue: boolean
+) {
     try {
-        let origValue = schemaSettings.get_boolean(key);
+        const origValue = schemaSettings.get_boolean(key);
         schemaSettings.set_boolean(key, disableValue);
 
         // save a backup copy to AlbumWM settings (for restore)
-        let pkey = `restore-${key}`;
+        const pkey = `restore-${key}`;
 
         /**
          * Now if albumwm settings has restore values, it means
          * that they weren't previously restore properly (since on
          * successful restore we clear the values).
          */
-        if (gsettings.get_string(pkey) === '') {
-            gsettings.set_string(pkey, origValue.toString());
+        if (gsettings!.get_string(pkey) === '') {
+            gsettings!.set_string(pkey, origValue.toString());
         }
 
         // we want to restore from AlbumWM back settings (safer)
-        let restore = () => {
-            let value = gsettings.get_string(pkey);
+        const restore = () => {
+            const value = gsettings!.get_string(pkey);
             // if value is empty, do nothing
             if (value === '') {
                 return;
             }
 
-            let bvalue = value === 'true';
+            const bvalue = value === 'true';
             schemaSettings.set_boolean(key, bvalue);
 
             // after restore, empty albumwm saved value
-            gsettings.set_string(pkey, '');
+            gsettings!.set_string(pkey, '');
         };
 
         runtimeDisables.push(restore);
@@ -462,10 +507,10 @@ export function saveRuntimeDisable(schemaSettings, key, disableValue) {
  * purposes (we save to AlbumWM's setting just in gnome terminates before AlbumWM can
  * restore the original user settings).  These settings are then restored on disable().
  */
-let mutterSettings;
+let mutterSettings: Gio.Settings | null;
 export function setupRuntimeDisables() {
-    saveRuntimeDisable(mutterSettings, 'attach-modal-dialogs', false);
-    saveRuntimeDisable(mutterSettings, 'edge-tiling', false);
+    saveRuntimeDisable(mutterSettings!, 'attach-modal-dialogs', false);
+    saveRuntimeDisable(mutterSettings!, 'edge-tiling', false);
 }
 
 /**
@@ -490,18 +535,18 @@ export function restoreRuntimeDisables() {
  * move from gnome version to gnome version.  Next to the swipe tracker locations
  * below are the gnome versions when they were first (or last) seen.
  */
-export let swipeTrackers; // exported
+export let swipeTrackers: GObject.Object[] | null; // exported
 export function setupSwipeTrackers() {
     swipeTrackers = [
         Main?.overview?._overview?._controls?._appDisplay?._swipeTracker, // gnome 49+
         Main?.overview?._swipeTracker, // gnome 40+
         Main?.overview?._overview?._controls?._workspacesDisplay?._swipeTracker, // gnome 40+
+        // @ts-expect-error property missing in girs
         Main?.wm?._workspaceAnimation?._swipeTracker, // gnome 40+
-        Main?.wm?._swipeTracker, // gnome 38 (and below)
     ].filter(t => typeof t !== 'undefined');
 }
 
-let actions;
+let actions: Clutter.Action[] | null;
 export function setupActions() {
     /*
      * Some actions work rather poorly.
@@ -510,6 +555,7 @@ export function setupActions() {
      */
     actions = global.stage.get_actions().filter(a => {
         switch (a.constructor) {
+            // @ts-expect-error not typed in girs
             case WindowManager.AppSwitchAction:
                 return true;
             default:
@@ -519,8 +565,8 @@ export function setupActions() {
     actions.forEach(a => global.stage.remove_action(a));
 }
 
-let signals;
-export function enable(extension) {
+let signals: Utils.Signals | null;
+export function enable(extension: Extension) {
     savedProps = new Map();
     gsettings = extension.getSettings();
 
@@ -536,15 +582,14 @@ export function enable(extension) {
 export function disable() {
     disableOverrides();
     restoreRuntimeDisables();
-    actions.forEach(a => global.stage.add_action(a));
+    actions!.forEach(a => global.stage.add_action(a));
     actions = null;
 
-    signals.destroy();
-    signals = null;
+    signals!.destroy();
 
     savedProps = null;
     swipeTrackers = null;
     gsettings = null;
     mutterSettings = null;
-    actions = null;
+    signals = null;
 }
