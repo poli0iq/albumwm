@@ -269,6 +269,8 @@ export function setInGrab(value) {
  *         shade: St.Widget,
  *         targetY: number,
  *         __oldOpacity: number, // Used by `grab.ts`
+ *         meta_window: Meta.Window, // Used by `gestures.ts`
+ *         targetX: number,
  *     },
  *     _scratch?: boolean, // Used by `scratch.ts`
  *     _scratchFrame?: import('@girs/mtk-18').default.Rectangle,
@@ -287,6 +289,11 @@ export class Space extends Array {
 
     /** @type {Monitor} */
     monitor;
+
+    /** @type {number} */
+    vx;
+    /** @type {import('@gi-types/clutter').TouchpadGesturePhase} */
+    hState;
 
     constructor(workspace, container, doInit) {
         super(0);
