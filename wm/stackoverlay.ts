@@ -5,9 +5,12 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+// @ts-expect-error not typed in girs
 import * as PointerWatcher from 'resource:///org/gnome/shell/ui/pointerWatcher.js';
 
 import { Settings, Utils, Tiling, Grab } from './imports.js';
+
+import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 /*
   The stack overlay decorates the top stacked window with its icon and
@@ -16,7 +19,7 @@ import { Settings, Utils, Tiling, Grab } from './imports.js';
   the animation the button-up event will be triggered at an
   unpredictable position
 
-  See #10
+  See paperwm/PaperWM#10
 */
 
 /*
@@ -43,18 +46,20 @@ import { Settings, Utils, Tiling, Grab } from './imports.js';
   restack loops)
 */
 
-let previewPointerWatcher;
-export function enable(_extension) {}
+// Not typed in girs.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let previewPointerWatcher: any | null;
+export function enable(_extension: Extension) {}
 
 export function disable() {
     previewPointerWatcher?.remove();
     previewPointerWatcher = null;
 }
 
-export function createAppIcon(metaWindow, size) {
-    let tracker = Shell.WindowTracker.get_default();
-    let app = tracker.get_window_app(metaWindow);
-    let appIcon = app
+export function createAppIcon(metaWindow: Meta.Window, size: number) {
+    const tracker = Shell.WindowTracker.get_default();
+    const app = tracker.get_window_app(metaWindow);
+    const appIcon = app
         ? app.create_icon_texture(size)
         : new St.Icon({
               icon_name: 'icon-missing',
@@ -69,7 +74,19 @@ export function createAppIcon(metaWindow, size) {
 }
 
 export class StackOverlay {
-    constructor(direction, monitor) {
+    SHOW_DELAY: number;
+    _direction: Meta.MotionDirection;
+    monitor: Tiling.Monitor;
+    signals: Utils.Signals;
+    triggerPreviewTimeout: number | null;
+    showPreviewTimeout: number | null;
+    activatePreviewTimeout: number | null;
+    overlay: Clutter.Actor;
+
+    declare target: Meta.Window | null;
+    declare clone: Clutter.Clone | null;
+
+    constructor(direction: Meta.MotionDirection, monitor: Tiling.Monitor) {
         this.SHOW_DELAY = 100;
 
         this._direction = direction;
@@ -86,11 +103,11 @@ export class StackOverlay {
         this.monitor = monitor;
         const panelBox = Main.layoutManager.panelBox;
         overlay.y =
-            monitor.y + panelBox.height + Settings.prefs.vertical_margin;
+            monitor.y + panelBox.height + Settings.prefs!.vertical_margin;
         overlay.height =
             this.monitor.height -
             panelBox.height -
-            Settings.prefs.vertical_margin;
+            Settings.prefs!.vertical_margin;
         overlay.width = Tiling.stackMargin;
 
         this.signals = new Utils.Signals();
@@ -101,11 +118,11 @@ export class StackOverlay {
         this.activatePreviewTimeout = null;
 
         this.signals.connect(overlay, 'button-press-event', () => {
-            if (!Settings.prefs.edge_preview_enable) {
+            if (!Settings.prefs!.edge_preview_enable) {
                 return;
             }
 
-            if (!Settings.prefs.edge_preview_click_enable) {
+            if (!Settings.prefs!.edge_preview_click_enable) {
                 return;
             }
 
@@ -134,7 +151,7 @@ export class StackOverlay {
         // if pointer is still at edge (within 2px), trigger preview
         this.triggerPreviewTimeout = GLib.timeout_add(
             GLib.PRIORITY_DEFAULT,
-            Settings.prefs.animation_time * 1000 + 50,
+            Settings.prefs!.animation_time * 1000 + 50,
             () => {
                 if (this._pointerIsAtEdge()) {
                     this.triggerPreview(true);
@@ -173,11 +190,10 @@ export class StackOverlay {
 
     /**
      * Triggers edge window preview.
-     * @param {Boolean} postActivatePreview: true if an auto preview after previous activation
-     * @returns
+     * @param postActivatePreview: true if an auto preview after previous activation
      */
     triggerPreview(postActivatePreview = false) {
-        if (!Settings.prefs.edge_preview_enable) {
+        if (!Settings.prefs!.edge_preview_enable) {
             return;
         }
 
@@ -211,11 +227,11 @@ export class StackOverlay {
                 this.showPreviewTimeout = null;
 
                 // activate preview on timeout
-                if (Settings.prefs.edge_preview_timeout_enable) {
+                if (Settings.prefs!.edge_preview_timeout_enable) {
                     // if no continual activation
                     if (
                         postActivatePreview &&
-                        !Settings.prefs.edge_preview_timeout_continual
+                        !Settings.prefs!.edge_preview_timeout_continual
                     ) {
                         // check have a target
                         if (!this.target) {
@@ -223,7 +239,7 @@ export class StackOverlay {
                         }
 
                         // push pointer back
-                        let [, py] = global.get_pointer();
+                        const [, py] = global.get_pointer();
                         const offset = 3;
                         let x;
                         switch (this._direction) {
@@ -237,13 +253,13 @@ export class StackOverlay {
                                     offset;
                                 break;
                         }
-                        Utils.warpPointer(x, py, false);
+                        Utils.warpPointer(x!, py, false);
                         return GLib.SOURCE_REMOVE;
                     }
 
                     this.activatePreviewTimeout = GLib.timeout_add(
                         GLib.PRIORITY_DEFAULT,
-                        Settings.prefs.edge_preview_timeout,
+                        Settings.prefs!.edge_preview_timeout,
                         () => {
                             // check if still at edge
                             if (this._pointerIsAtEdge()) {
@@ -276,7 +292,7 @@ export class StackOverlay {
      */
     showPreview() {
         // only show if have valid scale
-        const scale = Settings.prefs.edge_preview_scale;
+        const scale = Settings.prefs!.edge_preview_scale;
         if (scale <= 0) {
             return;
         }
@@ -291,14 +307,14 @@ export class StackOverlay {
          * then won't see the preview anyway).
          */
         if (
-            Settings.prefs.edge_preview_timeout_enable &&
-            Settings.prefs.edge_preview_timeout <= this.SHOW_DELAY
+            Settings.prefs!.edge_preview_timeout_enable &&
+            Settings.prefs!.edge_preview_timeout <= this.SHOW_DELAY
         ) {
             return;
         }
 
-        let [_, y] = global.get_pointer();
-        const actor = this.target.get_compositor_private();
+        let [, y] = global.get_pointer();
+        const actor = this.target!.get_compositor_private<Clutter.Actor>();
         const clone = new Clutter.Clone({ source: actor });
         this.clone = clone;
 
@@ -310,12 +326,12 @@ export class StackOverlay {
         clone.opacity = 255 * 0.95;
 
         clone.set_scale(scale, scale);
-        Main.uiGroup.add_child(clone);
+        Main.layoutManager.uiGroup.add_child(clone);
 
         const monitor = this.monitor;
         const scaleWidth = scale * clone.width;
         const scaleHeight = scale * clone.height;
-        let x =
+        const x =
             this._direction === Meta.MotionDirection.RIGHT
                 ? monitor.x + monitor.width - scaleWidth
                 : monitor.x;
@@ -331,39 +347,39 @@ export class StackOverlay {
         clone.set_position(x, y);
     }
 
-    setTarget(space, index) {
+    setTarget(space: Tiling.Space | null, index?: number) {
         this.removePreview();
 
-        let bail = () => {
+        const bail = () => {
             this.target = null;
             this.overlay.width = 0;
             return false;
         };
 
-        if (space === null) {
+        if (space === null || index === undefined) {
             // No target. Eg. if we're at the left- or right-most window
             return bail();
         }
 
-        let mru = global.display.get_tab_list(
+        const mru = global.display.get_tab_list(
             Meta.TabList.NORMAL_ALL,
             space.workspace
         );
-        let column = space[index];
+        const column = space[index];
         this.target = mru.filter(w => column.includes(w))[0];
-        let metaWindow = this.target;
+        const metaWindow = this.target;
         if (!metaWindow) return false;
 
-        let overlay = this.overlay;
+        const overlay = this.overlay;
         overlay.y =
             this.monitor.y +
             Main.layoutManager.panelBox.height +
-            Settings.prefs.vertical_margin;
+            Settings.prefs!.vertical_margin;
         overlay.width = 1;
 
         if (this._direction === Meta.MotionDirection.LEFT) {
-            let neighbourCol = space[space.indexOf(metaWindow) + 1];
-            let neighbour =
+            const neighbourCol = space[space.indexOf(metaWindow) + 1];
+            const neighbour =
                 neighbourCol &&
                 global.display
                     .sort_windows_by_stacking(neighbourCol)
@@ -374,8 +390,8 @@ export class StackOverlay {
             overlay.x = this.monitor.x;
             Utils.actorRaise(overlay, neighbour.get_compositor_private());
         } else {
-            let neighbourCol = space[space.indexOf(metaWindow) - 1];
-            let neighbour =
+            const neighbourCol = space[space.indexOf(metaWindow) - 1];
+            const neighbour =
                 neighbourCol &&
                 global.display
                     .sort_windows_by_stacking(neighbourCol)
@@ -387,8 +403,8 @@ export class StackOverlay {
         }
 
         if (
-            space.selectedWindow.fullscreen ||
-            space.selectedWindow.maximized_vertically
+            space.selectedWindow!.fullscreen ||
+            space.selectedWindow!.maximized_vertically
         )
             overlay.hide();
         else overlay.show();
@@ -407,7 +423,6 @@ export class StackOverlay {
         this.activatePreviewTimeout = null;
 
         this.signals.destroy();
-        this.signals = null;
         this.removePreview();
 
         Main.layoutManager.untrackChrome(this.overlay);
@@ -424,7 +439,11 @@ export class StackOverlay {
 }
 
 export class ClickOverlay {
-    constructor(monitor) {
+    monitor: Tiling.Monitor;
+    left: StackOverlay;
+    right: StackOverlay;
+
+    constructor(monitor: Tiling.Monitor) {
         this.monitor = monitor;
         this.left = new StackOverlay(Meta.MotionDirection.LEFT, monitor);
         this.right = new StackOverlay(Meta.MotionDirection.RIGHT, monitor);
@@ -447,10 +466,9 @@ export class ClickOverlay {
     }
 
     destroy() {
-        for (let overlay of [this.left, this.right]) {
-            let actor = overlay.overlay;
+        for (const overlay of [this.left, this.right]) {
+            const actor = overlay.overlay;
             overlay.signals.destroy();
-            overlay.signals = null;
             if (overlay.clone) {
                 overlay.clone.destroy();
                 overlay.clone = null;
