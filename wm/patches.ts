@@ -535,7 +535,7 @@ export function restoreRuntimeDisables() {
  * move from gnome version to gnome version.  Next to the swipe tracker locations
  * below are the gnome versions when they were first (or last) seen.
  */
-export let swipeTrackers: GObject.Object[] | null; // exported
+export let swipeTrackers: (GObject.Object & { enabled: boolean })[] | null; // exported
 export function setupSwipeTrackers() {
     swipeTrackers = [
         Main?.overview?._overview?._controls?._appDisplay?._swipeTracker, // gnome 49+
