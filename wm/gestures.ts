@@ -331,9 +331,11 @@ export function done(space: Tiling.Space) {
     space.targetX = Math.round(target);
     const selected =
         last || first || findTargetWindow(space, start - target > 0);
-    delete selected!.lastFrame; // Invalidate frame information
-    const x = Tiling.ensuredX(selected!, space);
-    target = x - selected!.clone.targetX;
+    if (selected) {
+        delete selected.lastFrame; // Invalidate frame information
+        const x = Tiling.ensuredX(selected, space);
+        target = x - selected.clone.targetX;
+    }
 
     // Scale down travel time if we've cut down the discance to travel
     const newD = Math.abs(startGlide - target);
