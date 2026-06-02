@@ -19,10 +19,17 @@ const RESTORE_KEYBINDS_KEY = 'restore-keybinds';
 const META_KEY_ABOVE_TAB = 0x2f7259c9;
 
 // position to open window at (e.g. to the right of current window)
-export const OpenWindowPositions = { RIGHT: 0, DOWN: 1 };
+export enum OpenWindowPositions {
+    RIGHT = 0,
+    DOWN = 1,
+}
 
 // Animation used when ensuring viewport on a window
-export const EnsureViewportAnimation = { NONE: 0, TRANSLATE: 1, FADE: 2 };
+export enum EnsureViewportAnimation {
+    NONE = 0,
+    TRANSLATE = 1,
+    FADE = 2,
+}
 
 export type Prefs = {
     window_gap: number;
