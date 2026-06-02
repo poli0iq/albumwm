@@ -385,7 +385,7 @@ export function restoreConflicts() {
 
 // / Winprops
 
-type PreferredWidth = {
+export type PreferredWidth = {
     value: number;
     unit: string;
 };
