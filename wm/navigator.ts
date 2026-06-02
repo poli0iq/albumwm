@@ -433,11 +433,11 @@ export class ActionDispatcher {
     _doAction(mutterActionId: number | Meta.KeyBindingAction) {
         const action = Keybindings.byId(mutterActionId);
         const space = Tiling.spaces.selectedSpace;
-        const metaWindow = space.selectedWindow!;
+        const metaWindow = space.selectedWindow;
         const nav = getNavigator();
 
         if (mutterActionId === Meta.KeyBindingAction.MINIMIZE) {
-            metaWindow.minimize();
+            metaWindow?.minimize();
         } else if (action && action.options.activeInNavigator) {
             // action is performed while navigator is open (e.g. switch-left)
             if (
@@ -450,7 +450,7 @@ export class ActionDispatcher {
             if (!Tiling.inGrab && action.options.opensMinimap) {
                 nav.showMinimap(space);
             }
-            action.handler(metaWindow, space, { navigator: this.navigator });
+            action.handler(metaWindow!, space, { navigator: this.navigator });
             if (space !== Tiling.spaces.selectedSpace) {
                 this.navigator.minimaps.forEach(m =>
                     typeof m === 'number' ? Utils.timeoutRemove(m) : m.hide()
@@ -471,7 +471,7 @@ export class ActionDispatcher {
                 GLib.PRIORITY_DEFAULT,
                 0,
                 () => {
-                    action.handler(metaWindow, space);
+                    action.handler(metaWindow!, space);
                     this._doActionTimeout = null;
                     return GLib.SOURCE_REMOVE;
                 }
