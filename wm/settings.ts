@@ -397,6 +397,8 @@ type WinProp = {
     preferredWidth?: PreferredWidth;
     spaceIndex?: number;
     gsetting?: boolean;
+    /** TODO: only used in `tiling.ts`, might be dead */
+    oneshot?: boolean;
 };
 export type WinPropSpec = {
     wm_class?: string;
