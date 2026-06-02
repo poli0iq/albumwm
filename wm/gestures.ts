@@ -369,10 +369,13 @@ export function done(space: Tiling.Space) {
 /**
  * Finds a target window given a space and direction (-1 is left, 1 is right)
  */
-export function findTargetWindow(space: Tiling.Space, dir: boolean) {
+export function findTargetWindow(
+    space: Tiling.Space,
+    dir: boolean
+): Tiling.Window | null {
     const selected = space.selectedWindow?.clone;
     if (!selected) {
-        return false;
+        return null;
     }
 
     if (
