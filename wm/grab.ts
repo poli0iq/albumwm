@@ -90,7 +90,7 @@ export class MoveGrab {
     constructor(
         metaWindow: Tiling.Window,
         type: Meta.GrabOp,
-        space: Tiling.Space
+        space?: Tiling.Space
     ) {
         this.window = metaWindow;
         this.type = type;
