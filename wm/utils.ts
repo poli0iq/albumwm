@@ -8,7 +8,6 @@ import * as Ripples from 'resource:///org/gnome/shell/ui/ripples.js';
 import * as Config from 'resource:///org/gnome/shell/misc/config.js';
 
 import type GObject from 'gi://GObject?version=2.0';
-import type St from 'gi://St';
 import type { Monitor } from 'resource:///org/gnome/shell/ui/layout.js';
 
 const Display = global.display;
@@ -269,7 +268,7 @@ export function actorRaise(actor: Clutter.Actor, above?: Clutter.Actor) {
     parent.set_child_above_sibling(actor, above ?? null);
 }
 
-export function actorReparent(actor: Clutter.Actor, newParent: St.Widget) {
+export function actorReparent(actor: Clutter.Actor, newParent: Clutter.Actor) {
     actorRemoveParent(actor);
     newParent.add_child(actor);
 }
