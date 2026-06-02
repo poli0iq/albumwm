@@ -186,6 +186,13 @@ export default defineConfig(
                 'error',
                 { allowDeclarations: true },
             ],
+            /* Permit the empty `interface X extends Utils.SignalMethods {}`
+             * to properly type classes after addSignalMethods. */
+            '@typescript-eslint/no-empty-object-type': [
+                'error',
+                { allowInterfaces: 'with-single-extends' },
+            ],
+            '@typescript-eslint/no-unsafe-declaration-merging': 'off',
             /* These core rules are type-blind; typescript-eslint ships
              * type-aware replacements. Swap each one for .ts files. */
             'no-unused-vars': 'off',

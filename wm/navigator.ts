@@ -17,6 +17,8 @@ import {
     Settings,
 } from './imports.js';
 
+import type { SignalMethods } from '@girs/gjs/gjs';
+
 /**
   Navigation and previewing functionality.
 
@@ -52,6 +54,8 @@ export function disable() {
     signals = null;
 }
 
+// Added to the prototype by Signals.addSignalMethods below
+export interface NavigatorClass extends SignalMethods {}
 export class NavigatorClass {
     takeHint: St.Label;
     was_accepted: boolean;
@@ -60,9 +64,6 @@ export class NavigatorClass {
     from: Tiling.Space;
     monitor: Tiling.Monitor;
     minimaps: Map<Tiling.Space, Minimap.Minimap | number>;
-
-    // Added to the prototype by Signals.addSignalMethods below
-    declare emit: (signal: 'destroy', accepted: boolean) => void;
 
     constructor() {
         console.debug('#navigator', 'nav created');
@@ -233,8 +234,8 @@ export class NavigatorClass {
         navigator = null;
     }
 }
+Signals.addSignalMethods(NavigatorClass.prototype);
 export const Navigator = NavigatorClass;
-Signals.addSignalMethods(Navigator.prototype);
 
 export function primaryModifier(mask: number) {
     if (mask === 0) return 0;
