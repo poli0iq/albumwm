@@ -2975,7 +2975,7 @@ Opening "${metaWindow?.title}" on current space.`
             );
             metaWindow.change_workspace(newspace.workspace);
             metaWindow.foreach_transient(t => {
-                space.addFloating(t as Window);
+                newspace.addFloating(t as Window);
                 return true;
             });
             connectSizeChanged(true);
