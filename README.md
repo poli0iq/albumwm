@@ -9,6 +9,7 @@ AlbumWM is a fork of [PaperWM](https://github.com/paperwm/PaperWM).
 For now, there are mostly removals and code maintainability improvements.
 Features that the fork author considered useless or harmful are dropped.
 
+- **Ported to TypeScript**
 - **Dropped the custom workspaces functionality and the hacky multi-monitor support**
 
     Now both the "Workspaces on all displays" and "Workspaces on primary display only" modes work.
