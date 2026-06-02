@@ -416,7 +416,7 @@ export function setupActions(settings: Gio.Settings) {
                 Utils.laterAdd(Meta.LaterType.IDLE, () => {
                     /* Could fire after disable. */
                     if (!Settings.prefs) return GLib.SOURCE_REMOVE;
-                    const next = global.display.focus_window;
+                    const next = global.display.focus_window as Tiling.Window;
                     /* Skip cross-monitor mutter MRU fallbacks: warping pointer
                      * to a window on a different monitor is disorienting. */
                     if (

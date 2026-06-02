@@ -53,7 +53,7 @@ export function getVirtualPointer() {
 }
 
 type DndTarget = {
-    position: number[];
+    position: [number, number?];
     center: number;
     originProp: 'x' | 'y';
     sizeProp: 'width' | 'height';
@@ -216,7 +216,7 @@ export class MoveGrab {
             });
         }
 
-        const i = space.indexOf(metaWindow);
+        const i = space.columnOf(metaWindow);
         const single = i !== -1 && space[i].length === 1;
         space.removeWindow(metaWindow);
         Utils.actorReparent(clone, Main.layoutManager.uiGroup);
@@ -271,7 +271,7 @@ export class MoveGrab {
 
         Tiling.spaces.forEach(s => {
             this.signals!.connect(
-                s.background,
+                s.background!,
                 'motion-event',
                 this.spaceMotion.bind(this, s)
             );
@@ -297,20 +297,20 @@ export class MoveGrab {
         const columnZoneMargin =
             space.length > 0
                 ? columnZoneMarginViz
-                : Math.round(space.width / 4);
+                : Math.round(space.width! / 4);
         const rowZoneMargin = 250 + halfGap;
 
         let target: DndTarget | null = null;
-        const tilingHeight = space.height - Main.layoutManager.panelBox.height;
+        const tilingHeight = space.height! - Main.layoutManager.panelBox.height;
 
         // TODO maybe EaserParams
         const fakeClone: {
-            targetX: number | null;
+            targetX: number;
             targetY: number;
             width: number;
             height: number;
         } = {
-            targetX: null,
+            targetX: 0,
             targetY: 0,
             width: columnZoneMargin,
             height: tilingHeight,
@@ -319,7 +319,10 @@ export class MoveGrab {
             const lastClone = space[space.length - 1][0].clone;
             fakeClone.targetX = lastClone.x + lastClone.width + gap;
         } else {
-            const [sx] = space.viewportToScroll(Math.round(space.width / 2), 0);
+            const [sx] = space.viewportToScroll(
+                Math.round(space.width! / 2),
+                0
+            );
             fakeClone.targetX = sx + halfGap;
         }
 
@@ -597,7 +600,7 @@ export class MoveGrab {
                 } else {
                     space.layout();
                 }
-                Tiling.moveTo(space, metaWindow, { x: x - space.monitor.x });
+                Tiling.moveTo(space, metaWindow, { x: x - space.monitor!.x });
                 Tiling.ensureViewport(metaWindow, space);
 
                 Utils.actorRaise(clone);
@@ -631,7 +634,7 @@ export class MoveGrab {
             }
 
             Navigator.getNavigator().accept();
-        } else if (clone && this.initialSpace.indexOf(metaWindow) !== -1) {
+        } else if (clone && this.initialSpace.columnOf(metaWindow) !== -1) {
             const space = this.initialSpace;
             space.targetX = space.cloneContainer.x;
 
@@ -662,7 +665,7 @@ export class MoveGrab {
 
         // // Make sure the window is on the correct workspace.
         // // If the window is transient this will take care of its parent too.
-        Tiling.setInGrab(false);
+        Tiling.setInGrab(null);
         if (this.dispatcher) {
             Navigator.dismissDispatcher(DispatcherMode.POINTER);
         }

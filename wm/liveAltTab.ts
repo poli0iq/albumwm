@@ -46,7 +46,7 @@ export class LiveAltTab extends AltTab.WindowSwitcherPopup {
         this.reverse = reverse;
         this.scratchOnly = scratchOnly;
         this.space = Tiling.spaces.selectedSpace;
-        this.monitor = Tiling.spaces.selectedSpace.monitor;
+        this.monitor = Tiling.spaces.selectedSpace.monitor!;
         super._init();
     }
 
@@ -152,8 +152,8 @@ export class LiveAltTab extends AltTab.WindowSwitcherPopup {
         clone.position = actor.position;
 
         const space = Tiling.spaces.spaceOfWindow(to)!;
-        if (space.indexOf(to) !== -1) {
-            clone.x = Tiling.ensuredX(to, space) + space.monitor.x;
+        if (space.columnOf(to) !== -1) {
+            clone.x = Tiling.ensuredX(to, space) + space.monitor!.x;
             clone.x -= frame.x - actor.x;
         }
 

@@ -15,6 +15,7 @@ import {
     Scratch,
     Minimap,
     Settings,
+    Grab,
 } from './imports.js';
 
 import type { SignalMethods } from '@girs/gjs/gjs';
@@ -87,8 +88,8 @@ export class NavigatorClass {
 
         this._startWindow = this.space.selectedWindow;
         this.from = this.space;
-        this.monitor = this.space.monitor;
-        this.monitor.clickOverlay.hide();
+        this.monitor = this.space.monitor!;
+        this.monitor.clickOverlay!.hide();
         this.minimaps = new Map();
 
         Topbar.fixTopBar();
@@ -123,7 +124,7 @@ export class NavigatorClass {
     showTakeHint(show = true) {
         if (show) {
             // set position on stage, take into account monitor
-            const monitor = this.space.monitor;
+            const monitor = this.space.monitor!;
             const x = monitor.x + monitor.width - 402;
             const y = monitor.height - 100;
 
@@ -173,7 +174,7 @@ export class NavigatorClass {
             }
         });
 
-        if (Tiling.inGrab && !Tiling.inGrab.dnd) {
+        if (Tiling.inGrab instanceof Grab.MoveGrab && !Tiling.inGrab.dnd) {
             Tiling.inGrab?.beginDnD();
         }
 
@@ -193,7 +194,10 @@ export class NavigatorClass {
         }
 
         if (this.space !== from) {
-            if (Tiling.inGrab && Tiling.inGrab.window) {
+            if (
+                Tiling.inGrab instanceof Grab.MoveGrab &&
+                Tiling.inGrab.window
+            ) {
                 this.space.activateWithFocus(Tiling.inGrab.window);
             } else {
                 this.space.activate();
@@ -201,7 +205,7 @@ export class NavigatorClass {
         }
 
         selected =
-            this.space.indexOf(selected) !== -1
+            this.space.columnOf(selected!) !== -1
                 ? selected
                 : this.space.selectedWindow;
 
@@ -429,7 +433,7 @@ export class ActionDispatcher {
     _doAction(mutterActionId: number | Meta.KeyBindingAction) {
         const action = Keybindings.byId(mutterActionId);
         const space = Tiling.spaces.selectedSpace;
-        const metaWindow = space.selectedWindow;
+        const metaWindow = space.selectedWindow!;
         const nav = getNavigator();
 
         if (mutterActionId === Meta.KeyBindingAction.MINIMIZE) {
@@ -452,7 +456,11 @@ export class ActionDispatcher {
                     typeof m === 'number' ? Utils.timeoutRemove(m) : m.hide()
                 );
             }
-            if (Tiling.inGrab && !Tiling.inGrab.dnd && Tiling.inGrab.window) {
+            if (
+                Tiling.inGrab instanceof Grab.MoveGrab &&
+                !Tiling.inGrab.dnd &&
+                Tiling.inGrab.window
+            ) {
                 Tiling.inGrab.beginDnD();
             }
         } else if (action) {

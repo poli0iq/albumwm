@@ -54,7 +54,7 @@ export class Minimap extends Array<Array<Container>> {
             style_class: 'albumwm-minimap switcher-list',
         });
         this.actor = actor;
-        actor.height = space.height * 0.2;
+        actor.height = space.height! * 0.2;
 
         const highlight = new St.Widget({
             name: 'minimap-selection',
@@ -85,21 +85,15 @@ export class Minimap extends Array<Array<Container>> {
         this.createClones();
 
         this.signals = new Utils.Signals();
-        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'select', this.select.bind(this));
-        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'window-added', this.addWindow.bind(this));
         this.signals.connect(
-            // @ts-expect-error tiling.js missing interface merge
             space,
             'window-removed',
             this.removeWindow.bind(this)
         );
-        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'layout', this.layout.bind(this));
-        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'swapped', this.swapped.bind(this));
-        // @ts-expect-error tiling.js missing interface merge
         this.signals.connect(space, 'full-layout', this.reset.bind(this));
 
         this.layout();

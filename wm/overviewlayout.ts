@@ -326,8 +326,8 @@ export class UnalignedLayoutStrategy extends Workspace.LayoutStrategy {
  * Ensures windows are sorted correctly in overview (correctly being the tiled order in the space).
  */
 export function sortWindows(a: WindowPreview, b: WindowPreview): number {
-    const aw = a.metaWindow;
-    const bw = b.metaWindow;
+    const aw = a.metaWindow as Tiling.Window;
+    const bw = b.metaWindow as Tiling.Window;
     if (!aw && !bw) {
         return 0;
     }
@@ -340,8 +340,8 @@ export function sortWindows(a: WindowPreview, b: WindowPreview): number {
 
     const spaceA = Tiling.spaces.spaceOfWindow(aw)!;
     const spaceB = Tiling.spaces.spaceOfWindow(bw)!;
-    const ia = spaceA.indexOf(aw);
-    const ib = spaceB.indexOf(bw);
+    const ia = spaceA.columnOf(aw);
+    const ib = spaceB.columnOf(bw);
     if (ia === -1 && ib === -1) {
         return aw.get_stable_sequence() - bw.get_stable_sequence();
     }

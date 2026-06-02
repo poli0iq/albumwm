@@ -272,16 +272,15 @@ export function update(space: Tiling.Space, dx: number, t: number) {
     }
 
     let accel = Settings.prefs!.swipe_friction[0] / 16; // px/ms^2
-    accel = space.vx > 0 ? -accel : accel;
-    const duration = -space.vx / accel;
-    const d = space.vx * duration + 0.5 * accel * duration ** 2;
+    accel = space.vx! > 0 ? -accel : accel;
+    const duration = -space.vx! / accel;
+    const d = space.vx! * duration + 0.5 * accel * duration ** 2;
     const target = Math.round(space.targetX - d);
 
     space.targetX = target;
     const selected = findTargetWindow(space, start - space.targetX > 0);
     space.targetX = space.cloneContainer.x;
     space.selectedWindow = selected;
-    // @ts-expect-error tiling.js missing interface merge
     space.emit('select');
 
     return Clutter.EVENT_STOP;
@@ -298,33 +297,33 @@ export function done(space: Tiling.Space) {
 
     // timetravel
     let accel = Settings.prefs!.swipe_friction[0] / 16; // px/ms^2
-    accel = space.vx > 0 ? -accel : accel;
-    let t = -space.vx / accel;
-    const d = space.vx * t + 0.5 * accel * t ** 2;
+    accel = space.vx! > 0 ? -accel : accel;
+    let t = -space.vx! / accel;
+    const d = space.vx! * t + 0.5 * accel * t ** 2;
     let target = Math.round(space.targetX - d);
 
     let mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-    let first;
-    let last;
+    let first: Tiling.Window | null = null;
+    let last: Tiling.Window | null = null;
 
-    const full = space.cloneContainer.width > space.width;
+    const full = space.cloneContainer.width > space.width!;
     // Only snap to the edges if we started gliding when the viewport is fully covered
     const snap = !(
         space.targetX >= 0 ||
-        space.targetX + space.cloneContainer.width <= space.width
+        space.targetX + space.cloneContainer.width <= space.width!
     );
-    if ((snap && target > 0) || (full && target > space.width * 2)) {
+    if ((snap && target > 0) || (full && target > space.width! * 2)) {
         // Snap to left edge
         first = space[0][0];
         target = 0;
         mode = Clutter.AnimationMode.EASE_OUT_BACK;
     } else if (
-        (snap && target + space.cloneContainer.width < space.width) ||
-        (full && target + space.cloneContainer.width < -space.width)
+        (snap && target + space.cloneContainer.width < space.width!) ||
+        (full && target + space.cloneContainer.width < -space.width!)
     ) {
         // Snap to right edge
         last = space[space.length - 1][0];
-        target = space.width - space.cloneContainer.width;
+        target = space.width! - space.cloneContainer.width;
         mode = Clutter.AnimationMode.EASE_OUT_BACK;
     }
 
@@ -332,9 +331,9 @@ export function done(space: Tiling.Space) {
     space.targetX = Math.round(target);
     const selected =
         last || first || findTargetWindow(space, start - target > 0);
-    delete selected.lastFrame; // Invalidate frame information
-    const x = Tiling.ensuredX(selected, space);
-    target = x - selected.clone.targetX;
+    delete selected!.lastFrame; // Invalidate frame information
+    const x = Tiling.ensuredX(selected!, space);
+    target = x - selected!.clone.targetX;
 
     // Scale down travel time if we've cut down the discance to travel
     const newD = Math.abs(startGlide - target);
@@ -350,7 +349,6 @@ export function done(space: Tiling.Space) {
     space.targetX = target;
 
     space.selectedWindow = selected;
-    // @ts-expect-error tiling.js missing interface merge
     space.emit('select');
     gliding = true;
     Easer.addEase(space.cloneContainer, {
@@ -367,7 +365,7 @@ export function done(space: Tiling.Space) {
 }
 
 /**
- * Finds a target window given a space and direction (-1 is left, 1 is right)
+ * Finds a target window given a space and direction (false is left, true is right)
  */
 export function findTargetWindow(
     space: Tiling.Space,
@@ -380,7 +378,7 @@ export function findTargetWindow(
 
     if (
         selected.x + space.targetX >= 0 &&
-        selected.x + selected.width + space.targetX <= space.width
+        selected.x + selected.width + space.targetX <= space.width!
     ) {
         return selected.meta_window;
     }
@@ -424,10 +422,10 @@ export function findTargetWindow(
         r1 =
             Math.abs(closest.targetX + closest.width + space.targetX) /
             closest.width;
-        r2 = Math.abs(next.targetX + space.targetX - space.width) / next.width;
+        r2 = Math.abs(next.targetX + space.targetX - space.width!) / next.width;
     } else {
         r1 =
-            Math.abs(closest.targetX + space.targetX - space.width) /
+            Math.abs(closest.targetX + space.targetX - space.width!) /
             closest.width;
         r2 = Math.abs(next.targetX + next.width + space.targetX) / next.width;
     }

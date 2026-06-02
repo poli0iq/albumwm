@@ -83,7 +83,7 @@ export class StackOverlay {
     activatePreviewTimeout: number | null;
     overlay: Clutter.Actor;
 
-    declare target: Meta.Window | null;
+    declare target: Tiling.Window | null;
     declare clone: Clutter.Clone | null;
 
     constructor(direction: Meta.MotionDirection, monitor: Tiling.Monitor) {
@@ -320,7 +320,7 @@ export class StackOverlay {
 
         // Remove any window clips, and show the metaWindow.clone's
         actor.remove_clip();
-        Tiling.animateWindow(this.target);
+        Tiling.animateWindow(this.target!);
 
         // set clone parameters
         clone.opacity = 255 * 0.95;
@@ -364,7 +364,7 @@ export class StackOverlay {
         const mru = global.display.get_tab_list(
             Meta.TabList.NORMAL_ALL,
             space.workspace
-        );
+        ) as Tiling.Window[];
         const column = space[index];
         this.target = mru.filter(w => column.includes(w))[0];
         const metaWindow = this.target;
@@ -378,7 +378,7 @@ export class StackOverlay {
         overlay.width = 1;
 
         if (this._direction === Meta.MotionDirection.LEFT) {
-            const neighbourCol = space[space.indexOf(metaWindow) + 1];
+            const neighbourCol = space[space.columnOf(metaWindow) + 1];
             const neighbour =
                 neighbourCol &&
                 global.display
@@ -390,7 +390,7 @@ export class StackOverlay {
             overlay.x = this.monitor.x;
             Utils.actorRaise(overlay, neighbour.get_compositor_private());
         } else {
-            const neighbourCol = space[space.indexOf(metaWindow) - 1];
+            const neighbourCol = space[space.columnOf(metaWindow) - 1];
             const neighbour =
                 neighbourCol &&
                 global.display

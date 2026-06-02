@@ -515,7 +515,7 @@ export function fixTopBar() {
     const normal = !Main.overview.visible;
     // selected is current (tiled) selected window (can be different to focused window)
     const selected = space.selectedWindow;
-    const focused = display.focus_window;
+    const focused = display.focus_window as Tiling.Window;
     const focusIsFloatOrScratch =
         focused &&
         (space.isFloating(focused) || Scratch.isScratchWindow(focused));

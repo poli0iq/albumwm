@@ -67,7 +67,7 @@ export function makeScratch(metaWindow: Tiling.Window) {
     if (fromNonScratch) {
         // Figure out some stuff before the window is removed from the tiling
         const space = Tiling.spaces.spaceOfWindow(metaWindow)!;
-        fromTiling = space.indexOf(metaWindow) > -1;
+        fromTiling = space.columnOf(metaWindow) > -1;
         if (fromTiling) {
             windowPositionSeen = metaWindow.clone
                 .get_transformed_position()

@@ -283,7 +283,7 @@ export function setupOverrides() {
         WindowPreview.WindowPreview.prototype,
         'boundingBox',
         function () {
-            const w = this.metaWindow;
+            const w = this.metaWindow as Tiling.Window;
             const rect = Tiling.spaces?.spaceOfWindow(w)?.cloneStageRect(w);
             if (rect) return rect;
             const saved = getSavedDescriptor(
@@ -338,7 +338,7 @@ export function setupOverrides() {
 
             this._icon.destroy_all_children();
 
-            const monitor = Tiling.spaces.selectedSpace.monitor;
+            const monitor = Tiling.spaces.selectedSpace.monitor!;
             const _createWindowClone = (
                 windowActor: Clutter.Actor,
                 size: number
@@ -405,7 +405,7 @@ export function setupOverrides() {
             if (!Main.overview.visible) {
                 Tiling?.spaces.forEach(s => {
                     s.visible.forEach(w => {
-                        w.get_compositor_private()?.remove_clip();
+                        w.get_compositor_private<Clutter.Actor>()?.remove_clip();
                     });
                 });
             }
