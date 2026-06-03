@@ -40,18 +40,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install blueprint-compiler
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y meson ninja-build gettext libgtk-4-dev libadwaita-1-dev
-          git clone --depth=1 https://gitlab.gnome.org/jwestman/blueprint-compiler.git
-          cd blueprint-compiler
-          meson setup build --prefix=/usr
-          meson compile -C build
-          sudo meson install -C build
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v22
 
-      - name: Install
-        run: npm ci
-
+      # Ubuntu's repos are always outdated.
       - name: Blueprint lint
-        run: npm run lint:ui
+        run: nix shell --inputs-from . nixpkgs#blueprint-compiler -c npm run lint:ui
