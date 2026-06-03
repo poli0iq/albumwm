@@ -1,3 +1,4 @@
+import Adw from 'gi://Adw?version=1';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
@@ -1160,55 +1161,34 @@ declare namespace KeybindingsRow {
     }
 }
 
-export class KeybindingsPane extends Gtk.Box {
+export class KeybindingsPage extends Adw.PreferencesPage {
     static {
         GObject.registerClass(
             {
-                GTypeName: 'KeybindingsPane',
+                GTypeName: 'KeybindingsPage',
                 Template: GLib.uri_resolve_relative(
                     import.meta.url,
-                    '../ui/KeybindingsPane.ui',
+                    '../ui/KeybindingsPage.ui',
                     GLib.UriFlags.NONE
                 ),
-                InternalChildren: ['search', 'listbox'],
+                InternalChildren: ['listbox'],
             },
             this
         );
     }
-    declare _search: Gtk.SearchEntry;
     declare _listbox: Gtk.ListBox;
 
     declare acceleratorParse: AcceleratorParse;
     declare _settings: Gio.Settings;
     declare _model: KeybindingsModel;
-    declare _filter: Gtk.StringFilter;
     declare _expandedRow: KeybindingsRow | null;
-
-    _init(params = {}) {
-        super._init(params);
-    }
 
     init(extension: ExtensionPreferences) {
         this._settings = extension.getSettings(KEYBINDINGS_KEY);
         this.acceleratorParse = new AcceleratorParse();
         this._model = new KeybindingsModel(this.acceleratorParse);
 
-        this._filter = new Gtk.StringFilter({
-            expression: Gtk.PropertyExpression.new(
-                Keybinding.$gtype,
-                null,
-                'description'
-            ),
-            ignore_case: true,
-            match_mode: Gtk.StringFilterMatchMode.SUBSTRING,
-        });
-
-        const filteredBindings = new Gtk.FilterListModel<Keybinding>({
-            model: this._model,
-            filter: this._filter,
-        });
-
-        this._listbox.bind_model(filteredBindings, keybinding =>
+        this._listbox.bind_model(this._model, keybinding =>
             this._createRow(keybinding)
         );
         this._listbox.set_header_func((row, before) =>
@@ -1266,10 +1246,6 @@ export class KeybindingsPane extends Gtk.Box {
             const row = this._listbox.get_row_at_index(pos)!;
             row.activate();
         }
-    }
-
-    _onSearchChanged() {
-        this._filter.search = this._search.text || null;
     }
 
     _onRowActivated(_list: Gtk.ListBox, row: KeybindingsRow) {

@@ -5,13 +5,13 @@ import Gtk from 'gi://Gtk';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 // For GObject.registerClass side effects
-import './preferences/keybindingsPane.js';
-import './preferences/winpropsPane.js';
+import './preferences/keybindingsPage.js';
+import './preferences/winpropsPage.js';
 
 import type Gio from 'gi://Gio?version=2.0';
 import type Adw from 'gi://Adw?version=1';
-import type { KeybindingsPane } from './preferences/keybindingsPane.js';
-import type { WinpropsPane } from './preferences/winpropsPane.js';
+import type { KeybindingsPage } from './preferences/keybindingsPage.js';
+import type { WinpropsPage } from './preferences/winpropsPage.js';
 import type { WinPropSpec } from './wm/settings.js';
 
 class SettingsWidget {
@@ -307,9 +307,9 @@ class SettingsWidget {
         );
 
         // Keybindings
-        const keybindingsPane =
-            this.builder.get_object<KeybindingsPane>('keybindings_pane');
-        keybindingsPane.init(extension);
+        const keybindingsPage =
+            this.builder.get_object<KeybindingsPage>('keybindings_page');
+        keybindingsPage.init(extension);
 
         // Winprops
         const winprops: WinPropSpec[] = this._settings
@@ -331,12 +331,12 @@ class SettingsWidget {
             const bb = valueFn(b).replaceAll(/[/]/g, '');
             return aa.localeCompare(bb);
         });
-        const winpropsPane =
-            this.builder.get_object<WinpropsPane>('winpropsPane');
-        winpropsPane.addWinprops(winprops);
-        winpropsPane.connect('changed', () => {
+        const winpropsPage =
+            this.builder.get_object<WinpropsPage>('winprops_page');
+        winpropsPage.addWinprops(winprops);
+        winpropsPage.connect('changed', () => {
             // update gsettings with changes
-            const rows = winpropsPane.rows
+            const rows = winpropsPage.rows
                 .filter(r => r.checkHasWmClassOrTitle())
                 .map(r => JSON.stringify(r.winprop));
 

@@ -1,0 +1,15 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $KeybindingsPage: Adw.PreferencesPage {
+  Adw.PreferencesGroup {
+    ListBox listbox {
+      styles [
+        "keybindings",
+        "frame",
+      ]
+
+      row-activated => $_onRowActivated();
+    }
+  }
+}

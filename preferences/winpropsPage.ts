@@ -1,3 +1,4 @@
+import Adw from 'gi://Adw?version=1';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
@@ -268,22 +269,17 @@ export declare namespace WinpropsRow {
     }
 }
 
-export class WinpropsPane extends Gtk.Box {
+export class WinpropsPage extends Adw.PreferencesPage {
     static {
         GObject.registerClass(
             {
-                GTypeName: 'WinpropsPane',
+                GTypeName: 'WinpropsPage',
                 Template: GLib.uri_resolve_relative(
                     import.meta.url,
-                    '../ui/WinpropsPane.ui',
+                    '../ui/WinpropsPage.ui',
                     GLib.UriFlags.NONE
                 ),
-                InternalChildren: [
-                    'search',
-                    'listbox',
-                    'addButton',
-                    'scrolledWindow',
-                ],
+                InternalChildren: ['listbox', 'addButton'],
                 Signals: {
                     changed: {},
                 },
@@ -295,29 +291,10 @@ export class WinpropsPane extends Gtk.Box {
     declare rows: WinpropsRow[];
     declare _expandedRow: WinpropsRow | null;
 
-    declare _search: Gtk.SearchEntry;
-    declare _scrolledWindow: Gtk.ScrolledWindow;
     declare _listbox: Gtk.ListBox;
 
     _init(params = {}) {
         super._init(params);
-
-        // define search box filter function (searches wm_class, title, and accelLabel)
-        this._listbox.set_filter_func((row: Gtk.ListBoxRow): boolean => {
-            const r = row as WinpropsRow;
-            const search = this._search.get_text().toLowerCase();
-            const wmclass = r.winprop.wm_class?.toLowerCase() ?? '';
-            const title = r.winprop.title?.toLowerCase() ?? '';
-            const accelLabel = r._accelLabel.label?.toLowerCase() ?? '';
-            return (
-                wmclass.includes(search) ||
-                title.includes(search) ||
-                accelLabel.includes(search)
-            );
-        });
-        this._search.connect('changed', () => {
-            this._listbox.invalidate_filter();
-        });
 
         this._expandedRow = null;
         this.rows = [];
@@ -339,13 +316,9 @@ export class WinpropsPane extends Gtk.Box {
     }
 
     _onAddButtonClicked() {
-        // first clear search text, otherwise won't be able to see new row
-        this._search.set_text('');
-
         const row = this._createRow();
         row.expanded = true;
         this._listbox.insert(row, 0);
-        this._scrolledWindow.get_vadjustment().set_value(0);
     }
 
     _createRow(winprop?: WinPropSpec) {
