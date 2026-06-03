@@ -27,7 +27,15 @@
 
           nativeBuildInputs = with hostPkgs; [
             glib
-            blueprint-compiler
+            # https://gitlab.gnome.org/GNOME/blueprint-compiler/-/merge_requests/312
+            (blueprint-compiler.overrideAttrs (old: {
+              patches = (old.patches or [ ]) ++ [
+                (fetchpatch {
+                  url = "https://gitlab.gnome.org/poli0iq/blueprint-compiler/-/commit/908cefe67d258b847ba0e8d406101d22b95a8a28.patch";
+                  hash = "sha256-MBDDO0vEKbHdTgcnhdHKpE9NfRZrvQFaC/wOLoR9YMA=";
+                })
+              ];
+            }))
           ];
 
           # Default buildPhase already includes "npm run build"
