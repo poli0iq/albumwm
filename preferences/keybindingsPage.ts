@@ -711,7 +711,7 @@ class ComboRow extends Gtk.ListBoxRow {
     declare _shortcutPage: Gtk.Box;
     declare _placeholderPage: Gtk.Label;
     declare _editPage: Gtk.Label;
-    declare _shortcutLabel: Gtk.ShortcutLabel;
+    declare _shortcutLabel: Adw.ShortcutLabel;
     declare _deleteButton: Gtk.Button;
     declare _conflictButton: Gtk.MenuButton;
     declare _conflictList: Gtk.ListBox;
