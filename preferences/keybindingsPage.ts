@@ -13,12 +13,6 @@ const _ = (s: string) => s;
 
 const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
-const sections = {
-    windows: 'Windows',
-    monitors: 'Monitors',
-    scratch: 'Scratch layer',
-};
-
 const actions = {
     windows: [
         'close-window',
@@ -336,7 +330,7 @@ class Keybinding extends GObject.Object implements Gio.ListModel<Combo> {
         );
     }
 
-    declare section: keyof typeof sections;
+    declare section: keyof typeof actions;
     declare action: string;
     declare _description: string;
     declare _combos: Gio.ListStore<Combo>;
@@ -586,10 +580,6 @@ export class KeybindingsModel
 
     getKeybinding(action: string) {
         return this._actionToBinding.get(action);
-    }
-
-    find(binding: Keybinding) {
-        return this._model.find(binding);
     }
 
     load() {
@@ -1171,16 +1161,25 @@ export class KeybindingsPage extends Adw.PreferencesPage {
                     '../ui/KeybindingsPage.ui',
                     GLib.UriFlags.NONE
                 ),
-                InternalChildren: ['listbox'],
+                InternalChildren: [
+                    'keybindings_windows_group',
+                    'keybindings_monitors_group',
+                    'keybindings_scratch_group',
+                ],
             },
             this
         );
     }
-    declare _listbox: Gtk.ListBox;
+    declare _keybindings_windows_group: Adw.PreferencesGroup;
+    declare _keybindings_monitors_group: Adw.PreferencesGroup;
+    declare _keybindings_scratch_group: Adw.PreferencesGroup;
 
     declare acceleratorParse: AcceleratorParse;
     declare _settings: Gio.Settings;
     declare _model: KeybindingsModel;
+    declare _windowsView: Gtk.FilterListModel;
+    declare _monitorsView: Gtk.FilterListModel;
+    declare _scratchView: Gtk.FilterListModel;
     declare _expandedRow: KeybindingsRow | null;
 
     init(extension: ExtensionPreferences) {
@@ -1188,44 +1187,27 @@ export class KeybindingsPage extends Adw.PreferencesPage {
         this.acceleratorParse = new AcceleratorParse();
         this._model = new KeybindingsModel(this.acceleratorParse);
 
-        this._listbox.bind_model(this._model, keybinding =>
-            this._createRow(keybinding)
+        this._windowsView = sectionView(this._model, 'windows');
+        this._monitorsView = sectionView(this._model, 'monitors');
+        this._scratchView = sectionView(this._model, 'scratch');
+
+        this._keybindings_windows_group.bind_model(
+            this._windowsView,
+            keybinding => this._createRow(keybinding as Keybinding)
         );
-        this._listbox.set_header_func((row, before) =>
-            this._onSetHeader(
-                row as KeybindingsRow,
-                before as KeybindingsRow | null
-            )
+        this._keybindings_monitors_group.bind_model(
+            this._monitorsView,
+            keybinding => this._createRow(keybinding as Keybinding)
+        );
+        this._keybindings_scratch_group.bind_model(
+            this._scratchView,
+            keybinding => this._createRow(keybinding as Keybinding)
         );
 
         this._expandedRow = null;
 
         // send settings to model (which processes and creates rows)
         this._model.init(this._settings);
-    }
-
-    _createHeader(row: KeybindingsRow, before: KeybindingsRow | null) {
-        const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL });
-        if (before)
-            box.append(
-                new Gtk.Separator({
-                    orientation: Gtk.Orientation.HORIZONTAL,
-                })
-            );
-        box.append(
-            new Gtk.Label({
-                use_markup: true,
-                label: `<b>${_(sections[row.keybinding.section])}</b>`,
-                xalign: 0.0,
-                halign: Gtk.Align.CENTER,
-                margin_start: 12,
-                margin_end: 12,
-            })
-        );
-        box.append(
-            new Gtk.Separator({ orientation: Gtk.Orientation.HORIZONTAL })
-        );
-        return box;
     }
 
     _createRow(keybinding: Keybinding) {
@@ -1241,16 +1223,29 @@ export class KeybindingsPage extends Adw.PreferencesPage {
     }
 
     _onCollisionActivated(keybinding: Keybinding) {
-        const [found, pos] = this._model.find(keybinding);
-        if (found) {
-            const row = this._listbox.get_row_at_index(pos)!;
-            row.activate();
+        let group: Adw.PreferencesGroup;
+        let view: Gtk.FilterListModel;
+        switch (keybinding.section) {
+            case 'windows':
+                group = this._keybindings_windows_group;
+                view = this._windowsView;
+                break;
+            case 'monitors':
+                group = this._keybindings_monitors_group;
+                view = this._monitorsView;
+                break;
+            default:
+                group = this._keybindings_scratch_group;
+                view = this._scratchView;
+                break;
         }
-    }
 
-    _onRowActivated(_list: Gtk.ListBox, row: KeybindingsRow) {
-        if (!row.is_focus()) return;
-        row.expanded = !row.expanded;
+        for (let i = 0; i < view.get_n_items(); i++) {
+            if (view.get_item(i) === keybinding) {
+                group.get_row(i)?.activate();
+                return;
+            }
+        }
     }
 
     _onRowExpanded(row: KeybindingsRow) {
@@ -1261,21 +1256,13 @@ export class KeybindingsPage extends Adw.PreferencesPage {
             this._expandedRow = null;
         }
     }
+}
 
-    _onSetHeader(row: KeybindingsRow, before: KeybindingsRow | null) {
-        const header = row.get_header();
-        if (!before || before.keybinding.section !== row.keybinding.section) {
-            if (!header || header instanceof Gtk.Separator) {
-                row.set_header(this._createHeader(row, before));
-            }
-        } else if (!header || !(header instanceof Gtk.Separator)) {
-            row.set_header(
-                new Gtk.Separator({
-                    orientation: Gtk.Orientation.HORIZONTAL,
-                })
-            );
-        }
-    }
+function sectionView(model: KeybindingsModel, section: keyof typeof actions) {
+    const filter = Gtk.CustomFilter.new(
+        keybinding => (keybinding as Keybinding).section === section
+    );
+    return Gtk.FilterListModel.new(model, filter);
 }
 
 let _aboveTabKeyvals: number[] | null = null;

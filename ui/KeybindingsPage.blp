@@ -2,14 +2,15 @@ using Gtk 4.0;
 using Adw 1;
 
 template $KeybindingsPage: Adw.PreferencesPage {
-  Adw.PreferencesGroup {
-    ListBox listbox {
-      styles [
-        "keybindings",
-        "frame",
-      ]
+  Adw.PreferencesGroup keybindings_windows_group {
+    title: _("Windows");
+  }
 
-      row-activated => $_onRowActivated();
-    }
+  Adw.PreferencesGroup keybindings_monitors_group {
+    title: _("Monitors");
+  }
+
+  Adw.PreferencesGroup keybindings_scratch_group {
+    title: _("Scratch layer");
   }
 }
