@@ -3,25 +3,26 @@ using Adw 1;
 
 template $WinpropsPage: Adw.PreferencesPage {
   Adw.PreferencesGroup {
-    Button addButton {
-      label: _("Add Winprop");
-      halign: center;
+    title: _("Window properties");
+    description: _("Settings to be applied to newly created windows.");
+
+    header-suffix: Gtk.Button addButton {
+      Adw.ButtonContent {
+        icon-name: "list-add-symbolic";
+        label: _("New");
+      }
+
+      accessibility {
+        label: _("New winprop");
+      }
+
+      valign: center;
       clicked => $_onAddButtonClicked();
 
       styles [
-        "winprops",
-        "add-button",
         "suggested-action",
       ]
-    }
-
-    Label {
-      label: _("<i>Winprops allow setting window properties to be applied to new windows</i>");
-      max-width-chars: -1;
-      margin-top: 12;
-      margin-bottom: 12;
-      use-markup: true;
-    }
+    };
 
     ListBox listbox {
       show-separators: true;
