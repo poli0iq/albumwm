@@ -45,4 +45,5 @@ jobs:
 
       # Ubuntu's repos are always outdated.
       - name: Blueprint lint
-        run: nix shell --inputs-from . nixpkgs#blueprint-compiler -c npm run lint:ui
+        #run: nix shell --inputs-from . nixpkgs#blueprint-compiler -c npm run lint:ui
+        run: nix develop . -c npm run lint:ui
