@@ -443,7 +443,6 @@ export default class AlbumWMPrefs extends ExtensionPreferences {
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         );
 
-        window.set_size_request(700, 750);
         new SettingsWidget(this, window);
     }
 }
