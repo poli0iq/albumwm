@@ -2,11 +2,12 @@ using Gtk 4.0;
 using Adw 1;
 
 template $WinpropsPage: Adw.PreferencesPage {
-  Adw.PreferencesGroup {
+  Adw.PreferencesGroup winprops {
     title: _("Window properties");
     description: _("Settings to be applied to newly created windows.");
+    separate-rows: true;
 
-    header-suffix: Gtk.Button addButton {
+    header-suffix: Gtk.Button add_button {
       Adw.ButtonContent {
         icon-name: "list-add-symbolic";
         label: _("New");
@@ -23,16 +24,5 @@ template $WinpropsPage: Adw.PreferencesPage {
         "suggested-action",
       ]
     };
-
-    ListBox listbox {
-      show-separators: true;
-
-      styles [
-        "winprops",
-        "frame",
-      ]
-
-      row-activated => $_onRowActivated();
-    }
   }
 }
