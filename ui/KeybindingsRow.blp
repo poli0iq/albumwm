@@ -1,113 +1,59 @@
 using Gtk 4.0;
+using Adw 1;
 
-template $KeybindingsRow: ListBoxRow {
-  styles [
-    "keybinding",
-  ]
+template $KeybindingsRow: Adw.ExpanderRow {
+  [suffix]
+  Gtk.Revealer reset_revealer {
+    transition-type: slide_right;
 
-  selectable: false;
-  activatable: true;
-  focusable: true;
-
-  Box {
-    orientation: vertical;
-
-    Box header {
-      spacing: 12;
+    Gtk.Button reset_button {
+      icon-name: "edit-clear-symbolic";
+      action-name: "keybinding.reset";
+      tooltip-text: _("Reset Shortcut");
+      valign: center;
 
       styles [
-        "header",
+        "flat",
+        "circular",
       ]
-
-      Label descLabel {
-        styles [
-          "description",
-        ]
-
-        ellipsize: end;
-        halign: start;
-        lines: 1;
-        wrap: false;
-        xalign: 0;
-      }
-
-      Image conflictIcon {
-        visible: false;
-        icon-name: "dialog-error-symbolic";
-        halign: start;
-
-        accessibility {
-          label: _("Keybinding conflict");
-        }
-      }
-
-      Label accelLabel {
-        hexpand: true;
-        halign: end;
-        xalign: 1.0;
-        use-markup: true;
-
-        styles [
-          "dim-label",
-        ]
-      }
     }
+  }
 
-    Revealer revealer {
-      Grid {
-        hexpand: true;
+  [suffix]
+  Gtk.Label accel_label {
+    use-markup: true;
+    xalign: 1.0;
 
-        ListBox comboList {
-          activate-on-single-click: true;
-          hexpand: true;
-          selection-mode: none;
+    styles [
+      "dim-label",
+    ]
+  }
 
-          styles [
-            "combos",
-          ]
+  ListBox comboList {
+    activate-on-single-click: true;
+    hexpand: true;
+    selection-mode: none;
 
-          row-activated => $_onRowActivated();
+    styles [
+      "combos",
+    ]
 
-          layout {
-            row: "0";
-            column: "0";
-            column-span: "2";
-          }
-        }
+    row-activated => $_onRowActivated();
 
-        Button resetButton {
-          label: _("Reset");
-          action-name: "keybinding.reset";
-          halign: start;
-          margin-start: 12;
-          margin-top: 8;
-          margin-bottom: 8;
-
-          layout {
-            row: "1";
-            column: "0";
-          }
-        }
-
-        Button addButton {
-          label: _("Add shortcut…");
-          action-name: "keybinding.add";
-          hexpand: true;
-          halign: end;
-          margin-top: 8;
-          margin-end: 12;
-          margin-bottom: 8;
-
-          layout {
-            row: "1";
-            column: "1";
-          }
-
-          styles [
-            "suggested-action",
-          ]
-        }
-      }
+    layout {
+      row: "0";
+      column: "0";
+      column-span: "2";
     }
+  }
+
+  Adw.ButtonRow add_button {
+    title: _("Add Shortcut");
+    start-icon-name: "list-add-symbolic";
+    action-name: "keybinding.add";
+
+    styles [
+      "suggested-action",
+    ]
   }
 }

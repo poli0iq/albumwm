@@ -367,6 +367,7 @@ class Keybinding extends GObject.Object implements Gio.ListModel<Combo> {
             (_combos, position, removed, added) => {
                 this.items_changed(position, removed, added);
                 this.notify('label');
+                this.notify('modified');
             }
         );
 
@@ -938,7 +939,7 @@ declare namespace ComboRow {
     }
 }
 
-class KeybindingsRow extends Gtk.ListBoxRow {
+class KeybindingsRow extends Adw.ExpanderRow {
     static {
         GObject.registerClass(
             {
@@ -949,11 +950,8 @@ class KeybindingsRow extends Gtk.ListBoxRow {
                     GLib.UriFlags.NONE
                 ),
                 InternalChildren: [
-                    'header',
-                    'descLabel',
-                    'accelLabel',
-                    'conflictIcon',
-                    'revealer',
+                    'accel_label',
+                    'reset_revealer',
                     'comboList',
                 ],
                 Properties: {
@@ -973,13 +971,6 @@ class KeybindingsRow extends Gtk.ListBoxRow {
                             GObject.ParamFlags.CONSTRUCT_ONLY,
                         Keybinding.$gtype
                     ),
-                    expanded: GObject.ParamSpec.boolean(
-                        'expanded',
-                        'Expanded',
-                        'Expanded',
-                        GObject.ParamFlags.READWRITE,
-                        false
-                    ),
                     collisions: GObject.ParamSpec.jsobject(
                         'collisions',
                         'Collisions',
@@ -997,11 +988,8 @@ class KeybindingsRow extends Gtk.ListBoxRow {
         );
     }
 
-    declare _header: Gtk.Box;
-    declare _descLabel: Gtk.Label;
-    declare _accelLabel: Gtk.Label;
-    declare _conflictIcon: Gtk.Image;
-    declare _revealer: Gtk.Revealer;
+    declare _accel_label: Gtk.Label;
+    declare _reset_revealer: Gtk.Revealer;
     declare _comboList: Gtk.ListBox;
 
     declare keybindings: KeybindingsModel;
@@ -1021,12 +1009,17 @@ class KeybindingsRow extends Gtk.ListBoxRow {
         this.insert_action_group('keybinding', this._actionGroup);
 
         let action;
-        action = new Gio.SimpleAction({
-            name: 'reset',
-            enabled: this.keybinding.modified,
-        });
+        action = new Gio.SimpleAction({ name: 'reset' });
         action.connect('activate', () => this.keybinding.reset());
         this._actionGroup.add_action(action);
+
+        // Reveal the reset button when keybinding is 'modified'.
+        this.keybinding.bind_property(
+            'modified',
+            this._reset_revealer,
+            'reveal-child',
+            GObject.BindingFlags.SYNC_CREATE
+        );
 
         action = new Gio.SimpleAction({ name: 'add' });
         action.connect('activate', () =>
@@ -1034,18 +1027,10 @@ class KeybindingsRow extends Gtk.ListBoxRow {
         );
         this._actionGroup.add_action(action);
 
-        const gesture = Gtk.GestureClick.new();
-        gesture.set_button(Gdk.BUTTON_PRIMARY);
-        gesture.connect('released', controller => {
-            this.expanded = !this.expanded;
-            controller.set_state(Gtk.EventSequenceState.CLAIMED);
-        });
-        this._header.add_controller(gesture);
-
-        this._descLabel.label = this.keybinding.description;
-        this._descLabel.tooltip_text = this.keybinding.description;
+        this.set_title(this.keybinding.description);
 
         this.keybinding.connect('notify::label', () => this._updateState());
+        this.connect('notify::expanded', () => this._updateState());
 
         this._comboList.bind_model(this.keybinding, combo =>
             this._createRow(combo)
@@ -1058,19 +1043,6 @@ class KeybindingsRow extends Gtk.ListBoxRow {
             }
         );
 
-        this._updateState();
-    }
-
-    get expanded() {
-        if (this._expanded === undefined) this._expanded = false;
-        return this._expanded;
-    }
-
-    set expanded(value) {
-        if (this._expanded === value) return;
-
-        this._expanded = value;
-        this.notify('expanded');
         this._updateState();
     }
 
@@ -1127,17 +1099,16 @@ class KeybindingsRow extends Gtk.ListBoxRow {
 
     _updateState() {
         GLib.idle_add(0, () => {
-            this._accelLabel.label = this.keybinding.label;
-            if (this.expanded) {
-                this._accelLabel.hide();
-                this._conflictIcon.visible = false;
-                this._revealer.reveal_child = true;
-                this.add_css_class('expanded');
+            this._accel_label.label = this.keybinding.label;
+            if (this.collisions.size > 0) {
+                this._accel_label.add_css_class('error');
             } else {
-                this._accelLabel.show();
-                this._conflictIcon.visible = this.collisions.size > 0;
-                this._revealer.reveal_child = false;
-                this.remove_css_class('expanded');
+                this._accel_label.remove_css_class('error');
+            }
+            if (this.expanded) {
+                this._accel_label.hide();
+            } else {
+                this._accel_label.show();
             }
             return GLib.SOURCE_REMOVE;
         });
