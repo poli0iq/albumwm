@@ -3,7 +3,7 @@ using Adw 1;
 
 Adw.PreferencesPage general_page {
   title: _("General");
-  icon-name: "text-x-generic-symbolic";
+  icon-name: "preferences-system-symbolic";
 
   Adw.PreferencesGroup {
     title: _("Behavior");
@@ -161,7 +161,7 @@ Adw.PreferencesPage general_page {
       tooltip-text: _("Semicolon separated, either “%” or “px”");
 
       Gtk.Button cycle_widths_reset_button {
-        icon-name: "edit-undo-symbolic";
+        icon-name: "edit-clear-symbolic";
         valign: center;
         tooltip-text: _("Reset to default");
       }
@@ -172,7 +172,7 @@ Adw.PreferencesPage general_page {
       tooltip-text: _("Semicolon separated, either “%” or “px”");
 
       Gtk.Button cycle_heights_reset_button {
-        icon-name: "edit-undo-symbolic";
+        icon-name: "edit-clear-symbolic";
         valign: center;
         tooltip-text: _("Reset to default");
       }
@@ -181,18 +181,18 @@ Adw.PreferencesPage general_page {
 }
 
 $KeybindingsPage keybindings_page {
-  title: _("Keybindings");
+  title: _("Shortcuts");
   icon-name: "input-keyboard-symbolic";
 }
 
 $WinpropsPage winprops_page {
   title: _("Winprops");
-  icon-name: "sidebar-show-right-symbolic";
+  icon-name: "window-new-symbolic";
 }
 
 Adw.PreferencesPage advanced_page {
-  title: _("Advanced");
-  icon-name: "emblem-system-symbolic";
+  title: _("Other");
+  icon-name: "preferences-other-symbolic";
 
   Adw.PreferencesGroup {
     title: _("Interface");
