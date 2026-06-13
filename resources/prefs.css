@@ -4,10 +4,6 @@ list.combos > row {
     min-height: 32px;
 }
 
-list.combos {
-    background-color: transparent;
-}
-
 list.combos > .editing {
     background-color: @theme_selected_bg_color;
     color: @theme_selected_fg_color;

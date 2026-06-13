@@ -1,15 +1,10 @@
 using Gtk 4.0;
 using Adw 1;
 
-template $ComboRow: ListBoxRow {
-  selectable: false;
-  activatable: true;
-  focusable: true;
-  focus-on-click: true;
-
-  child: Stack stack {
-    StackPage {
-      child: Box shortcutPage {
+template $ComboRow: Adw.PreferencesRow {
+  child: Gtk.Stack stack {
+    Gtk.StackPage {
+      child: Gtk.Box shortcutPage {
         hexpand: true;
         spacing: 12;
 
@@ -17,9 +12,9 @@ template $ComboRow: ListBoxRow {
           disabled-text: _("Disabled");
         }
 
-        MenuButton conflictButton {
-          tooltip-text: _("Conflicts");
+        Gtk.MenuButton conflictButton {
           icon-name: "dialog-error-symbolic";
+          tooltip-text: _("Conflicts");
           popover: conflictPopover;
           visible: false;
 
@@ -29,11 +24,11 @@ template $ComboRow: ListBoxRow {
           ]
         }
 
-        Button deleteButton {
+        Gtk.Button delete_button {
+          icon-name: "edit-delete-symbolic";
+          tooltip-text: _("Remove Shortcut");
           hexpand: true;
           halign: end;
-          tooltip-text: _("Remove shortcut");
-          icon-name: "edit-clear-symbolic";
 
           styles [
             "flat",
@@ -45,17 +40,8 @@ template $ComboRow: ListBoxRow {
       };
     }
 
-    StackPage {
-      child: Label placeholderPage {
-        hexpand: true;
-        xalign: 0.0;
-        use-markup: true;
-        label: _("<i>Add shortcut…</i>");
-      };
-    }
-
-    StackPage {
-      child: Label editPage {
+    Gtk.StackPage {
+      child: Gtk.Label editPage {
         use-markup: true;
         label: _("Enter keyboard shortcut, <b>Backspace</b> to delete or <b>Esc</b> to cancel");
       };
@@ -63,15 +49,15 @@ template $ComboRow: ListBoxRow {
   };
 }
 
-Popover conflictPopover {
-  Box about {
+Gtk.Popover conflictPopover {
+  Gtk.Box about {
     focusable: false;
     orientation: vertical;
     margin-top: 12;
     margin-bottom: 12;
     spacing: 8;
 
-    Label {
+    Gtk.Label {
       label: _("Conflicts:");
 
       styles [
@@ -79,7 +65,7 @@ Popover conflictPopover {
       ]
     }
 
-    ListBox conflictList {
+    Gtk.ListBox conflictList {
       selection-mode: none;
       row-activated => $_onConflictRowActivated();
     }

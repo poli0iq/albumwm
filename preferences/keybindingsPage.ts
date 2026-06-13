@@ -644,7 +644,7 @@ export class KeybindingsModel
     }
 }
 
-class ComboRow extends Gtk.ListBoxRow {
+class ComboRow extends Adw.PreferencesRow {
     static {
         GObject.registerClass(
             {
@@ -657,10 +657,9 @@ class ComboRow extends Gtk.ListBoxRow {
                 InternalChildren: [
                     'stack',
                     'shortcutPage',
-                    'placeholderPage',
                     'editPage',
                     'shortcutLabel',
-                    'deleteButton',
+                    'delete_button',
                     'conflictButton',
                     'conflictList',
                 ],
@@ -700,10 +699,9 @@ class ComboRow extends Gtk.ListBoxRow {
 
     declare _stack: Gtk.Stack;
     declare _shortcutPage: Gtk.Box;
-    declare _placeholderPage: Gtk.Label;
     declare _editPage: Gtk.Label;
     declare _shortcutLabel: Adw.ShortcutLabel;
-    declare _deleteButton: Gtk.Button;
+    declare _delete_button: Gtk.Button;
     declare _conflictButton: Gtk.MenuButton;
     declare _conflictList: Gtk.ListBox;
 
@@ -922,11 +920,11 @@ class ComboRow extends Gtk.ListBoxRow {
 
             if (this._combo && !this._combo.disabled) {
                 this._shortcutLabel.accelerator = this._combo.keystr;
-                this._deleteButton.visible = true;
+                this._delete_button.visible = true;
                 this._conflictButton.visible = this.collisions.length > 0;
             } else {
                 this._shortcutLabel.accelerator = '';
-                this._deleteButton.visible = false;
+                this._delete_button.visible = false;
             }
         }
     }
