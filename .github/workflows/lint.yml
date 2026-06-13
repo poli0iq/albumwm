@@ -40,10 +40,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      # Ubuntu's repos are always outdated.
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v22
 
-      # Ubuntu's repos are always outdated.
       - name: Blueprint lint
-        #run: nix shell --inputs-from . nixpkgs#blueprint-compiler -c npm run lint:ui
-        run: nix develop . -c npm run lint:ui
+        run: |
+          set +e
+          output="$(nix develop . -c npm run lint:ui 2>&1)"
+          status=$?
+          set -e
+
+          printf '%s\n' "$output"
+          clean="$(printf '%s\n' "$output" | sed -E 's/\x1b\[[0-9;]*m//g')"
+
+          if printf '%s\n' "$clean" | grep -q '^error:'; then
+            echo "::error::Blueprint lint reported errors"
+            exit 1
+          elif printf '%s\n' "$clean" | grep -q '^warning:'; then
+            echo "::warning::Blueprint lint reported warnings"
+            exit 0
+          else
+            exit $status
+          fi
