@@ -656,12 +656,12 @@ class ComboRow extends Adw.PreferencesRow {
                 ),
                 InternalChildren: [
                     'stack',
-                    'shortcutPage',
-                    'editPage',
-                    'shortcutLabel',
+                    'edit_page',
+                    'shortcut_label',
+                    'suffixes',
                     'delete_button',
-                    'conflictButton',
-                    'conflictList',
+                    'conflict_button',
+                    'conflict_list',
                 ],
                 Properties: {
                     keybinding: GObject.ParamSpec.object(
@@ -698,12 +698,12 @@ class ComboRow extends Adw.PreferencesRow {
     }
 
     declare _stack: Gtk.Stack;
-    declare _shortcutPage: Gtk.Box;
-    declare _editPage: Gtk.Label;
-    declare _shortcutLabel: Adw.ShortcutLabel;
+    declare _edit_page: Gtk.Label;
+    declare _shortcut_label: Adw.ShortcutLabel;
+    declare _suffixes: Gtk.Box;
     declare _delete_button: Gtk.Button;
-    declare _conflictButton: Gtk.MenuButton;
-    declare _conflictList: Gtk.ListBox;
+    declare _conflict_button: Gtk.MenuButton;
+    declare _conflict_list: Gtk.ListBox;
 
     declare _combo: Combo | null;
     declare _editing: boolean;
@@ -745,8 +745,9 @@ class ComboRow extends Adw.PreferencesRow {
 
         this._collisions = new Gio.ListStore({ itemType: Keybinding.$gtype });
 
-        this._conflictList.bind_model(this._collisions, (binding: Keybinding) =>
-            this._createConflictRow(binding)
+        this._conflict_list.bind_model(
+            this._collisions,
+            (binding: Keybinding) => this._createConflictRow(binding)
         );
 
         GLib.idle_add(0, () => {
@@ -759,9 +760,9 @@ class ComboRow extends Adw.PreferencesRow {
     _onButton(target: Gtk.Widget) {
         return (
             target === this._delete_button ||
-            target === this._conflictButton ||
+            target === this._conflict_button ||
             target.is_ancestor(this._delete_button) ||
-            target.is_ancestor(this._conflictButton)
+            target.is_ancestor(this._conflict_button)
         );
     }
 
@@ -941,22 +942,24 @@ class ComboRow extends Adw.PreferencesRow {
 
         if (this.editing) {
             this.add_css_class('editing');
-            this._stack.visible_child = this._editPage;
+            this._stack.visible_child = this._edit_page;
+            this._suffixes.visible = false;
             this.grab_focus();
             this._grabKeyboard();
         } else {
             this.remove_css_class('editing');
-            this._stack.visible_child = this._shortcutPage;
+            this._stack.visible_child = this._shortcut_label;
             this._ungrabKeyboard();
 
-            if (this._combo && !this._combo.disabled) {
-                this._shortcutLabel.accelerator = this._combo.keystr;
-                this._delete_button.visible = true;
-                this._conflictButton.visible = this.collisions.length > 0;
-            } else {
-                this._shortcutLabel.accelerator = '';
-                this._delete_button.visible = false;
-            }
+            const active = !!this._combo && !this._combo.disabled;
+            this._shortcut_label.accelerator = active
+                ? this._combo!.keystr
+                : '';
+            this._delete_button.visible = active;
+            this._conflict_button.visible =
+                active && this.collisions.length > 0;
+            this._suffixes.visible =
+                this._delete_button.visible || this._conflict_button.visible;
         }
     }
 }

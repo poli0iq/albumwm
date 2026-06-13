@@ -6,54 +6,83 @@ template $ComboRow: Adw.PreferencesRow {
     "combo",
   ]
 
-  child: Gtk.Stack stack {
-    Gtk.StackPage {
-      child: Gtk.Box shortcutPage {
-        hexpand: true;
-        spacing: 12;
+  child: Gtk.Box header {
+    valign: center;
+    hexpand: false;
 
-        Adw.ShortcutLabel shortcutLabel {
-          disabled-text: _("Disabled");
-        }
+    styles [
+      "header",
+    ]
 
-        Gtk.MenuButton conflictButton {
-          icon-name: "dialog-error-symbolic";
-          tooltip-text: _("Conflicts");
-          popover: conflictPopover;
-          visible: false;
+    Gtk.Box prefixes {
+      visible: false;
 
-          styles [
-            "flat",
-            "circular",
-          ]
-        }
-
-        Gtk.Button delete_button {
-          icon-name: "edit-delete-symbolic";
-          tooltip-text: _("Remove Shortcut");
-          hexpand: true;
-          halign: end;
-
-          styles [
-            "flat",
-            "circular",
-          ]
-
-          clicked => $_onDeleteButtonClicked();
-        }
-      };
+      styles [
+        "prefixes",
+      ]
     }
 
-    Gtk.StackPage {
-      child: Gtk.Label editPage {
-        use-markup: true;
-        label: _("Enter keyboard shortcut, <b>Backspace</b> to delete or <b>Esc</b> to cancel");
-      };
+    Gtk.Box accel_box {
+      hexpand: true;
+      valign: center;
+
+      styles [
+        "title",
+      ]
+
+      Gtk.Stack stack {
+        hhomogeneous: false;
+
+        Gtk.StackPage {
+          child: Adw.ShortcutLabel shortcut_label {
+            disabled-text: _("Disabled");
+          };
+        }
+
+        Gtk.StackPage {
+          child: Gtk.Label edit_page {
+            use-markup: true;
+            label: _("Enter keyboard shortcut, <b>Backspace</b> to delete or <b>Esc</b> to cancel");
+          };
+        }
+      }
+    }
+
+    Gtk.Box suffixes {
+      styles [
+        "suffixes",
+      ]
+
+      Gtk.MenuButton conflict_button {
+        icon-name: "dialog-error-symbolic";
+        tooltip-text: _("Conflicts");
+        popover: conflict_popover;
+        valign: center;
+        visible: false;
+
+        styles [
+          "flat",
+          "circular",
+        ]
+      }
+
+      Gtk.Button delete_button {
+        icon-name: "edit-delete-symbolic";
+        tooltip-text: _("Remove Shortcut");
+        valign: center;
+
+        styles [
+          "flat",
+          "circular",
+        ]
+
+        clicked => $_onDeleteButtonClicked();
+      }
     }
   };
 }
 
-Gtk.Popover conflictPopover {
+Gtk.Popover conflict_popover {
   Gtk.Box about {
     focusable: false;
     orientation: vertical;
@@ -69,7 +98,7 @@ Gtk.Popover conflictPopover {
       ]
     }
 
-    Gtk.ListBox conflictList {
+    Gtk.ListBox conflict_list {
       selection-mode: none;
       row-activated => $_onConflictRowActivated();
     }

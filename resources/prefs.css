@@ -1,5 +1,4 @@
-list.winprops > row .header,
-.combo {
+list.winprops > row .header {
     padding: 8px 12px;
     min-height: 32px;
 }
