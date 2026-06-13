@@ -982,6 +982,7 @@ class KeybindingsRow extends Adw.ExpanderRow {
                     GLib.UriFlags.NONE
                 ),
                 InternalChildren: [
+                    'accel_revealer',
                     'accel_label',
                     'reset_revealer',
                     'add_button',
@@ -1014,6 +1015,7 @@ class KeybindingsRow extends Adw.ExpanderRow {
         );
     }
 
+    declare _accel_revealer: Gtk.Revealer;
     declare _accel_label: Gtk.Label;
     declare _reset_revealer: Gtk.Revealer;
     declare _add_button: Adw.ButtonRow;
@@ -1039,14 +1041,6 @@ class KeybindingsRow extends Adw.ExpanderRow {
         action = new Gio.SimpleAction({ name: 'reset' });
         action.connect('activate', () => this.keybinding.reset());
         this._actionGroup.add_action(action);
-
-        // Reveal the reset button when keybinding is 'modified'.
-        this.keybinding.bind_property(
-            'modified',
-            this._reset_revealer,
-            'reveal-child',
-            GObject.BindingFlags.SYNC_CREATE
-        );
 
         action = new Gio.SimpleAction({ name: 'add' });
         action.connect('activate', () =>
@@ -1178,11 +1172,9 @@ class KeybindingsRow extends Adw.ExpanderRow {
             } else {
                 this._accel_label.remove_css_class('error');
             }
-            if (this.expanded) {
-                this._accel_label.hide();
-            } else {
-                this._accel_label.show();
-            }
+            this._accel_revealer.reveal_child = !this.expanded;
+            this._reset_revealer.reveal_child =
+                this.keybinding.modified && !this.expanded;
             return GLib.SOURCE_REMOVE;
         });
     }

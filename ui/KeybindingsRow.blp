@@ -20,13 +20,17 @@ template $KeybindingsRow: Adw.ExpanderRow {
   }
 
   [suffix]
-  Gtk.Label accel_label {
-    use-markup: true;
-    xalign: 1.0;
+  Gtk.Revealer accel_revealer {
+    transition-type: slide_right;
 
-    styles [
-      "dim-label",
-    ]
+    Gtk.Label accel_label {
+      use-markup: true;
+      xalign: 1.0;
+
+      styles [
+        "dim-label",
+      ]
+    }
   }
 
   Adw.ButtonRow add_button {
