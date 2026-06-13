@@ -444,5 +444,6 @@ export default class AlbumWMPrefs extends ExtensionPreferences {
         );
 
         new SettingsWidget(this, window);
+        window.set_search_enabled(true);
     }
 }
