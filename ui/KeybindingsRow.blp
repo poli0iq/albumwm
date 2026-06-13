@@ -29,24 +29,6 @@ template $KeybindingsRow: Adw.ExpanderRow {
     ]
   }
 
-  ListBox comboList {
-    activate-on-single-click: true;
-    hexpand: true;
-    selection-mode: none;
-
-    styles [
-      "combos",
-    ]
-
-    row-activated => $_onRowActivated();
-
-    layout {
-      row: "0";
-      column: "0";
-      column-span: "2";
-    }
-  }
-
   Adw.ButtonRow add_button {
     title: _("Add Shortcut");
     start-icon-name: "list-add-symbolic";

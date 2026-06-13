@@ -722,9 +722,8 @@ class ComboRow extends Adw.PreferencesRow {
         const keyController = Gtk.EventControllerKey.new();
         keyController.connect(
             'key-pressed',
-            (controller, keyval, keycode, state) => {
-                this._onKeyPressed(controller, keyval, keycode, state);
-            }
+            (controller, keyval, keycode, state) =>
+                this._onKeyPressed(controller, keyval, keycode, state)
         );
         this.add_controller(keyController);
 
@@ -733,6 +732,16 @@ class ComboRow extends Adw.PreferencesRow {
             this.editing = false;
         });
         this.add_controller(focusController);
+
+        // Click the row to toggle editing.
+        const clickGesture = Gtk.GestureClick.new();
+        clickGesture.set_button(Gdk.BUTTON_PRIMARY);
+        clickGesture.connect('released', (_gesture, _nPress, x, y) => {
+            const target = this.pick(x, y, Gtk.PickFlags.DEFAULT);
+            if (target && this._onButton(target)) return;
+            this.editing = !this.editing;
+        });
+        this.add_controller(clickGesture);
 
         this._collisions = new Gio.ListStore({ itemType: Keybinding.$gtype });
 
@@ -744,6 +753,16 @@ class ComboRow extends Adw.PreferencesRow {
             this._updateState();
             return GLib.SOURCE_REMOVE;
         });
+    }
+
+    /** Whether a picked widget belongs to one of the row's action buttons. */
+    _onButton(target: Gtk.Widget) {
+        return (
+            target === this._delete_button ||
+            target === this._conflictButton ||
+            target.is_ancestor(this._delete_button) ||
+            target.is_ancestor(this._conflictButton)
+        );
     }
 
     get combo() {
@@ -816,7 +835,19 @@ class ComboRow extends Adw.PreferencesRow {
         state: Gdk.ModifierType
     ) {
         // Adapted from Control Center, cc-keyboard-shortcut-editor.c
-        if (!this.editing) return Gdk.EVENT_PROPAGATE;
+        if (!this.editing) {
+            // Enter/Space on the focused row starts editing.
+            switch (keyval) {
+                case Gdk.KEY_Return:
+                case Gdk.KEY_KP_Enter:
+                case Gdk.KEY_ISO_Enter:
+                case Gdk.KEY_space:
+                    this.editing = true;
+                    return Gdk.EVENT_STOP;
+                default:
+                    return Gdk.EVENT_PROPAGATE;
+            }
+        }
 
         /**
          * Replace KEY_less ("<") with comma, see
@@ -950,7 +981,7 @@ class KeybindingsRow extends Adw.ExpanderRow {
                 InternalChildren: [
                     'accel_label',
                     'reset_revealer',
-                    'comboList',
+                    'add_button',
                 ],
                 Properties: {
                     keybindings: GObject.ParamSpec.object(
@@ -969,12 +1000,6 @@ class KeybindingsRow extends Adw.ExpanderRow {
                             GObject.ParamFlags.CONSTRUCT_ONLY,
                         Keybinding.$gtype
                     ),
-                    collisions: GObject.ParamSpec.jsobject(
-                        'collisions',
-                        'Collisions',
-                        'Colliding keybindings',
-                        GObject.ParamFlags.READABLE
-                    ),
                 },
                 Signals: {
                     'collision-activated': {
@@ -988,12 +1013,13 @@ class KeybindingsRow extends Adw.ExpanderRow {
 
     declare _accel_label: Gtk.Label;
     declare _reset_revealer: Gtk.Revealer;
-    declare _comboList: Gtk.ListBox;
+    declare _add_button: Adw.ButtonRow;
 
     declare keybindings: KeybindingsModel;
     declare keybinding: Keybinding;
     declare _expanded: boolean;
     declare _collisions: Map<string, Keybinding[]>;
+    declare _comboRows: ComboRow[];
 
     declare _actionGroup: Gio.SimpleActionGroup;
 
@@ -1030,9 +1056,13 @@ class KeybindingsRow extends Adw.ExpanderRow {
         this.keybinding.connect('notify::label', () => this._updateState());
         this.connect('notify::expanded', () => this._updateState());
 
-        this._comboList.bind_model(this.keybinding, combo =>
-            this._createRow(combo)
+        this._comboRows = [];
+        this.keybinding.connect(
+            'items-changed',
+            (_model, position, removed, added) =>
+                this._syncCombos(position, removed, added)
         );
+        this._syncCombos(0, 0, this.keybinding.get_n_items());
 
         this.keybindings.connect(
             `collisions-changed::${this.keybinding.action}`,
@@ -1062,13 +1092,61 @@ class KeybindingsRow extends Adw.ExpanderRow {
                 return GLib.SOURCE_REMOVE;
             });
         }
-        this.connect('notify::collisions', () => {
-            row.collisions = this.collisions.get(combo.keystr) || [];
-        });
         row.connect('collision-activated', (_row, binding) => {
             this.emit('collision-activated', binding);
         });
         return row;
+    }
+
+    /**
+     * Keep our combo rows in sync with the keybinding model.
+     * Mirrors Gtk.ListBox.bind_model behavior (Adw.ExpanderRow's internal
+     * Gtk.ListBox is private). There's also no insert at position, so re-append
+     * the 'Add Shortcut' button on each insertion.
+     */
+    _syncCombos(position: number, removed: number, added: number) {
+        const combos = this.keybinding.combos;
+        const overlap = Math.min(removed, added);
+
+        // Updating combo refreshes the row in place, so reuse the overlap.
+        for (let i = 0; i < overlap; i++) {
+            this._comboRows[position + i].combo = combos.get_item(
+                position + i
+            )!;
+        }
+
+        if (removed > added) {
+            const surplus = this._comboRows.splice(
+                position + added,
+                removed - added
+            );
+            for (const row of surplus) this.remove(row);
+        } else if (added > removed) {
+            // Detach the trailing rows and the button, append the new rows,
+            // then restore the tail so the button stays last.
+            const tail = this._comboRows.splice(position + removed);
+            for (const row of tail) this.remove(row);
+            this.remove(this._add_button);
+
+            for (let i = overlap; i < added; i++) {
+                const row = this._createRow(combos.get_item(position + i)!);
+                this._comboRows.push(row);
+                this.add_row(row);
+            }
+            for (const row of tail) {
+                this._comboRows.push(row);
+                this.add_row(row);
+            }
+            this.add_row(this._add_button);
+        }
+
+        this._applyCollisions();
+    }
+
+    _applyCollisions() {
+        for (const row of this._comboRows) {
+            row.collisions = this.collisions.get(row.combo!.keystr) || [];
+        }
     }
 
     _onCollisionsChanged() {
@@ -1085,14 +1163,8 @@ class KeybindingsRow extends Adw.ExpanderRow {
             );
         }
         this._collisions = map;
-        this.notify('collisions');
+        this._applyCollisions();
         this._updateState();
-    }
-
-    _onRowActivated(_list: Gtk.ListBox, row: ComboRow) {
-        if (row.is_focus()) {
-            row.editing = !row.editing;
-        }
     }
 
     _updateState() {

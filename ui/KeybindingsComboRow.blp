@@ -2,6 +2,10 @@ using Gtk 4.0;
 using Adw 1;
 
 template $ComboRow: Adw.PreferencesRow {
+  styles [
+    "combo",
+  ]
+
   child: Gtk.Stack stack {
     Gtk.StackPage {
       child: Gtk.Box shortcutPage {
