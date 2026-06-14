@@ -1,13 +1,17 @@
-SVG icons adapted from "GNOME Project" adwaita-icon-theme (https://github.com/GNOME/adwaita-icon-theme):
+# adwaita-icon-theme
+
+Adapted from [adwaita-icon-theme](https://github.com/GNOME/adwaita-icon-theme):
 
 - `sidebar-show-right-symbolic.svg`
 - `preferences-desktop-multitasking-symbolic.svg`
 - `zoom-fit-best-symbolic.svg`
 
-See http://www.gnome.org for more information.
+License: [CC-BY-SA-3.0](https://creativecommons.org/licenses/by-sa/3.0).
 
-The icons are licensed under Creative Commons Attribution-Share Alike 3.0 United States License.
+# gnome-control-center
 
-To view a copy of the CC-BY-SA licence, visit
-http://creativecommons.org/licenses/by-sa/3.0/ or send a letter to Creative
-Commons, 171 Second Street, Suite 300, San Francisco, California 94105, USA.
+Vendored from [gnome-control-center](https://gitlab.gnome.org/GNOME/gnome-control-center):
+
+- `enter-keyboard-shortcut.svg`
+
+License: [GPL-2.0-or-later](https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html).

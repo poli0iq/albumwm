@@ -1,0 +1,108 @@
+using Gtk 4.0;
+using Adw 1;
+// Mostly a port of CcKeyboardShortcutEditor from gnome-control-center.
+template $ShortcutEditorDialog: Adw.Dialog {
+  content-width: 400;
+  content-height: 300;
+
+  child: Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar headerbar {
+      show-start-title-buttons: false;
+
+      [start]
+      Gtk.Button cancel_button {
+        label: _("Cancel");
+        visible: false;
+        clicked => $_onCancelClicked();
+      }
+
+      [end]
+      Gtk.Button set_button {
+        label: _("Set");
+        visible: false;
+        clicked => $_onSetClicked();
+
+        styles [
+          "suggested-action",
+        ]
+      }
+    }
+
+    content: Gtk.Stack stack {
+      Adw.PreferencesPage capture_page {
+        Adw.PreferencesGroup {
+          Gtk.Label capture_info_label {
+            justify: center;
+            wrap: true;
+            use-markup: true;
+            width-chars: 15;
+            max-width-chars: 20;
+          }
+        }
+
+        Adw.PreferencesGroup {
+          Gtk.Picture picture {
+            halign: center;
+            valign: center;
+            can-shrink: false;
+
+            accessibility {
+              label: _("Keyboard");
+            }
+          }
+        }
+
+        Adw.PreferencesGroup {
+          Gtk.Label {
+            label: _("Press <b>Esc</b> to cancel");
+            justify: center;
+            wrap: true;
+            use-markup: true;
+
+            styles [
+              "dim-label",
+            ]
+          }
+        }
+      }
+
+      Adw.PreferencesPage result_page {
+        Adw.PreferencesGroup {
+          Gtk.Label result_info_label {
+            justify: center;
+            wrap: true;
+            use-markup: true;
+            width-chars: 15;
+            max-width-chars: 20;
+          }
+        }
+
+        Adw.PreferencesGroup {
+          Adw.ShortcutLabel shortcut_accel_label {
+            halign: center;
+          }
+        }
+
+        Adw.PreferencesGroup {
+          Gtk.Label conflict_label {
+            justify: center;
+            wrap: true;
+            use-markup: true;
+            visible: false;
+            max-width-chars: 25;
+
+            styles [
+              "error",
+            ]
+          }
+        }
+      }
+    };
+  };
+
+  EventControllerKey {
+    propagation-phase: capture;
+    key-pressed => $_onKeyPressed();
+  }
+}

@@ -30,21 +30,8 @@ template $ComboRow: Adw.PreferencesRow {
         "title",
       ]
 
-      Gtk.Stack stack {
-        hhomogeneous: false;
-
-        Gtk.StackPage {
-          child: Adw.ShortcutLabel shortcut_label {
-            disabled-text: _("Disabled");
-          };
-        }
-
-        Gtk.StackPage {
-          child: Gtk.Label edit_page {
-            use-markup: true;
-            label: _("Enter keyboard shortcut, <b>Backspace</b> to delete or <b>Esc</b> to cancel");
-          };
-        }
+      Adw.ShortcutLabel shortcut_label {
+        disabled-text: _("Disabled");
       }
     }
 

@@ -208,14 +208,6 @@ class Combo extends GObject.Object {
                         GObject.ParamFlags.READABLE,
                         false
                     ),
-                    placeholder: GObject.ParamSpec.boolean(
-                        'placeholder',
-                        'Placeholder',
-                        'Placeholder sentinel',
-                        GObject.ParamFlags.READWRITE |
-                            GObject.ParamFlags.CONSTRUCT_ONLY,
-                        false
-                    ),
                 },
             },
             this
@@ -225,7 +217,6 @@ class Combo extends GObject.Object {
     declare _keycode: number;
     declare keyval: number;
     declare mods: number;
-    declare placeholder: boolean;
 
     constructor(props?: Partial<Combo.ConstructorProps>) {
         super(props);
@@ -259,7 +250,6 @@ declare namespace Combo {
         keycode: number;
         keyval: number;
         mods: number;
-        placeholder: boolean;
     }
 }
 
@@ -583,6 +573,25 @@ export class KeybindingsModel
         return this._actionToBinding.get(action);
     }
 
+    /**
+     * AlbumWM actions that already bind keystr.
+     * Analogue of gnome-control-center's cc_keyboard_manager_get_collision.
+     */
+    findActionsUsing(keystr: string, exceptAction: string): Keybinding[] {
+        if (!keystr) return [];
+        const result: Keybinding[] = [];
+        for (const binding of this._model) {
+            if (binding.action === exceptAction) continue;
+            for (const combo of binding.combos) {
+                if (!combo.disabled && combo.keystr === keystr) {
+                    result.push(binding);
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
     load() {
         const bindings: Keybinding[] = [];
         for (const section in actions) {
@@ -644,6 +653,248 @@ export class KeybindingsModel
     }
 }
 
+/**
+ * Modal capture dialog, port of gnome-control-center's CcKeyboardShortcutEditor.
+ */
+class ShortcutEditorDialog extends Adw.Dialog {
+    static {
+        GObject.registerClass(
+            {
+                GTypeName: 'ShortcutEditorDialog',
+                Template: GLib.uri_resolve_relative(
+                    import.meta.url,
+                    '../ui/KeybindingsShortcutEditor.ui',
+                    GLib.UriFlags.NONE
+                ),
+                InternalChildren: [
+                    'headerbar',
+                    'cancel_button',
+                    'set_button',
+                    'stack',
+                    'capture_page',
+                    'result_page',
+                    'capture_info_label',
+                    'result_info_label',
+                    'picture',
+                    'shortcut_accel_label',
+                    'conflict_label',
+                ],
+                Properties: {
+                    keybinding: GObject.ParamSpec.object(
+                        'keybinding',
+                        'Keybinding',
+                        'Keybinding being edited',
+                        GObject.ParamFlags.READWRITE |
+                            GObject.ParamFlags.CONSTRUCT_ONLY,
+                        Keybinding.$gtype
+                    ),
+                    keybindings: GObject.ParamSpec.object(
+                        'keybindings',
+                        'Keybindings',
+                        'Keybindings model',
+                        GObject.ParamFlags.READWRITE |
+                            GObject.ParamFlags.CONSTRUCT_ONLY,
+                        KeybindingsModel.$gtype
+                    ),
+                    combo: GObject.ParamSpec.object(
+                        'combo',
+                        'Combo',
+                        'Combo being edited, or null when adding',
+                        GObject.ParamFlags.READWRITE |
+                            GObject.ParamFlags.CONSTRUCT_ONLY,
+                        Combo.$gtype
+                    ),
+                },
+            },
+            this
+        );
+    }
+
+    declare _headerbar: Adw.HeaderBar;
+    declare _cancel_button: Gtk.Button;
+    declare _set_button: Gtk.Button;
+    declare _stack: Gtk.Stack;
+    declare _capture_page: Adw.PreferencesPage;
+    declare _result_page: Adw.PreferencesPage;
+    declare _capture_info_label: Gtk.Label;
+    declare _result_info_label: Gtk.Label;
+    declare _picture: Gtk.Picture;
+    declare _shortcut_accel_label: Adw.ShortcutLabel;
+    declare _conflict_label: Gtk.Label;
+
+    declare keybinding: Keybinding;
+    declare keybindings: KeybindingsModel;
+    declare combo: Combo | null;
+
+    declare _captured: Combo | null;
+    declare _inhibited: boolean;
+
+    constructor(props: Partial<ShortcutEditorDialog.ConstructorProps>) {
+        super(props);
+    }
+
+    _init(params = {}) {
+        super._init(params);
+        this._captured = null;
+        this._inhibited = false;
+
+        this.title = _('Set Shortcut');
+        const desc = GLib.markup_escape_text(this.keybinding.description, -1);
+        const info = `${_('Enter new shortcut for')} <b>${desc}</b>`;
+        this._capture_info_label.label = info;
+        this._result_info_label.label = info;
+
+        const uri = GLib.uri_resolve_relative(
+            import.meta.url,
+            '../resources/enter-keyboard-shortcut.svg',
+            GLib.UriFlags.NONE
+        );
+        this._picture.set_file(Gio.File.new_for_uri(uri!));
+
+        this.connect('map', () => this._inhibit());
+        this.connect('unmap', () => this._restore());
+        this.connect('closed', () => this._restore());
+    }
+
+    _inhibit() {
+        if (this._inhibited) return;
+        (
+            this.get_root()?.get_surface() as Gdk.Toplevel | undefined
+        )?.inhibit_system_shortcuts(null);
+        this._inhibited = true;
+    }
+
+    _restore() {
+        if (!this._inhibited) return;
+        (
+            this.get_root()?.get_surface() as Gdk.Toplevel | undefined
+        )?.restore_system_shortcuts();
+        this._inhibited = false;
+    }
+
+    _onKeyPressed(
+        controller: Gtk.EventControllerKey,
+        keyval: number,
+        keycode: number,
+        state: Gdk.ModifierType
+    ) {
+        // Only capture while the capture page is shown, so the result page's
+        // Cancel/Set stay keyboard-navigable (Esc there closes via Adw.Dialog).
+        if (this._stack.visible_child !== this._capture_page) {
+            return Gdk.EVENT_PROPAGATE;
+        }
+
+        /**
+         * Replace KEY_less ("<") with comma, see
+         * https://github.com/paperwm/PaperWM/issues/545
+         */
+        if (keyval === Gdk.KEY_less) {
+            keycode = Gdk.KEY_comma;
+            keyval = Gdk.KEY_comma;
+        }
+
+        let modmask = state & Gtk.accelerator_get_default_mod_mask();
+        let keyvalLower = Gdk.keyval_to_lower(keyval);
+
+        // Normalize <Tab>
+        if (keyvalLower === Gdk.KEY_ISO_Left_Tab) {
+            keyvalLower = Gdk.KEY_Tab;
+        }
+
+        // Put Shift back if it changed the case of the key
+        if (keyvalLower !== keyval) {
+            modmask |= Gdk.ModifierType.SHIFT_MASK;
+        }
+
+        if (
+            keyvalLower === Gdk.KEY_Sys_Req &&
+            (modmask & Gdk.ModifierType.ALT_MASK) !== 0
+        ) {
+            // Don't allow SysRq as a keybinding, but allow Alt+Print
+            keyvalLower = Gdk.KEY_Print;
+        }
+
+        const event = controller.get_current_event() as Gdk.KeyEvent | null;
+        const isModifier = event?.is_modifier();
+
+        // Escape cancels
+        if (!isModifier && modmask === 0 && keyvalLower === Gdk.KEY_Escape) {
+            this.close();
+            return Gdk.EVENT_STOP;
+        }
+
+        // Remove CapsLock
+        modmask &= ~Gdk.ModifierType.LOCK_MASK;
+
+        const newCombo = new Combo({
+            keycode,
+            keyval: keyvalLower,
+            mods: modmask,
+        });
+
+        if (!isModifier && isValidBinding(newCombo)) {
+            this._captured = newCombo;
+            this._showResult();
+        }
+
+        return Gdk.EVENT_STOP;
+    }
+
+    _showResult() {
+        const captured = this._captured!;
+        this._shortcut_accel_label.accelerator = captured.keystr;
+
+        const conflicts = this.keybindings.findActionsUsing(
+            captured.keystr,
+            this.keybinding.action
+        );
+        if (conflicts.length > 0) {
+            const names = conflicts
+                .map(b => `“${GLib.markup_escape_text(b.description, -1)}”`)
+                .join(', ');
+            this._conflict_label.label = `<b>${_(
+                'This key combination is already being used for'
+            )} ${names}.</b>`;
+            this._conflict_label.visible = true;
+        } else {
+            this._conflict_label.visible = false;
+        }
+
+        this._stack.visible_child = this._result_page;
+
+        // The capture page carries only the close button; the action buttons
+        // appear once there is a shortcut to commit.
+        this._headerbar.show_end_title_buttons = false;
+        this._cancel_button.visible = true;
+        this._set_button.visible = true;
+    }
+
+    _onSetClicked() {
+        const captured = this._captured;
+        if (captured === null) return;
+
+        if (this.combo !== null) {
+            this.keybinding.replace(this.combo, captured);
+        } else {
+            this.keybinding.add(captured);
+        }
+
+        this.close();
+    }
+
+    _onCancelClicked() {
+        this.close();
+    }
+}
+
+declare namespace ShortcutEditorDialog {
+    interface ConstructorProps extends Adw.Dialog.ConstructorProps {
+        keybinding: Keybinding;
+        keybindings: KeybindingsModel;
+        combo: Combo | null;
+    }
+}
+
 class ComboRow extends Adw.PreferencesRow {
     static {
         GObject.registerClass(
@@ -655,8 +906,6 @@ class ComboRow extends Adw.PreferencesRow {
                     GLib.UriFlags.NONE
                 ),
                 InternalChildren: [
-                    'stack',
-                    'edit_page',
                     'shortcut_label',
                     'suffixes',
                     'delete_button',
@@ -664,6 +913,14 @@ class ComboRow extends Adw.PreferencesRow {
                     'conflict_list',
                 ],
                 Properties: {
+                    keybindings: GObject.ParamSpec.object(
+                        'keybindings',
+                        'Keybindings',
+                        'Keybindings model',
+                        GObject.ParamFlags.READWRITE |
+                            GObject.ParamFlags.CONSTRUCT_ONLY,
+                        KeybindingsModel.$gtype
+                    ),
                     keybinding: GObject.ParamSpec.object(
                         'keybinding',
                         'Keybinding',
@@ -679,13 +936,6 @@ class ComboRow extends Adw.PreferencesRow {
                         GObject.ParamFlags.READWRITE,
                         Combo.$gtype
                     ),
-                    editing: GObject.ParamSpec.boolean(
-                        'editing',
-                        'Editing',
-                        'Editing',
-                        GObject.ParamFlags.READWRITE,
-                        false
-                    ),
                 },
                 Signals: {
                     'collision-activated': {
@@ -697,8 +947,6 @@ class ComboRow extends Adw.PreferencesRow {
         );
     }
 
-    declare _stack: Gtk.Stack;
-    declare _edit_page: Gtk.Label;
     declare _shortcut_label: Adw.ShortcutLabel;
     declare _suffixes: Gtk.Box;
     declare _delete_button: Gtk.Button;
@@ -706,11 +954,10 @@ class ComboRow extends Adw.PreferencesRow {
     declare _conflict_list: Gtk.ListBox;
 
     declare _combo: Combo | null;
-    declare _editing: boolean;
     declare _collisions: Gio.ListStore<Keybinding>;
 
+    declare keybindings: KeybindingsModel;
     declare keybinding: Keybinding;
-    declare acceleratorParse: AcceleratorParse;
 
     constructor(props: Partial<ComboRow.ConstructorProps>) {
         super(props);
@@ -719,27 +966,29 @@ class ComboRow extends Adw.PreferencesRow {
     _init(params = {}) {
         super._init(params);
 
+        // Enter/Space on the focused row opens the editor.
         const keyController = Gtk.EventControllerKey.new();
-        keyController.connect(
-            'key-pressed',
-            (controller, keyval, keycode, state) =>
-                this._onKeyPressed(controller, keyval, keycode, state)
-        );
+        keyController.connect('key-pressed', (_controller, keyval) => {
+            switch (keyval) {
+                case Gdk.KEY_Return:
+                case Gdk.KEY_KP_Enter:
+                case Gdk.KEY_ISO_Enter:
+                case Gdk.KEY_space:
+                    this._openEditor();
+                    return Gdk.EVENT_STOP;
+                default:
+                    return Gdk.EVENT_PROPAGATE;
+            }
+        });
         this.add_controller(keyController);
 
-        const focusController = Gtk.EventControllerFocus.new();
-        focusController.connect('leave', () => {
-            this.editing = false;
-        });
-        this.add_controller(focusController);
-
-        // Click the row to toggle editing.
+        // Click the row to open the editor.
         const clickGesture = Gtk.GestureClick.new();
         clickGesture.set_button(Gdk.BUTTON_PRIMARY);
         clickGesture.connect('released', (_gesture, _nPress, x, y) => {
             const target = this.pick(x, y, Gtk.PickFlags.DEFAULT);
             if (target && this._onButton(target)) return;
-            this.editing = !this.editing;
+            this._openEditor();
         });
         this.add_controller(clickGesture);
 
@@ -778,16 +1027,12 @@ class ComboRow extends Adw.PreferencesRow {
         this._updateState();
     }
 
-    get editing() {
-        if (this._editing === undefined) this._editing = false;
-        return this._editing;
-    }
-
-    set editing(value) {
-        if (this.editing === value) return;
-        this._editing = value;
-        this.notify('editing');
-        this._updateState();
+    _openEditor() {
+        new ShortcutEditorDialog({
+            keybindings: this.keybindings,
+            keybinding: this.keybinding,
+            combo: this.combo,
+        }).present(this);
     }
 
     get collisions() {
@@ -809,19 +1054,6 @@ class ComboRow extends Adw.PreferencesRow {
         this.emit('collision-activated', binding);
     }
 
-    _grabKeyboard() {
-        (
-            this.get_root()?.get_surface() as Gdk.Toplevel | undefined
-        )?.inhibit_system_shortcuts(null);
-    }
-
-    _ungrabKeyboard() {
-        // using optionals here since may have already been ungrabbed
-        (
-            this.get_root()?.get_surface() as Gdk.Toplevel | undefined
-        )?.restore_system_shortcuts();
-    }
-
     _onDeleteButtonClicked() {
         GLib.idle_add(0, () => {
             this.keybinding.remove(this.combo!);
@@ -829,143 +1061,23 @@ class ComboRow extends Adw.PreferencesRow {
         });
     }
 
-    _onKeyPressed(
-        controller: Gtk.EventControllerKey,
-        keyval: number,
-        keycode: number,
-        state: Gdk.ModifierType
-    ) {
-        // Adapted from Control Center, cc-keyboard-shortcut-editor.c
-        if (!this.editing) {
-            // Enter/Space on the focused row starts editing.
-            switch (keyval) {
-                case Gdk.KEY_Return:
-                case Gdk.KEY_KP_Enter:
-                case Gdk.KEY_ISO_Enter:
-                case Gdk.KEY_space:
-                    this.editing = true;
-                    return Gdk.EVENT_STOP;
-                default:
-                    return Gdk.EVENT_PROPAGATE;
-            }
-        }
-
-        /**
-         * Replace KEY_less ("<") with comma, see
-         * https://github.com/paperwm/PaperWM/issues/545
-         */
-        if (keyval === Gdk.KEY_less) {
-            keycode = Gdk.KEY_comma;
-            keyval = Gdk.KEY_comma;
-        }
-
-        let modmask = state & Gtk.accelerator_get_default_mod_mask();
-        let keyvalLower = Gdk.keyval_to_lower(keyval);
-
-        // Normalize <Tab>
-        if (keyvalLower === Gdk.KEY_ISO_Left_Tab) {
-            keyvalLower = Gdk.KEY_Tab;
-        }
-
-        // Put Shift back if it changed the case of the key
-        if (keyvalLower !== keyval) {
-            modmask |= Gdk.ModifierType.SHIFT_MASK;
-        }
-
-        if (
-            keyvalLower === Gdk.KEY_Sys_Req &&
-            (modmask & Gdk.ModifierType.ALT_MASK) !== 0
-        ) {
-            // Don't allow SysRq as a keybinding, but allow Alt+Print
-            keyvalLower = Gdk.KEY_Print;
-        }
-
-        const event = controller.get_current_event() as Gdk.KeyEvent | null;
-        const isModifier = event?.is_modifier();
-
-        // Escape cancels
-        if (!isModifier && modmask === 0 && keyvalLower === Gdk.KEY_Escape) {
-            this.editing = false;
-            if (this.combo!.placeholder) {
-                this.keybinding.remove(this.combo!);
-            }
-            return Gdk.EVENT_STOP;
-        }
-
-        // Backspace deletes
-        if (!isModifier && modmask === 0 && keyvalLower === Gdk.KEY_BackSpace) {
-            this._updateKeybinding(new Combo());
-            return Gdk.EVENT_STOP;
-        }
-
-        // Remove CapsLock
-        modmask &= ~Gdk.ModifierType.LOCK_MASK;
-
-        this._updateKeybinding(
-            new Combo({
-                keycode,
-                keyval: keyvalLower,
-                mods: modmask,
-            })
-        );
-
-        return Gdk.EVENT_STOP;
-    }
-
-    _updateKeybinding(newCombo: Combo) {
-        const isValid = isValidBinding(newCombo);
-        const isEmpty = isEmptyBinding(newCombo);
-
-        const oldCombo = this.combo!;
-        if (isEmptyBinding(oldCombo) && isValid) {
-            this.editing = false;
-            this.keybinding.add(newCombo);
-            return;
-        }
-
-        if (isEmpty) {
-            this.editing = false;
-            this.keybinding.remove(oldCombo);
-            return;
-        }
-
-        if (isValid) {
-            this.editing = false;
-            this.keybinding.replace(oldCombo, newCombo);
-        }
-    }
-
     _updateState() {
-        if (!this._stack) {
+        if (!this._shortcut_label) {
             return;
         }
 
-        if (this.editing) {
-            this.add_css_class('editing');
-            this._stack.visible_child = this._edit_page;
-            this._suffixes.visible = false;
-            this.grab_focus();
-            this._grabKeyboard();
-        } else {
-            this.remove_css_class('editing');
-            this._stack.visible_child = this._shortcut_label;
-            this._ungrabKeyboard();
-
-            const active = !!this._combo && !this._combo.disabled;
-            this._shortcut_label.accelerator = active
-                ? this._combo!.keystr
-                : '';
-            this._delete_button.visible = active;
-            this._conflict_button.visible =
-                active && this.collisions.length > 0;
-            this._suffixes.visible =
-                this._delete_button.visible || this._conflict_button.visible;
-        }
+        const active = !!this._combo && !this._combo.disabled;
+        this._shortcut_label.accelerator = active ? this._combo!.keystr : '';
+        this._delete_button.visible = active;
+        this._conflict_button.visible = active && this.collisions.length > 0;
+        this._suffixes.visible =
+            this._delete_button.visible || this._conflict_button.visible;
     }
 }
 
 declare namespace ComboRow {
     interface ConstructorProps extends Gtk.ListBoxRow.ConstructorProps {
+        keybindings: KeybindingsModel;
         keybinding: Keybinding;
         combo: Combo;
     }
@@ -1044,7 +1156,11 @@ class KeybindingsRow extends Adw.ExpanderRow {
 
         action = new Gio.SimpleAction({ name: 'add' });
         action.connect('activate', () =>
-            this.keybinding.add(new Combo({ placeholder: true }))
+            new ShortcutEditorDialog({
+                keybindings: this.keybindings,
+                keybinding: this.keybinding,
+                combo: null,
+            }).present(this)
         );
         this._actionGroup.add_action(action);
 
@@ -1080,15 +1196,10 @@ class KeybindingsRow extends Adw.ExpanderRow {
 
     _createRow(combo: Combo) {
         const row = new ComboRow({
+            keybindings: this.keybindings,
             keybinding: this.keybinding,
             combo,
         });
-        if (combo.placeholder) {
-            GLib.idle_add(0, () => {
-                row.editing = true;
-                return GLib.SOURCE_REMOVE;
-            });
-        }
         row.connect('collision-activated', (_row, binding) => {
             this.emit('collision-activated', binding);
         });
