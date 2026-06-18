@@ -6,10 +6,14 @@ import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
 import { AcceleratorParse } from '../wm/acceleratorparse.js';
+import { getConflictSettings } from '../wm/settings.js';
 
 import type { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 const _ = (s: string) => s;
+
+/** A single conflicting shortcut, labelled with where it comes from. */
+type ConflictEntry = { description: string; source: 'albumwm' | 'gnome' };
 
 const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
@@ -523,6 +527,7 @@ export class KeybindingsModel
     declare _actionToBinding: Map<string, Keybinding>;
     declare _settings: Gio.Settings;
     declare _collisions: Map<string, Set<string>>;
+    declare _systemShortcuts: Map<string, string[]>;
 
     _init(acceleratorParse: AcceleratorParse, params = {}) {
         super._init(params);
@@ -547,6 +552,16 @@ export class KeybindingsModel
     init(settings: Gio.Settings) {
         this._settings = settings;
         this.load();
+
+        /* Keep GNOME's shortcuts in sync the same way we track our own: rebuild
+         * the lookup and recompute collisions when a system shortcut changes
+         * while this page is open. */
+        getConflictSettings().forEach(systemSettings =>
+            systemSettings.connect('changed', () => {
+                this._systemShortcuts = this._buildSystemShortcuts();
+                this._updateCollisions();
+            })
+        );
     }
 
     vfunc_get_item_type() {
@@ -567,6 +582,49 @@ export class KeybindingsModel
             this._updateCollisions();
         }
         return this._collisions;
+    }
+
+    /**
+     * GNOME Shell shortcuts, keyed by the same normalized keystr that
+     * `Combo.keystr` produces, so they can be compared by string equality.
+     * Kept in sync with the changes (see `init`).
+     */
+    get systemShortcuts() {
+        if (this._systemShortcuts === undefined) {
+            this._systemShortcuts = this._buildSystemShortcuts();
+        }
+        return this._systemShortcuts;
+    }
+
+    _buildSystemShortcuts() {
+        const map = new Map<string, string[]>();
+        for (const settings of getConflictSettings()) {
+            const schema = settings.settings_schema;
+            for (const key of settings.list_keys()) {
+                const value = settings.get_value<'as'>(key);
+                if (value.get_type_string() !== 'as') continue;
+
+                const description = schema.get_key(key).get_summary() || key;
+                for (const raw of value.deep_unpack()) {
+                    if (!raw) continue;
+                    const [ok, keyval, mods] =
+                        this.acceleratorParse.accelerator_parse(
+                            translateAboveTab(raw)
+                        );
+                    if (!ok) continue;
+                    const keystr = Gtk.accelerator_name(keyval, mods);
+                    if (!keystr) continue;
+
+                    const descriptions = map.get(keystr);
+                    if (!descriptions) {
+                        map.set(keystr, [description]);
+                    } else if (!descriptions.includes(description)) {
+                        descriptions.push(description);
+                    }
+                }
+            }
+        }
+        return map;
     }
 
     getKeybinding(action: string) {
@@ -590,6 +648,11 @@ export class KeybindingsModel
             }
         }
         return result;
+    }
+
+    /** GNOME Shell shortcuts that already bind keystr. */
+    findSystemConflicts(keystr: string): string[] {
+        return keystr ? (this.systemShortcuts.get(keystr) ?? []) : [];
     }
 
     load() {
@@ -623,7 +686,8 @@ export class KeybindingsModel
         }
         const changed = new Set<string>();
         for (const [keystr, bindingActions] of map.entries()) {
-            if (bindingActions.size > 1) {
+            const systemCount = this.systemShortcuts.get(keystr)?.length ?? 0;
+            if (bindingActions.size + systemCount > 1) {
                 if (!this.collisions.has(keystr)) {
                     for (const action of bindingActions) {
                         changed.add(action);
@@ -844,17 +908,19 @@ class ShortcutEditorDialog extends Adw.Dialog {
         const captured = this._captured!;
         this._shortcut_accel_label.accelerator = captured.keystr;
 
-        const conflicts = this.keybindings.findActionsUsing(
-            captured.keystr,
-            this.keybinding.action
-        );
-        if (conflicts.length > 0) {
-            const names = conflicts
-                .map(b => `“${GLib.markup_escape_text(b.description, -1)}”`)
-                .join(', ');
+        const quote = (s: string) => `“${GLib.markup_escape_text(s, -1)}”`;
+        const names = [
+            ...this.keybindings
+                .findActionsUsing(captured.keystr, this.keybinding.action)
+                .map(b => `${quote(b.description)} (AlbumWM)`),
+            ...this.keybindings
+                .findSystemConflicts(captured.keystr)
+                .map(d => `${quote(d)} (GNOME)`),
+        ];
+        if (names.length > 0) {
             this._conflict_label.label = `<b>${_(
                 'This key combination is already being used for'
-            )} ${names}.</b>`;
+            )} ${names.join(', ')}.</b>`;
             this._conflict_label.visible = true;
         } else {
             this._conflict_label.visible = false;
@@ -949,7 +1015,7 @@ class ComboRow extends Adw.PreferencesRow {
     declare _conflict_list: Gtk.Box;
 
     declare _combo: Combo | null;
-    declare _collisions: Keybinding[];
+    declare _collisions: ConflictEntry[];
 
     declare keybindings: KeybindingsModel;
     declare keybinding: Keybinding;
@@ -1038,9 +1104,10 @@ class ComboRow extends Adw.PreferencesRow {
             this._conflict_list.remove(child);
             child = next;
         }
-        for (const binding of value) {
+        for (const { description, source } of value) {
+            const suffix = source === 'gnome' ? 'GNOME' : 'AlbumWM';
             this._conflict_list.append(
-                new Gtk.Label({ label: binding.description })
+                new Gtk.Label({ label: `${description} (${suffix})` })
             );
         }
     }
@@ -1121,7 +1188,7 @@ class KeybindingsRow extends Adw.ExpanderRow {
     declare keybindings: KeybindingsModel;
     declare keybinding: Keybinding;
     declare _expanded: boolean;
-    declare _collisions: Map<string, Keybinding[]>;
+    declare _collisions: Map<string, ConflictEntry[]>;
     declare _comboRows: ComboRow[];
 
     declare _actionGroup: Gio.SimpleActionGroup;
@@ -1241,17 +1308,26 @@ class KeybindingsRow extends Adw.ExpanderRow {
     }
 
     _onCollisionsChanged() {
-        const map = new Map<string, Keybinding[]>();
+        const map = new Map<string, ConflictEntry[]>();
         const collisions = this.keybindings.collisions;
         for (const combo of this.keybinding.combos) {
-            const bindingActions = collisions.get(combo.keystr);
-            if (!bindingActions) continue;
-            map.set(
-                combo.keystr,
-                [...bindingActions]
+            if (combo.disabled) continue;
+            const entries: ConflictEntry[] = [
+                ...[...(collisions.get(combo.keystr) ?? [])]
                     .filter(a => a !== this.keybinding.action)
-                    .map(a => this.keybindings.getKeybinding(a)!)
-            );
+                    .map(a => ({
+                        description:
+                            this.keybindings.getKeybinding(a)!.description,
+                        source: 'albumwm' as const,
+                    })),
+                ...this.keybindings
+                    .findSystemConflicts(combo.keystr)
+                    .map(description => ({
+                        description,
+                        source: 'gnome' as const,
+                    })),
+            ];
+            if (entries.length > 0) map.set(combo.keystr, entries);
         }
         this._collisions = map;
         this._applyCollisions();
