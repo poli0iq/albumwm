@@ -311,12 +311,6 @@
   </schema>
 
   <schema id="org.gnome.shell.extensions.albumwm" path="/org/gnome/shell/extensions/albumwm/">
-    <!-- backup settings (used for restore) -->
-    <key type="s" name="restore-keybinds">
-        <default>''</default>
-        <summary>Keybind overrides saved for restoring after AlbumWM disable</summary>
-    </key>
-
     <key type="s" name="restore-attach-modal-dialogs">
         <default>''</default>
         <summary>Original setting value (used for restore)</summary>

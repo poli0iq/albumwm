@@ -4,6 +4,7 @@ import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
 import {
     Settings,
@@ -60,9 +61,6 @@ let pendingCloses: Map<
 > | null;
 
 export function enable(extension: Extension) {
-    // restore previous keybinds (in case failed to restore last time, e.g. gnome crash etc)
-    Settings.updateOverrides();
-
     keybindSettings = extension.getSettings(KEYBINDINGS_KEY);
     setupActions(keybindSettings);
     signals!.connect(
@@ -73,21 +71,15 @@ export function enable(extension: Extension) {
         }
     );
     actions!.forEach(enableAction);
-    Settings.overrideConflicts();
 
-    const schemas = [
-        ...Settings.getConflictSettings(),
-        extension.getSettings(KEYBINDINGS_KEY),
-    ];
-    schemas.forEach(schema => {
+    notifyConflicts(extension, Settings.findConflicts());
+
+    Settings.getConflictSettings().forEach(schema => {
         signals!.connect(schema, 'changed', (settings, key) => {
-            const overrode = Settings.conflictKeyChanged(settings, key);
-            if (overrode) {
-                Main.notifyError(
-                    `AlbumWM: overriding '${key}' keybind`,
-                    `this Gnome Keybind will be restored when AlbumWM is disabled`
-                );
-            }
+            const conflicts = Settings.findConflicts([settings]).filter(c =>
+                c.conflicts.includes(key)
+            );
+            notifyConflicts(extension, conflicts);
         });
     });
 }
@@ -96,7 +88,6 @@ export function disable() {
     signals!.destroy();
     signals = null;
     actions!.forEach(disableAction);
-    Settings.restoreConflicts();
 
     pendingCloses!.forEach((entry, id) => {
         Utils.timeoutRemove(id);
@@ -111,6 +102,33 @@ export function disable() {
     nameMap = null;
     actionIdMap = null;
     keycomboMap = null;
+}
+
+function notifyConflicts(
+    extension: Extension,
+    conflicts: ReturnType<typeof Settings.findConflicts>
+) {
+    if (!conflicts.length) return;
+    const source = MessageTray.getSystemSource();
+    for (const { name, conflicts: gnomeKeys, settings } of conflicts) {
+        const accel = keybindSettings!.get_strv(name)[0] ?? '';
+        const album = `“${
+            keybindSettings!.settings_schema.get_key(name).get_summary() || name
+        }”`;
+        const gnome = gnomeKeys
+            .map(k => settings.settings_schema.get_key(k).get_summary() || k)
+            .map(g => `“${g}”`)
+            .join(', ');
+
+        const n = new MessageTray.Notification({
+            source,
+            title: 'AlbumWM keybinding conflict',
+            body: `${album} (<b>${accel}</b>) conflicts with GNOME ${gnome}. Click to open extension preferences.`,
+            useBodyMarkup: true,
+        });
+        n.connect('activated', () => extension.openPreferences());
+        source.addNotification(n);
+    }
 }
 
 export function registerAlbumAction(

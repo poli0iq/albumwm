@@ -1,5 +1,4 @@
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
 
 import { AcceleratorParse } from './acceleratorparse.js';
 
@@ -13,7 +12,6 @@ import type Meta from 'gi://Meta';
  */
 
 const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
-const RESTORE_KEYBINDS_KEY = 'restore-keybinds';
 
 // This is the value mutter uses for the keyvalue of above_tab
 const META_KEY_ABOVE_TAB = 0x2f7259c9;
@@ -71,16 +69,13 @@ export type Prefs = {
 };
 
 export let prefs: Prefs | null;
-let gsettings: Gio.Settings | null,
-    keybindSettings: Gio.Settings,
-    _overridingConflicts: boolean | null;
+let gsettings: Gio.Settings | null, keybindSettings: Gio.Settings;
 let acceleratorParse: AcceleratorParse | null;
 export function enable(extension: Extension) {
     gsettings = extension.getSettings();
     keybindSettings = extension.getSettings(KEYBINDINGS_KEY);
 
     acceleratorParse = new AcceleratorParse();
-    _overridingConflicts = false;
     prefs = {} as Prefs;
     for (const key of gsettings.list_keys()) {
         if (key.startsWith('restore-') || key === 'winprops') continue;
@@ -116,7 +111,6 @@ let conflictSettings: Gio.Settings[] | null;
 export function disable() {
     gsettings = null;
     acceleratorParse = null;
-    _overridingConflicts = null;
     prefs = null;
     conflictSettings = null;
 }
@@ -211,7 +205,7 @@ function generateKeycomboMap(settings: Gio.Settings): KeycomboMap {
     return map;
 }
 
-function findConflicts(schemas?: Gio.Settings[]) {
+export function findConflicts(schemas?: Gio.Settings[]) {
     schemas = schemas || getConflictSettings();
     const conflicts = [];
     const albumMap = generateKeycomboMap(keybindSettings);
@@ -230,157 +224,6 @@ function findConflicts(schemas?: Gio.Settings[]) {
         }
     }
     return conflicts;
-}
-
-/** Single right-hand keybinding value */
-type OverrideValue = {
-    /** JSON.stringified list of binds */
-    bind: string;
-    schema_id: string;
-};
-
-/** Map of keybinding names to keybinding values */
-type OverrideList = Map<string, OverrideValue>;
-
-/**
- * Returns / reconstitutes saved overrides list.
- */
-function getSavedOverrides() {
-    const saveListJson = gsettings!.get_string(RESTORE_KEYBINDS_KEY);
-    let saveList: OverrideList;
-    try {
-        saveList = new Map(Object.entries(JSON.parse(saveListJson)));
-    } catch {
-        saveList = new Map();
-    }
-    return saveList;
-}
-
-/**
- * Saves an overrides list.
- */
-function saveOverrides(overrides: OverrideList) {
-    gsettings!.set_string(
-        RESTORE_KEYBINDS_KEY,
-        JSON.stringify(Object.fromEntries(overrides))
-    );
-}
-
-export function conflictKeyChanged(settings: Gio.Settings, key: string) {
-    if (_overridingConflicts) {
-        return false;
-    }
-
-    const newKeybind = settings.get_value(key).deep_unpack();
-    if (Array.isArray(newKeybind) && newKeybind.length === 0) {
-        return false;
-    }
-
-    const saveList = getSavedOverrides();
-    saveList.delete(key);
-    saveOverrides(saveList);
-
-    // check for new conflicts
-    return overrideConflicts(key);
-}
-
-/**
- * Override conflicts and save original values for restore.
- */
-export function overrideConflicts(checkKey?: string) {
-    if (_overridingConflicts) {
-        return false;
-    }
-
-    _overridingConflicts = true;
-    const saveList = getSavedOverrides();
-
-    // restore orignal keybinds prior to conflict overriding
-    restoreConflicts();
-
-    const disableAll: (() => boolean)[] = [];
-    const foundConflicts = findConflicts();
-    for (const conflict of foundConflicts) {
-        // save conflicts (list of names of conflicting keybinds)
-        const { conflicts, settings } = conflict;
-
-        conflicts.forEach(c => {
-            // get current value
-            const keybind = settings.get_value(c);
-            saveList.set(c, {
-                bind: JSON.stringify(keybind.deep_unpack()),
-                schema_id: settings.schema_id,
-            });
-
-            // now disable conflict
-            disableAll.push(() =>
-                settings.set_value(c, new GLib.Variant('as', []))
-            );
-        });
-    }
-
-    // save override list
-    saveOverrides(saveList);
-
-    // now disable all conflicts
-    disableAll.forEach(d => d());
-    _overridingConflicts = false;
-
-    return checkKey ? saveList.has(checkKey) : false;
-}
-
-/**
- * Update overrides to their current keybinds.
- */
-export function updateOverrides() {
-    const saveList = getSavedOverrides();
-    saveList.forEach((saved, key) => {
-        const settings = getConflictSettings().find(
-            s => s.schema_id === saved.schema_id
-        );
-        if (settings) {
-            const newKeybind = settings.get_value(key).deep_unpack();
-            if (Array.isArray(newKeybind) && newKeybind.length === 0) {
-                return;
-            }
-
-            saveList.set(key, {
-                bind: JSON.stringify(newKeybind),
-                schema_id: settings.schema_id,
-            });
-        }
-    });
-
-    // save override list
-    saveOverrides(saveList);
-}
-
-/**
- * Restores previously overridden conflicts.
- */
-export function restoreConflicts() {
-    const saveList = getSavedOverrides();
-    const toRemove: { key: string; remove: () => boolean }[] = [];
-    saveList.forEach((saved, key) => {
-        const settings = getConflictSettings().find(
-            s => s.schema_id === saved.schema_id
-        );
-        if (settings) {
-            const keybind = JSON.parse(saved.bind);
-            toRemove.push({
-                key,
-                remove: () =>
-                    settings.set_value(key, new GLib.Variant('as', keybind)),
-            });
-        }
-    });
-
-    // now remove retored keybinds from list
-    toRemove.forEach(r => {
-        r.remove();
-        saveList.delete(r.key);
-    });
-    saveOverrides(saveList);
 }
 
 // / Winprops

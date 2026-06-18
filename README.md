@@ -22,6 +22,11 @@ Features that the fork author considered useless or harmful are dropped.
 
 - **Preferences ui redesigned, migrated to Adwaita widgets and
   ported to [Blueprint](https://gnome.pages.gitlab.gnome.org/blueprint-compiler)**
+- **Better shortcut conflict detection and handling**
+
+    Instead of unconditionally deleting GNOME shortcuts, show a warning and let
+    the user decide.
+
 - Implemented pointer warp on window focus (optional)
 - Dropped drawing a custom top bar on secondary displays
 - Dropped the window position indicator and top bar styling
