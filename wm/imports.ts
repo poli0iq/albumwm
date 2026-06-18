@@ -1,5 +1,6 @@
 export * as AcceleratorParse from './acceleratorparse.js';
 export * as Gestures from './gestures.js';
+export * as GnomeSettings from './gnomeSettings.js';
 export * as Grab from './grab.js';
 export * as Keybindings from './keybindings.js';
 export * as Lib from './lib.js';

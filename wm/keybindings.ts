@@ -14,6 +14,7 @@ import {
     Scratch,
     LiveAltTab,
     Topbar,
+    GnomeSettings,
 } from './imports.js';
 
 import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -127,6 +128,9 @@ function notifyConflicts(
             useBodyMarkup: true,
         });
         n.connect('activated', () => extension.openPreferences());
+        n.addAction('Open GNOME settings', () =>
+            GnomeSettings.openPanel('keyboard')
+        );
         source.addNotification(n);
     }
 }
