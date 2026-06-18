@@ -937,11 +937,6 @@ class ComboRow extends Adw.PreferencesRow {
                         Combo.$gtype
                     ),
                 },
-                Signals: {
-                    'collision-activated': {
-                        param_types: [Keybinding.$gtype],
-                    },
-                },
             },
             this
         );
@@ -951,10 +946,10 @@ class ComboRow extends Adw.PreferencesRow {
     declare _suffixes: Gtk.Box;
     declare _delete_button: Gtk.Button;
     declare _conflict_button: Gtk.MenuButton;
-    declare _conflict_list: Gtk.ListBox;
+    declare _conflict_list: Gtk.Box;
 
     declare _combo: Combo | null;
-    declare _collisions: Gio.ListStore<Keybinding>;
+    declare _collisions: Keybinding[];
 
     declare keybindings: KeybindingsModel;
     declare keybinding: Keybinding;
@@ -992,12 +987,7 @@ class ComboRow extends Adw.PreferencesRow {
         });
         this.add_controller(clickGesture);
 
-        this._collisions = new Gio.ListStore({ itemType: Keybinding.$gtype });
-
-        this._conflict_list.bind_model(
-            this._collisions,
-            (binding: Keybinding) => this._createConflictRow(binding)
-        );
+        this._collisions = [];
 
         GLib.idle_add(0, () => {
             this._updateState();
@@ -1036,22 +1026,23 @@ class ComboRow extends Adw.PreferencesRow {
     }
 
     get collisions() {
-        return [...this._collisions];
+        return this._collisions;
     }
 
     set collisions(value) {
-        this._collisions.splice(0, this._collisions.get_n_items(), value);
-    }
+        this._collisions = value;
 
-    _createConflictRow(binding: Keybinding) {
-        return new Gtk.Label({
-            label: binding.description,
-        });
-    }
-
-    _onConflictRowActivated(_list: Gtk.ListBox, row: ComboRow) {
-        const binding = this._collisions.get_item(row.get_index());
-        this.emit('collision-activated', binding);
+        let child = this._conflict_list.get_first_child();
+        while (child) {
+            const next = child.get_next_sibling();
+            this._conflict_list.remove(child);
+            child = next;
+        }
+        for (const binding of value) {
+            this._conflict_list.append(
+                new Gtk.Label({ label: binding.description })
+            );
+        }
     }
 
     _onDeleteButtonClicked() {
@@ -1116,11 +1107,6 @@ class KeybindingsRow extends Adw.ExpanderRow {
                             GObject.ParamFlags.CONSTRUCT_ONLY,
                         Keybinding.$gtype
                     ),
-                },
-                Signals: {
-                    'collision-activated': {
-                        param_types: [Keybinding.$gtype],
-                    },
                 },
             },
             this
@@ -1199,9 +1185,6 @@ class KeybindingsRow extends Adw.ExpanderRow {
             keybindings: this.keybindings,
             keybinding: this.keybinding,
             combo,
-        });
-        row.connect('collision-activated', (_row, binding) => {
-            this.emit('collision-activated', binding);
         });
         return row;
     }
@@ -1363,36 +1346,7 @@ export class KeybindingsPage extends Adw.PreferencesPage {
             keybinding,
         });
         row.connect('notify::expanded', () => this._onRowExpanded(row));
-        row.connect('collision-activated', (_row, binding) =>
-            this._onCollisionActivated(binding)
-        );
         return row;
-    }
-
-    _onCollisionActivated(keybinding: Keybinding) {
-        let group: Adw.PreferencesGroup;
-        let view: Gtk.FilterListModel;
-        switch (keybinding.section) {
-            case 'windows':
-                group = this._keybindings_windows_group;
-                view = this._windowsView;
-                break;
-            case 'monitors':
-                group = this._keybindings_monitors_group;
-                view = this._monitorsView;
-                break;
-            default:
-                group = this._keybindings_scratch_group;
-                view = this._scratchView;
-                break;
-        }
-
-        for (let i = 0; i < view.get_n_items(); i++) {
-            if (view.get_item(i) === keybinding) {
-                group.get_row(i)?.activate();
-                return;
-            }
-        }
     }
 
     _onRowExpanded(row: KeybindingsRow) {

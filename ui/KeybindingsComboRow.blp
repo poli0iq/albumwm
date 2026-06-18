@@ -85,9 +85,9 @@ Gtk.Popover conflict_popover {
       ]
     }
 
-    Gtk.ListBox conflict_list {
-      selection-mode: none;
-      row-activated => $_onConflictRowActivated();
+    Gtk.Box conflict_list {
+      orientation: vertical;
+      spacing: 6;
     }
   }
 }
