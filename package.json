@@ -9,7 +9,7 @@
     "scripts": {
         "prebuild": "rm -rf dist",
         "build": "tsc && blueprint-compiler batch-compile --minify dist/ui ui ui/*",
-        "postbuild": "cp -r schemas resources metadata.json stylesheet.css LICENSE dist/ && glib-compile-schemas dist/schemas",
+        "postbuild": "cp -r schemas metadata.json stylesheet.css LICENSE dist/ && glib-compile-schemas dist/schemas && glib-compile-resources --sourcedir=resources --target=dist/albumwm.gresource resources/albumwm.gresource.xml",
         "pack": "npm run build && rm -f albumwm@0iq.dev.zip && cd dist && zip -9r ../albumwm@0iq.dev.zip .",
         "install:ext": "npm run pack && gnome-extensions install --force albumwm@0iq.dev.zip",
         "uninstall:ext": "gnome-extensions uninstall albumwm@0iq.dev 2>/dev/null; rm -rf \"$HOME/.local/share/gnome-shell/extensions/albumwm@0iq.dev\"",

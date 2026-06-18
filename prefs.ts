@@ -1,4 +1,5 @@
 import Gdk from 'gi://Gdk';
+import Gio from 'gi://Gio?version=2.0';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
@@ -8,7 +9,6 @@ import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/
 import './preferences/keybindingsPage.js';
 import './preferences/winpropsPage.js';
 
-import type Gio from 'gi://Gio?version=2.0';
 import type Adw from 'gi://Adw?version=1';
 import type { KeybindingsPage } from './preferences/keybindingsPage.js';
 import type { WinpropsPage } from './preferences/winpropsPage.js';
@@ -435,8 +435,12 @@ class SettingsWidget {
 
 export default class AlbumWMPrefs extends ExtensionPreferences {
     async fillPreferencesWindow(window: Adw.PreferencesWindow) {
+        Gio.resources_register(
+            Gio.Resource.load(`${this.path}/albumwm.gresource`)
+        );
+
         const provider = new Gtk.CssProvider();
-        provider.load_from_path(`${this.path}/resources/prefs.css`);
+        provider.load_from_resource('/dev/0iq/albumwm/prefs.css');
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default()!,
             provider,

@@ -1,6 +1,5 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Graphene from 'gi://Graphene';
 import Pango from 'gi://Pango';
@@ -223,20 +222,14 @@ class FocusIcon extends BaseIcon {
             props,
             tooltipProps,
             () => {
-                const pather = (relativePath: string) =>
-                    GLib.uri_resolve_relative(
-                        import.meta.url,
-                        relativePath,
-                        GLib.UriFlags.NONE
-                    );
                 this.gIconDefault = Gio.icon_new_for_string(
-                    pather('../resources/focus-mode-default-symbolic.svg')
+                    'resource:///dev/0iq/albumwm/icons/focus-mode-default-symbolic.svg'
                 );
                 this.gIconCenter = Gio.icon_new_for_string(
-                    pather('../resources/focus-mode-center-symbolic.svg')
+                    'resource:///dev/0iq/albumwm/icons/focus-mode-center-symbolic.svg'
                 );
                 this.gIconEdge = Gio.icon_new_for_string(
-                    pather('../resources/focus-mode-edge-symbolic.svg')
+                    'resource:///dev/0iq/albumwm/icons/focus-mode-edge-symbolic.svg'
                 );
             },
             mode => {
@@ -355,17 +348,11 @@ class OpenPositionIcon extends BaseIcon {
             props,
             tooltipProps,
             () => {
-                const pather = (relativePath: string) =>
-                    GLib.uri_resolve_relative(
-                        import.meta.url,
-                        relativePath,
-                        GLib.UriFlags.NONE
-                    );
                 this.gIconRight = Gio.icon_new_for_string(
-                    pather('../resources/open-position-right-symbolic.svg')
+                    'resource:///dev/0iq/albumwm/icons/open-position-right-symbolic.svg'
                 );
                 this.gIconDown = Gio.icon_new_for_string(
-                    pather('../resources/open-position-down-symbolic.svg')
+                    'resource:///dev/0iq/albumwm/icons/open-position-down-symbolic.svg'
                 );
 
                 signals!.connect(

@@ -13,6 +13,8 @@ import {
     Grab,
 } from './wm/imports.js';
 
+import Gio from 'gi://Gio?version=2.0';
+
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 /**
@@ -61,8 +63,12 @@ export default class AlbumWM extends Extension {
         Grab,
     ];
 
+    _resource: Gio.Resource | null = null;
+
     enable() {
         console.log(`#AlbumWM enabled`);
+        this._resource = Gio.Resource.load(`${this.path}/albumwm.gresource`);
+        Gio.resources_register(this._resource);
         this.modules.forEach(m => {
             if (m['enable']) {
                 m.enable(this);
@@ -78,6 +84,8 @@ export default class AlbumWM extends Extension {
                 m.disable();
             }
         });
+        Gio.resources_unregister(this._resource!);
+        this._resource = null;
     }
 
     prepareForDisable() {

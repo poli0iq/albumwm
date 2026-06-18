@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/dev/0iq/albumwm/icons">
+    <file>focus-mode-default-symbolic.svg</file>
+    <file>focus-mode-center-symbolic.svg</file>
+    <file>focus-mode-edge-symbolic.svg</file>
+    <file>open-position-right-symbolic.svg</file>
+    <file>open-position-down-symbolic.svg</file>
+    <file>enter-keyboard-shortcut.svg</file>
+  </gresource>
+  <gresource prefix="/dev/0iq/albumwm">
+    <file>prefs.css</file>
+  </gresource>
+</gresources>

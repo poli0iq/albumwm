@@ -808,12 +808,9 @@ class ShortcutEditorDialog extends Adw.Dialog {
         this._capture_info_label.label = info;
         this._result_info_label.label = info;
 
-        const uri = GLib.uri_resolve_relative(
-            import.meta.url,
-            '../resources/enter-keyboard-shortcut.svg',
-            GLib.UriFlags.NONE
+        this._picture.set_resource(
+            '/dev/0iq/albumwm/icons/enter-keyboard-shortcut.svg'
         );
-        this._picture.set_file(Gio.File.new_for_uri(uri!));
 
         this.connect('map', () => this._inhibit());
         this.connect('unmap', () => this._restore());
