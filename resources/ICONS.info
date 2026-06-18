@@ -15,3 +15,12 @@ Vendored from [gnome-control-center](https://gitlab.gnome.org/GNOME/gnome-contro
 - `enter-keyboard-shortcut.svg`
 
 License: [GPL-2.0-or-later](https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html).
+
+# icon-library
+
+Exported from [Icon Library](https://gitlab.gnome.org/World/design/icon-library):
+
+- `albumwm-general-symbolic.svg`
+- `albumwm-other-symbolic.svg`
+
+License: [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/).

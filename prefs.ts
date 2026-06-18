@@ -439,6 +439,10 @@ export default class AlbumWMPrefs extends ExtensionPreferences {
             Gio.Resource.load(`${this.path}/albumwm.gresource`)
         );
 
+        Gtk.IconTheme.get_for_display(
+            Gdk.Display.get_default()!
+        ).add_resource_path('/dev/0iq/albumwm/icons');
+
         const provider = new Gtk.CssProvider();
         provider.load_from_resource('/dev/0iq/albumwm/prefs.css');
         Gtk.StyleContext.add_provider_for_display(
