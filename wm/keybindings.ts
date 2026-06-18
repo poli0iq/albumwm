@@ -128,6 +128,11 @@ function notifyConflicts(
             useBodyMarkup: true,
         });
         n.connect('activated', () => extension.openPreferences());
+        n.addAction('Delete GNOME shortcut', () => {
+            for (const k of gnomeKeys) {
+                settings.set_value(k, new GLib.Variant('as', []));
+            }
+        });
         n.addAction('Open GNOME settings', () =>
             GnomeSettings.openPanel('keyboard')
         );
