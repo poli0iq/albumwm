@@ -38,6 +38,8 @@ Features that the fork author considered useless or harmful are dropped.
 
     Ratioale: the windows already indicate focus themselves.
 
+- Dropped the "take window" navigation mode
+
 ## Installation
 
 ### Manual

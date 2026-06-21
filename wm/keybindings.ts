@@ -152,16 +152,6 @@ export function registerAlbumAction(
     });
 }
 
-export function registerNavigatorAction(
-    name: string,
-    handler: KeyBindingHandler
-) {
-    registerAction(name, handler, {
-        settings: keybindSettings!,
-        opensNavigator: true,
-    });
-}
-
 export function registerMinimapAction(
     name: string,
     handler: KeyBindingHandler
@@ -226,8 +216,6 @@ export function setupActions(settings: Gio.Settings) {
         },
         { settings }
     );
-
-    registerNavigatorAction('take-window', Tiling.takeWindow);
 
     registerMinimapAction('switch-next', (_mw, space) => space.switchLinear(1));
     registerMinimapAction('switch-previous', (_mw, space) =>

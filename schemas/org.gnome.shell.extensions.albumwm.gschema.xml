@@ -54,11 +54,6 @@
         <summary>Attach/detach the active window into the scratch layer</summary>
     </key>
 
-    <key type="as" name="take-window">
-        <default><![CDATA[['<Super>t']]]></default>
-        <summary>Take the window, dropping it when finished navigating</summary>
-    </key>
-
     <key type="as" name="switch-focus-mode">
       <default><![CDATA[['<Super><Shift>c']]]></default>
       <summary>Switch between Window Focus Modes (e.g. default, center)</summary>

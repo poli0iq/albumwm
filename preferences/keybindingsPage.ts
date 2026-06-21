@@ -60,7 +60,6 @@ const actions = {
         'cycle-width-backwards',
         'cycle-height',
         'cycle-height-backwards',
-        'take-window',
         'activate-window-under-cursor',
     ],
     monitors: [

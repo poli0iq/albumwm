@@ -1,7 +1,6 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
-import St from 'gi://St';
 
 import { DispatcherMode } from './utils.js';
 
@@ -14,7 +13,6 @@ import {
     Topbar,
     Scratch,
     Minimap,
-    Settings,
     Grab,
 } from './imports.js';
 
@@ -58,7 +56,6 @@ export function disable() {
 // Added to the prototype by Signals.addSignalMethods below
 export interface NavigatorClass extends SignalMethods {}
 export class NavigatorClass {
-    takeHint: St.Label;
     was_accepted: boolean;
     space: Tiling.Space;
     _startWindow: Tiling.Window | null;
@@ -68,17 +65,6 @@ export class NavigatorClass {
 
     constructor() {
         console.debug('#navigator', 'nav created');
-
-        /**
-         * Hint for using take window mode (used in `takeWindow`).
-         */
-        this.takeHint = new St.Label({ style_class: 'take-window-hint' });
-        this.takeHint.clutter_text.set_markup(
-            `<i>• press <span foreground="#6be67b">spacebar</span> to return the last taken window</i>
-<i>• press <span foreground="#6be67b">tab</span> to cycle forward through taken windows</i>
-<i>• press <span foreground="#6be67b">shift+tab</span> to cycle backward through taken windows</i>
-<i>• press <span foreground="#6be67b">q</span> to close all taken windows</i>`
-        );
 
         navigating = true;
 
@@ -115,40 +101,6 @@ export class NavigatorClass {
             this.minimaps.set(space, minimapId);
         } else {
             if (typeof minimap !== 'number') minimap.show();
-        }
-    }
-
-    /**
-     * Shows the "take window" hint.
-     */
-    showTakeHint(show = true) {
-        if (show) {
-            // set position on stage, take into account monitor
-            const monitor = this.space.monitor!;
-            const x = monitor.x + monitor.width - 402;
-            const y = monitor.height - 100;
-
-            this.takeHint.opacity = 0;
-            // global.stage.add_child(this.takeHint);
-            Utils.actorAddChild(global.stage, this.takeHint);
-            this.takeHint.set_position(x, y);
-
-            Utils.Easer.addEase(this.takeHint, {
-                time: Settings.prefs!.animation_time,
-                opacity: 255,
-            });
-        } else {
-            this.takeHint.opacity = 255;
-            // global.stage.add_child(this.takeHint);
-            Utils.actorAddChild(global.stage, this.takeHint);
-            Utils.Easer.addEase(this.takeHint, {
-                time: Settings.prefs!.animation_time,
-                opacity: 0,
-                onComplete: () => {
-                    // global.stage.remove_child(this.takeHint);
-                    Utils.actorRemoveChild(global.stage, this.takeHint);
-                },
-            });
         }
     }
 
