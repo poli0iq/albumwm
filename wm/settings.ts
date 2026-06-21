@@ -35,7 +35,6 @@ export type Prefs = {
     vertical_margin_bottom: number;
     horizontal_margin: number;
     animation_time: number;
-    drift_speed: number;
     drag_drift_speed: number;
     default_show_top_bar: boolean;
     swipe_sensitivity: number[];

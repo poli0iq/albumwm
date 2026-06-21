@@ -255,21 +255,6 @@ Adw.PreferencesPage advanced_page {
       };
     }
 
-    Adw.SpinRow drift_speed_spin {
-      title: _("Scroll speed (px/ms)");
-      subtitle: _("Scrolling left/right via keybinds");
-      numeric: true;
-      snap-to-ticks: true;
-
-      adjustment: Gtk.Adjustment {
-        lower: 0;
-        upper: 15;
-        value: 0;
-        page-increment: 5;
-        step-increment: 1;
-      };
-    }
-
     Adw.SpinRow drag_drift_speed_spin {
       title: _("Edge drag scroll speed (px/ms)");
       subtitle: _("Dragging windows to the monitor edge");

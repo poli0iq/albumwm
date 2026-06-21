@@ -356,7 +356,6 @@ class SettingsWidget {
 
         // Animations
         doubleValueChanged('animation_time_spin', 'animation-time');
-        intValueChanged('drift_speed_spin', 'drift-speed');
         intValueChanged('drag_drift_speed_spin', 'drag-drift-speed');
         comboRowSelectionChanged(
             'overview-ensure-viewport-animation',

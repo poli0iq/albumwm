@@ -146,7 +146,7 @@ let startupTimeoutId: number | null,
     fullscreenStartTimeout: number | null,
     stackSlurpTimeout: number | null,
     workspaceChangeTimeouts: (number | null)[] | null;
-let monitorChangeTimeout: number | null, driftTimeout: number | null;
+let monitorChangeTimeout: number | null;
 export let inGrab: Grab.MoveGrab | Grab.ResizeGrab | null;
 
 export function enable(extension: Extension) {
@@ -254,8 +254,6 @@ export function disable() {
     workspaceChangeTimeouts = null;
     Utils.timeoutRemove(monitorChangeTimeout);
     monitorChangeTimeout = null;
-    Utils.timeoutRemove(driftTimeout);
-    driftTimeout = null;
 
     grabSignals!.destroy();
     grabSignals = null;
@@ -378,7 +376,6 @@ export class Space extends Array<Array<Window>> {
     _inLayout?: boolean;
     showTopBar?: boolean;
     _layoutQueued?: boolean;
-    drifting?: boolean;
     _isAnimating?: boolean;
 
     constructor(
@@ -1292,42 +1289,6 @@ export class Space extends Array<Array<Window>> {
 
         const metaWindow = this.getWindow(index, row);
         ensureViewport(metaWindow!, this);
-    }
-
-    _drift(dx: number) {
-        if (dx === 0) {
-            return;
-        }
-        if (this.drifting) {
-            return;
-        }
-        this.drifting = true;
-
-        // stop drifting on key_release
-        Navigator.getActionDispatcher(
-            DispatcherMode.KEYBOARD
-        ).addKeyReleaseCallback(() => {
-            Utils.timeoutRemove(driftTimeout);
-            this.drifting = false;
-        });
-
-        Utils.timeoutRemove(driftTimeout);
-        driftTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1, () => {
-            Gestures.update(this, dx, 1);
-            this.selectedWindow = Gestures.findTargetWindow(
-                this,
-                dx < 0 ? false : true
-            );
-            ensureViewport(this.selectedWindow!, this);
-            return true;
-        });
-    }
-
-    driftLeft() {
-        this._drift(-1 * Settings.prefs!.drift_speed);
-    }
-    driftRight() {
-        this._drift(Settings.prefs!.drift_speed);
     }
 
     /**

@@ -26,8 +26,6 @@ const actions = {
         'switch-right',
         'switch-up',
         'switch-down',
-        'drift-left',
-        'drift-right',
         'switch-global-left',
         'switch-global-right',
         'switch-global-up',

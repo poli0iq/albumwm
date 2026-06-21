@@ -239,9 +239,6 @@ export function setupActions(settings: Gio.Settings) {
     registerMinimapAction('switch-up', (_mw, space) => space.switchUp());
     registerMinimapAction('switch-down', (_mw, space) => space.switchDown());
 
-    registerNavigatorAction('drift-left', (_mw, space) => space.driftLeft());
-    registerNavigatorAction('drift-right', (_mw, space) => space.driftRight());
-
     registerMinimapAction('switch-first', Tiling.activateFirstWindow);
     registerMinimapAction('switch-last', Tiling.activateLastWindow);
 
