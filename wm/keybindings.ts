@@ -229,45 +229,18 @@ export function setupActions(settings: Gio.Settings) {
 
     registerNavigatorAction('take-window', Tiling.takeWindow);
 
-    registerMinimapAction('switch-next', (_mw, space) =>
-        space.switchLinear(1, false)
-    );
+    registerMinimapAction('switch-next', (_mw, space) => space.switchLinear(1));
     registerMinimapAction('switch-previous', (_mw, space) =>
-        space.switchLinear(-1, false)
-    );
-    registerMinimapAction('switch-next-loop', (_mw, space) =>
-        space.switchLinear(1, true)
-    );
-    registerMinimapAction('switch-previous-loop', (_mw, space) =>
-        space.switchLinear(-1, true)
+        space.switchLinear(-1)
     );
 
-    registerMinimapAction('switch-right', (_mw, space) =>
-        space.switchRight(false)
-    );
-    registerMinimapAction('switch-left', (_mw, space) =>
-        space.switchLeft(false)
-    );
-    registerMinimapAction('switch-up', (_mw, space) => space.switchUp(false));
-    registerMinimapAction('switch-down', (_mw, space) =>
-        space.switchDown(false)
-    );
+    registerMinimapAction('switch-right', (_mw, space) => space.switchRight());
+    registerMinimapAction('switch-left', (_mw, space) => space.switchLeft());
+    registerMinimapAction('switch-up', (_mw, space) => space.switchUp());
+    registerMinimapAction('switch-down', (_mw, space) => space.switchDown());
 
     registerNavigatorAction('drift-left', (_mw, space) => space.driftLeft());
     registerNavigatorAction('drift-right', (_mw, space) => space.driftRight());
-
-    registerMinimapAction('switch-right-loop', (_mw, space) =>
-        space.switchRight(true)
-    );
-    registerMinimapAction('switch-left-loop', (_mw, space) =>
-        space.switchLeft(true)
-    );
-    registerMinimapAction('switch-up-loop', (_mw, space) =>
-        space.switchUp(true)
-    );
-    registerMinimapAction('switch-down-loop', (_mw, space) =>
-        space.switchDown(true)
-    );
 
     registerMinimapAction('switch-first', Tiling.activateFirstWindow);
     registerMinimapAction('switch-second', (_mw, space) =>

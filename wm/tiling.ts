@@ -1176,20 +1176,13 @@ export class Space extends Array<Array<Window>> {
         ensureViewport(this.selectedWindow!, this, { force: true });
     }
 
-    switchLinear(dir: number, loop: boolean) {
+    switchLinear(dir: number) {
         let index = this.selectedIndex();
         const column = this[index];
         if (!column) return false;
         let row = column.indexOf(this.selectedWindow!);
         if (Lib.inBounds(column, row + dir) === false) {
             index += dir;
-            if (loop) {
-                if (index >= this.length) {
-                    index = 0;
-                } else if (index < 0) {
-                    index = this.length - 1;
-                }
-            }
             if (dir === 1) {
                 if (index < this.length) row = 0;
             } else if (index >= 0) row = this[index].length - 1;
@@ -1202,19 +1195,19 @@ export class Space extends Array<Array<Window>> {
         return true;
     }
 
-    switchLeft(loop: boolean) {
-        return this.switch(Meta.MotionDirection.LEFT, loop);
+    switchLeft() {
+        return this.switch(Meta.MotionDirection.LEFT);
     }
-    switchRight(loop: boolean) {
-        return this.switch(Meta.MotionDirection.RIGHT, loop);
+    switchRight() {
+        return this.switch(Meta.MotionDirection.RIGHT);
     }
-    switchUp(loop: boolean) {
-        return this.switch(Meta.MotionDirection.UP, loop);
+    switchUp() {
+        return this.switch(Meta.MotionDirection.UP);
     }
-    switchDown(loop: boolean) {
-        return this.switch(Meta.MotionDirection.DOWN, loop);
+    switchDown() {
+        return this.switch(Meta.MotionDirection.DOWN);
     }
-    switch(direction: Meta.MotionDirection, loop: boolean) {
+    switch(direction: Meta.MotionDirection) {
         let index = this.selectedIndex();
         if (index === -1) {
             return false;
@@ -1229,13 +1222,7 @@ export class Space extends Array<Array<Window>> {
                 index--;
                 row = -1;
         }
-        if (loop) {
-            if (index < 0) {
-                index = this.length - 1;
-            } else if (index >= this.length) {
-                index = 0;
-            }
-        } else if (!Lib.inBounds(this, index)) {
+        if (!Lib.inBounds(this, index)) {
             return false;
         }
 
@@ -1253,13 +1240,7 @@ export class Space extends Array<Array<Window>> {
             case Meta.MotionDirection.DOWN:
                 row++;
         }
-        if (loop) {
-            if (row < 0) {
-                row = column.length - 1;
-            } else if (row >= column.length) {
-                row = 0;
-            }
-        } else if (!Lib.inBounds(column, row)) {
+        if (!Lib.inBounds(column, row)) {
             return false;
         }
 
@@ -1690,11 +1671,11 @@ export class Space extends Array<Array<Window>> {
                 switch (dir) {
                     case Clutter.ScrollDirection.LEFT:
                     case Clutter.ScrollDirection.UP:
-                        this.switchLeft(false);
+                        this.switchLeft();
                         break;
                     case Clutter.ScrollDirection.RIGHT:
                     case Clutter.ScrollDirection.DOWN:
-                        this.switchRight(false);
+                        this.switchRight();
                         break;
                 }
             }

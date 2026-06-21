@@ -453,10 +453,10 @@ export function topBarScrollAction(event: Clutter.Event) {
     const direction = event.get_scroll_direction();
     switch (direction) {
         case Clutter.ScrollDirection.DOWN:
-            Tiling.spaces!.activeSpace?.switchRight(false);
+            Tiling.spaces!.activeSpace?.switchRight();
             break;
         case Clutter.ScrollDirection.UP:
-            Tiling.spaces!.activeSpace?.switchLeft(false);
+            Tiling.spaces!.activeSpace?.switchLeft();
             break;
     }
     const selected = Tiling.spaces!.activeSpace?.selectedWindow;
