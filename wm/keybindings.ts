@@ -243,36 +243,6 @@ export function setupActions(settings: Gio.Settings) {
     registerNavigatorAction('drift-right', (_mw, space) => space.driftRight());
 
     registerMinimapAction('switch-first', Tiling.activateFirstWindow);
-    registerMinimapAction('switch-second', (_mw, space) =>
-        Tiling.activateNthWindow(1, space)
-    );
-    registerMinimapAction('switch-third', (_mw, space) =>
-        Tiling.activateNthWindow(2, space)
-    );
-    registerMinimapAction('switch-fourth', (_mw, space) =>
-        Tiling.activateNthWindow(3, space)
-    );
-    registerMinimapAction('switch-fifth', (_mw, space) =>
-        Tiling.activateNthWindow(4, space)
-    );
-    registerMinimapAction('switch-sixth', (_mw, space) =>
-        Tiling.activateNthWindow(5, space)
-    );
-    registerMinimapAction('switch-seventh', (_mw, space) =>
-        Tiling.activateNthWindow(6, space)
-    );
-    registerMinimapAction('switch-eighth', (_mw, space) =>
-        Tiling.activateNthWindow(7, space)
-    );
-    registerMinimapAction('switch-ninth', (_mw, space) =>
-        Tiling.activateNthWindow(8, space)
-    );
-    registerMinimapAction('switch-tenth', (_mw, space) =>
-        Tiling.activateNthWindow(9, space)
-    );
-    registerMinimapAction('switch-eleventh', (_mw, space) =>
-        Tiling.activateNthWindow(10, space)
-    );
     registerMinimapAction('switch-last', Tiling.activateLastWindow);
 
     registerMinimapAction('switch-global-right', (_mw, space) =>

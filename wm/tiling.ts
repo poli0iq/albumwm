@@ -3954,7 +3954,7 @@ export function cycleWindowHeightDirection(
     }
 }
 
-export function activateNthWindow(n: number, space: Space) {
+function activateNthWindow(n: number, space: Space) {
     space = space || spaces.activeSpace;
     const nth = space[n][0];
     ensureViewport(nth, space);
