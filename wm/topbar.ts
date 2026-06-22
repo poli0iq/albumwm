@@ -20,8 +20,7 @@ const display = global.display;
 
 export const panelBox = Main.layoutManager.panelBox;
 
-export let focusButton: FocusButton | null,
-    openPositionButton: OpenPositionButton | null;
+export let focusButton: FocusButton | null;
 let signals: Utils.Signals | null, gsettings: Gio.Settings | null;
 
 export function enable(extension: Extension) {
@@ -31,19 +30,10 @@ export function enable(extension: Extension) {
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     focusButton = new FocusButton();
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    openPositionButton = new OpenPositionButton();
 
     Main.panel.addToStatusArea('FocusButton', focusButton, 2, 'left');
-    Main.panel.addToStatusArea(
-        'OpenPositionButton',
-        openPositionButton,
-        3,
-        'left'
-    );
 
     fixFocusModeIcon();
-    fixOpenPositionIcon();
 
     signals.connect(Main.overview, 'showing', fixTopBar);
     signals.connect(Main.overview, 'hidden', () => {
@@ -55,14 +45,6 @@ export function enable(extension: Extension) {
         'changed::show-focus-mode-icon',
         (_settings, _key) => {
             fixFocusModeIcon();
-        }
-    );
-
-    signals.connect(
-        gsettings,
-        'changed::show-open-position-icon',
-        (_settings, _key) => {
-            fixOpenPositionIcon();
         }
     );
 
@@ -80,8 +62,6 @@ export function disable() {
     signals = null;
     focusButton!.destroy();
     focusButton = null;
-    openPositionButton!.destroy();
-    openPositionButton = null;
 
     gsettings = null;
 }
@@ -332,105 +312,6 @@ export class FocusButton extends panelMenu.Button {
     }
 }
 
-class OpenPositionIcon extends BaseIcon {
-    static {
-        GObject.registerClass({ GTypeName: 'OpenPositionIcon' }, this);
-    }
-
-    declare gIconRight: Gio.Icon;
-    declare gIconDown: Gio.Icon;
-
-    _init(
-        props?: Partial<St.Icon.ConstructorProps>,
-        tooltipProps?: TooltipProps
-    ) {
-        super._init(
-            props,
-            tooltipProps,
-            () => {
-                this.gIconRight = Gio.icon_new_for_string(
-                    'resource:///dev/0iq/albumwm/icons/open-position-right-symbolic.svg'
-                );
-                this.gIconDown = Gio.icon_new_for_string(
-                    'resource:///dev/0iq/albumwm/icons/open-position-down-symbolic.svg'
-                );
-
-                signals!.connect(
-                    gsettings!,
-                    'changed::open-window-position',
-                    (_settings, _key) => {
-                        const mode = Settings.prefs!.open_window_position;
-                        this.setMode(mode);
-                    }
-                );
-            },
-            mode => {
-                mode = mode ?? Settings.OpenWindowPositions.RIGHT;
-                this.mode = mode;
-                this.gicon =
-                    mode === Settings.OpenWindowPositions.DOWN
-                        ? this.gIconDown
-                        : this.gIconRight;
-                this.updateTooltipText();
-                return this;
-            },
-            () => {
-                const label =
-                    this.mode === Settings.OpenWindowPositions.DOWN
-                        ? 'DOWN'
-                        : 'RIGHT';
-                const ct = this.tooltip.clutter_text;
-                ct.set_markup(`<i>Open Window Position</i>
-Current position: <b>${label}</b>\
-${this.getKeybindString('switch-open-window-position')}`);
-            }
-        );
-    }
-}
-
-export class OpenPositionButton extends panelMenu.Button {
-    static {
-        GObject.registerClass({ GTypeName: 'OpenPositionButton' }, this);
-    }
-
-    declare _icon: OpenPositionIcon;
-    declare positionMode: number;
-
-    constructor() {
-        super(0.0, 'OpenPosition');
-    }
-
-    _init() {
-        super._init(0.0, 'OpenPosition');
-
-        this._icon = new OpenPositionIcon(
-            {
-                style_class: 'system-status-icon open-position-icon',
-            },
-            { parent: this, x_point: -10 }
-        );
-
-        this.setPositionMode(Settings.prefs!.open_window_position);
-        this.add_child(this._icon);
-        this.connect('button-press-event', this._onClicked.bind(this));
-    }
-
-    /**
-     * Sets the position mode with this button.
-     */
-    setPositionMode(mode: number) {
-        mode = mode ?? Settings.OpenWindowPositions.RIGHT;
-        this.positionMode = mode;
-        this._icon.setMode(mode);
-        return this;
-    }
-
-    _onClicked(_actor: Clutter.Actor, _event: Clutter.Event) {
-        switchToNextOpenPositionMode();
-        return Clutter.EVENT_PROPAGATE;
-    }
-}
-
 /**
  * Action when mouse scrolling on topbar.
  */
@@ -476,25 +357,6 @@ export function topBarScrollAction(event: Clutter.Event) {
     return Clutter.EVENT_PROPAGATE;
 }
 
-/**
- * Toggles between RIGHT and DOWN open-window positions.
- */
-export function switchToNextOpenPositionMode() {
-    const next =
-        Settings.prefs!.open_window_position ===
-        Settings.OpenWindowPositions.DOWN
-            ? Settings.OpenWindowPositions.RIGHT
-            : Settings.OpenWindowPositions.DOWN;
-    gsettings!.set_int('open-window-position', next);
-}
-
-/**
- * Switches to the next position for opening new windows.
- */
-export function setOpenPositionMode(mode: number) {
-    gsettings!.set_int('open-window-position', mode);
-}
-
 export function fixTopBar() {
     const space = Tiling?.spaces?.activeSpace;
     if (!space) return;
@@ -531,9 +393,4 @@ export function hideTopBar() {
 export function fixFocusModeIcon() {
     if (Settings.prefs!.show_focus_mode_icon) focusButton!.show();
     else focusButton!.hide();
-}
-
-export function fixOpenPositionIcon() {
-    if (Settings.prefs!.show_open_position_icon) openPositionButton!.show();
-    else openPositionButton!.hide();
 }

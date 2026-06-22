@@ -9,25 +9,6 @@ Adw.PreferencesPage general_page {
     title: _("Behavior");
 
     Adw.ActionRow {
-      title: _("Open window position");
-      subtitle: _("Position to insert new tiled windows");
-
-      Adw.ToggleGroup open-window-position {
-        valign: center;
-
-        Adw.Toggle {
-          name: "right";
-          label: _("To right");
-        }
-
-        Adw.Toggle {
-          name: "down";
-          label: _("Below");
-        }
-      }
-    }
-
-    Adw.ActionRow {
       title: _("Window focus mode");
       subtitle: _("What happens to a window on selection");
 
@@ -199,10 +180,6 @@ Adw.PreferencesPage advanced_page {
 
     Adw.SwitchRow show-focus-mode-icon {
       title: _("Show focus mode icon in top bar");
-    }
-
-    Adw.SwitchRow show-open-position-icon {
-      title: _("Show open window position icon in top bar");
     }
 
     Adw.SpinRow overview_min_windows_per_row_spin {

@@ -144,7 +144,6 @@ let signals: Utils.Signals | null, grabSignals: Utils.Signals | null;
 let startupTimeoutId: number | null,
     timerId: number | null,
     fullscreenStartTimeout: number | null,
-    stackSlurpTimeout: number | null,
     workspaceChangeTimeouts: (number | null)[] | null;
 let monitorChangeTimeout: number | null;
 export let inGrab: Grab.MoveGrab | Grab.ResizeGrab | null;
@@ -248,8 +247,6 @@ export function disable() {
     timerId = null;
     Utils.timeoutRemove(fullscreenStartTimeout);
     fullscreenStartTimeout = null;
-    Utils.timeoutRemove(stackSlurpTimeout);
-    stackSlurpTimeout = null;
     workspaceChangeTimeouts?.forEach(t => Utils.timeoutRemove(t));
     workspaceChangeTimeouts = null;
     Utils.timeoutRemove(monitorChangeTimeout);
@@ -2925,7 +2922,6 @@ Opening "${metaWindow?.title}" on current space.`
             return;
         }
     }
-    const active = space.selectedWindow!;
 
     if (!addFilter(metaWindow)) {
         connectSizeChanged();
@@ -2973,33 +2969,6 @@ Opening "${metaWindow?.title}" on current space.`
     // run a simple layout in pre-prepare layout
     space.layout(false);
 
-    const slurpCheck = (timeout: boolean) => {
-        const slurpPosition =
-            Settings.prefs!.open_window_position ===
-            Settings.OpenWindowPositions.DOWN
-                ? SlurpInsertPosition.BELOW
-                : null;
-
-        if (!slurpPosition) {
-            dropCallback(metaWindow);
-            return;
-        }
-
-        // has slurpPosition but no timeout
-        if (!timeout) {
-            slurp(active, slurpPosition);
-            dropCallback(metaWindow);
-            return;
-        }
-
-        // if need to slurp (i.e. vertical stack)
-        stackSlurpTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-            slurp(active, slurpPosition);
-            dropCallback(metaWindow);
-            return false; // on return false destroys timeout
-        });
-    };
-
     /**
      * If window is new, then setup and ensure is in view
      * after actor is shown on stage.
@@ -3022,7 +2991,7 @@ Opening "${metaWindow?.title}" on current space.`
             ensureViewport(space.selectedWindow!, space);
             maybeWarpPointerToWindow(metaWindow);
 
-            slurpCheck(true);
+            dropCallback(metaWindow);
         });
 
         return;
@@ -3054,13 +3023,13 @@ Opening "${metaWindow?.title}" on current space.`
     }
 
     if (dropping) {
-        slurpCheck(false);
+        dropCallback(metaWindow);
     }
 }
 
 /**
- * Gets the window index to add a new window in the space (always to the right
- * of the selected window — DOWN position handles its placement via slurp).
+ * Gets the window index to add a new window in the space: always a new column
+ * to the right of the selected window.
  */
 export function getOpenWindowPositionIndex(space: Space) {
     let index = -1;

@@ -241,15 +241,6 @@ class SettingsWidget {
         );
 
         toggleGroupSelectionChanged(
-            'open-window-position',
-            {
-                right: 0,
-                down: 1,
-            },
-            'right',
-            0
-        );
-        toggleGroupSelectionChanged(
             'default-focus-mode',
             {
                 default: 0,
@@ -347,7 +338,6 @@ class SettingsWidget {
 
         // Interface
         booleanStateChanged('show-focus-mode-icon');
-        booleanStateChanged('show-open-position-icon');
         intValueChanged(
             'overview_min_windows_per_row_spin',
             'overview-min-windows-per-row'

@@ -6,12 +6,6 @@
     border: none;
 }
 
-.open-position-icon {
-    icon-size: 22px;
-    padding: 0;
-    background-color: transparent;
-}
-
 .focus-button-tooltip {
     background-color: rgba(0, 0, 0, 0.8);
     padding: 8px;

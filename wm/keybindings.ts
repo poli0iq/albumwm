@@ -13,7 +13,6 @@ import {
     Navigator,
     Scratch,
     LiveAltTab,
-    Topbar,
     GnomeSettings,
 } from './imports.js';
 
@@ -273,17 +272,6 @@ export function setupActions(settings: Gio.Settings) {
 
     registerAlbumAction('switch-focus-mode', (_mw, space) =>
         Tiling.switchToNextFocusMode(space)
-    );
-
-    registerAlbumAction(
-        'switch-open-window-position',
-        Topbar.switchToNextOpenPositionMode
-    );
-    registerAlbumAction('open-window-position-right', (_mw, _space) =>
-        Topbar.setOpenPositionMode(Settings.OpenWindowPositions.RIGHT)
-    );
-    registerAlbumAction('open-window-position-down', (_mw, _space) =>
-        Topbar.setOpenPositionMode(Settings.OpenWindowPositions.DOWN)
     );
 
     registerAlbumAction(

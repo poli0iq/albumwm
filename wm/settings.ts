@@ -16,12 +16,6 @@ const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 // This is the value mutter uses for the keyvalue of above_tab
 const META_KEY_ABOVE_TAB = 0x2f7259c9;
 
-// position to open window at (e.g. to the right of current window)
-export enum OpenWindowPositions {
-    RIGHT = 0,
-    DOWN = 1,
-}
-
 // Animation used when ensuring viewport on a window
 export enum EnsureViewportAnimation {
     NONE = 0,
@@ -55,10 +49,8 @@ export type Prefs = {
     only_scratch_in_overview: boolean;
     disable_scratch_in_overview: boolean;
     show_focus_mode_icon: boolean;
-    show_open_position_icon: boolean;
     topbar_mouse_scroll_enable: boolean;
     default_focus_mode: number;
-    open_window_position: number;
     gesture_enabled: boolean;
     gesture_horizontal_fingers: number;
     overview_ensure_viewport_animation: number;
