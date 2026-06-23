@@ -205,11 +205,9 @@ export function enable(extension: Extension) {
             });
         Topbar.fixTopBar();
 
-        // on idle update space name
+        // on idle, reset viewports
         Utils.laterAdd(Meta.LaterType.IDLE, () => {
             spaces.forEach(s => {
-                s.updateName();
-
                 /**
                  * The below resolves https://github.com/paperwm/PaperWM/issues/758.
                  */
@@ -369,7 +367,6 @@ export class Space extends Array<Array<Window>> {
     hState?: Clutter.TouchpadGesturePhase;
 
     // Less used dynamic fields
-    name?: string;
     _inLayout?: boolean;
     showTopBar?: boolean;
     _layoutQueued?: boolean;
@@ -443,9 +440,7 @@ export class Space extends Array<Array<Window>> {
 
         const workspace = this.workspace;
         const prevSpace = saveState.getPrevSpaceByUUID(this.uuid);
-        console.info(
-            `restore by uuid: ${this.uuid}, prevSpace name: ${prevSpace?.name}`
-        );
+        console.info(`restore by uuid: ${this.uuid}`);
 
         // get previous focus mode (if exists)
         const focusMode = prevSpace?.focusMode;
@@ -1551,7 +1546,6 @@ export class Space extends Array<Array<Window>> {
     }
 
     initWorkspaceState() {
-        this.updateName();
         this.updateShowTopBar();
 
         this.signals.connect(
@@ -1564,12 +1558,6 @@ export class Space extends Array<Array<Window>> {
     updateShowTopBar() {
         this.showTopBar = Settings.prefs!.default_show_top_bar;
         if (this._populated) Topbar.fixTopBar();
-    }
-
-    updateName() {
-        const name = `Workspace ${this.index + 1}`;
-        Meta.prefs_change_workspace_name(this.index, name);
-        this.name = name;
     }
 
     createBackground() {
@@ -2018,10 +2006,6 @@ export class Spaces extends Map<Meta.Workspace, Space> {
             if (!workspaces.has(space.workspace)) {
                 this.removeSpace(space);
             }
-        }
-
-        for (const [workspace, space] of this) {
-            Meta.prefs_change_workspace_name(workspace.index(), space.name!);
         }
     }
 
@@ -2910,7 +2894,7 @@ Opening "${metaWindow?.title}" on current space.`
         } else {
             console.debug(
                 '#winprops',
-                `inserting window into space ${newspace.name}`
+                `inserting window into space ${newspace.index}`
             );
             metaWindow.change_workspace(newspace.workspace);
             metaWindow.foreach_transient(t => {

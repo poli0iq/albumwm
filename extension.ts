@@ -37,7 +37,7 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
      - Patches is used for monkey patching gnome shell behavior which simply
        doesn't fit albumwm.
 
-     - topbar adds the workspace name to the topbar and styles it.
+     - topbar manages the top bar: the focus-mode icon and show/hide.
 
      - gestures is responsible for 3-finger swiping.
 
