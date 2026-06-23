@@ -177,7 +177,7 @@ export function enable(extension: Extension) {
         });
     };
     gsettings.connect('changed::vertical-margin', marginsGapChanged);
-    gsettings.connect('changed::window-gap', marginsGapChanged);
+    gsettings.connect('changed::column-gap', marginsGapChanged);
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     spaces = new Spaces();
@@ -588,7 +588,7 @@ export class Space extends Array<Array<Window>> {
             );
         }
 
-        const gap = Settings.prefs!.window_gap;
+        const gap = Settings.prefs!.column_gap;
         const f = grabWindow.get_frame_rect();
         const yGrabRel = f.y - this.monitor!.y;
         targetWidth = f.width;
@@ -634,7 +634,7 @@ export class Space extends Array<Array<Window>> {
                     const availableWidth =
                         this.workArea().width -
                         Settings.prefs!.horizontal_margin * 2 -
-                        Settings.prefs!.window_gap;
+                        Settings.prefs!.column_gap;
                     targetWidth = Math.floor(
                         availableWidth * Math.min(prop.value / 100.0, 1.0)
                     );
@@ -697,7 +697,7 @@ export class Space extends Array<Array<Window>> {
                 }
             }
 
-            y += targetHeight + Settings.prefs!.window_gap;
+            y += targetHeight + Settings.prefs!.column_gap;
         }
         return [targetWidth, y];
     }
@@ -717,7 +717,7 @@ export class Space extends Array<Array<Window>> {
         this.startAnimate();
 
         const time = Settings.prefs!.animation_time;
-        const gap = Settings.prefs!.window_gap;
+        const gap = Settings.prefs!.column_gap;
         let x = gap; // init (ensures autostart apps in particular start properly gapped)
         const selectedIndex = this.selectedIndex();
         const workArea = this.workArea();
@@ -3026,7 +3026,7 @@ export function ensuredX(metaWindow: Window, space: Space) {
     } else if (
         frame.width >
         workArea.width * 0.9 -
-            2 * (Settings.prefs!.horizontal_margin + Settings.prefs!.window_gap)
+            2 * (Settings.prefs!.horizontal_margin + Settings.prefs!.column_gap)
     ) {
         // Consider the window to be wide and center it
         x = min + Math.round((workArea.width - frame.width) / 2);
@@ -3323,7 +3323,7 @@ export function focusHandler(metaWindow: Window) {
         if (
             metaWindow.clone.y === 0 &&
             Settings.prefs!.vertical_margin !== 0 &&
-            Settings.prefs!.window_gap !== 0
+            Settings.prefs!.column_gap !== 0
         ) {
             needLayout = true;
         }
@@ -3503,7 +3503,7 @@ export function toggleMaximizeHorizontally(metaWindow: Window) {
         return;
     }
 
-    let maxWidthPrc = Settings.prefs!.maximize_width_percent;
+    let maxWidthPrc = Settings.prefs!.maximize_column_width;
     // add some sane limits to width percents: 0.5 <= x <= 1.0
     maxWidthPrc = Math.max(0.5, maxWidthPrc);
     maxWidthPrc = Math.min(1.0, maxWidthPrc);
@@ -3546,7 +3546,7 @@ export function resizeHInc(metaWindow: Window) {
     const maxHeight =
         workArea.height -
         Settings.prefs!.horizontal_margin * 2 -
-        Settings.prefs!.window_gap;
+        Settings.prefs!.column_gap;
     const step = Math.floor(maxHeight * 0.1);
     const currentHeight = Math.round(frame.height / step) * step;
     const targetHeight = Math.min(currentHeight + step, maxHeight);
@@ -3575,7 +3575,7 @@ export function resizeHDec(metaWindow: Window) {
     const maxHeight =
         workArea.height -
         Settings.prefs!.horizontal_margin * 2 -
-        Settings.prefs!.window_gap;
+        Settings.prefs!.column_gap;
     const step = Math.floor(maxHeight * 0.1);
     const currentHeight = Math.round(frame.height / step) * step;
     const minHeight = step;
@@ -3605,7 +3605,7 @@ export function resizeWInc(metaWindow: Window) {
     const maxWidth =
         workArea.width -
         Settings.prefs!.horizontal_margin * 2 -
-        Settings.prefs!.window_gap;
+        Settings.prefs!.column_gap;
     const step = Math.floor(maxWidth * 0.1);
     const currentWidth = Math.round(frame.width / step) * step;
     const targetWidth = Math.min(currentWidth + step, maxWidth);
@@ -3634,7 +3634,7 @@ export function resizeWDec(metaWindow: Window) {
     const maxWidth =
         workArea.width -
         Settings.prefs!.horizontal_margin * 2 -
-        Settings.prefs!.window_gap;
+        Settings.prefs!.column_gap;
     const step = Math.floor(maxWidth * 0.1);
     const currentWidth = Math.round(frame.width / step) * step;
     const minWidth = step;
@@ -3656,7 +3656,7 @@ export function resizeWDec(metaWindow: Window) {
 }
 
 export function getCycleWindowWidths(metaWindow: Window) {
-    let steps = Settings.prefs!.cycle_width_steps;
+    let steps = Settings.prefs!.preset_column_widths;
     const space = spaces.spaceOfWindow(metaWindow);
     const workArea = space.workArea();
 
@@ -3666,7 +3666,7 @@ export function getCycleWindowWidths(metaWindow: Window) {
         const availableWidth =
             workArea.width -
             Settings.prefs!.horizontal_margin * 2 -
-            Settings.prefs!.window_gap;
+            Settings.prefs!.column_gap;
         steps = steps.map(x => Math.floor(x * availableWidth));
     }
 
@@ -3755,7 +3755,7 @@ export function cycleWindowHeightDirection(
     metaWindow: Window,
     direction: CycleWindowSizesDirection
 ) {
-    const steps = Settings.prefs!.cycle_height_steps;
+    const steps = Settings.prefs!.preset_window_heights;
     const frame = metaWindow.get_frame_rect();
 
     const space = spaces.spaceOfWindow(metaWindow);
@@ -3787,7 +3787,7 @@ export function cycleWindowHeightDirection(
         const allocate = (column: Window[], available: number) => {
             // NB: important to not retrieve the frame size inside allocate. Allocation of
             // metaWindow should stay the same during a potential fixpoint evaluation.
-            available -= (column.length - 1) * Settings.prefs!.window_gap;
+            available -= (column.length - 1) * Settings.prefs!.column_gap;
             const targetHeight = calcTargetHeight(available);
             return column.map((mw: Window) => {
                 if (mw === metaWindow) {
@@ -3977,7 +3977,7 @@ export function allocateDefault(
         return [availableHeight];
     } else {
         // Distribute available height amongst non-selected windows in proportion to their existing height
-        const gap = Settings.prefs!.window_gap;
+        const gap = Settings.prefs!.column_gap;
         const minHeight = 50;
 
         const heightOf = (mw: Window) => {
@@ -4015,7 +4015,7 @@ export function allocateDefault(
 }
 
 export function allocateEqualHeight(column: Window[], available: number) {
-    available -= (column.length - 1) * Settings.prefs!.window_gap;
+    available -= (column.length - 1) * Settings.prefs!.column_gap;
     return column.map(_ => Math.floor(available / column.length));
 }
 

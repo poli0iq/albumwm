@@ -391,7 +391,7 @@ export class ActionDispatcher {
         if (mutterActionId === Meta.KeyBindingAction.MINIMIZE) {
             metaWindow?.minimize();
         } else if (action && action.options.activeInNavigator) {
-            // action is performed while navigator is open (e.g. switch-left)
+            // action is performed while navigator is open (e.g. focus-column-left)
             if (
                 !metaWindow &&
                 action.options.mutterFlags! & Meta.KeyBindingFlags.PER_WINDOW
@@ -417,7 +417,7 @@ export class ActionDispatcher {
             }
         } else if (action) {
             // closes navigator and action is performed afterwards
-            // (e.g. switch-monitor-left)
+            // (e.g. focus-monitor-left)
             this._resetNoModsTimeout();
             this._doActionTimeout = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,

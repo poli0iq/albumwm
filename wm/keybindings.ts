@@ -172,28 +172,28 @@ export function setupActions(settings: Gio.Settings) {
 
     /* Initialize keybindings */
     registerAction(
-        'switch-monitor-right',
+        'focus-monitor-right',
         () => {
             Tiling.switchMonitor(Meta.DisplayDirection.RIGHT);
         },
         { settings }
     );
     registerAction(
-        'switch-monitor-left',
+        'focus-monitor-left',
         () => {
             Tiling.switchMonitor(Meta.DisplayDirection.LEFT);
         },
         { settings }
     );
     registerAction(
-        'switch-monitor-above',
+        'focus-monitor-above',
         () => {
             Tiling.switchMonitor(Meta.DisplayDirection.UP);
         },
         { settings }
     );
     registerAction(
-        'switch-monitor-below',
+        'focus-monitor-below',
         () => {
             Tiling.switchMonitor(Meta.DisplayDirection.DOWN);
         },
@@ -207,24 +207,30 @@ export function setupActions(settings: Gio.Settings) {
         space.switchLinear(-1)
     );
 
-    registerMinimapAction('switch-right', (_mw, space) => space.switchRight());
-    registerMinimapAction('switch-left', (_mw, space) => space.switchLeft());
-    registerMinimapAction('switch-up', (_mw, space) => space.switchUp());
-    registerMinimapAction('switch-down', (_mw, space) => space.switchDown());
+    registerMinimapAction('focus-column-right', (_mw, space) =>
+        space.switchRight()
+    );
+    registerMinimapAction('focus-column-left', (_mw, space) =>
+        space.switchLeft()
+    );
+    registerMinimapAction('focus-window-up', (_mw, space) => space.switchUp());
+    registerMinimapAction('focus-window-down', (_mw, space) =>
+        space.switchDown()
+    );
 
-    registerMinimapAction('switch-first', Tiling.activateFirstWindow);
-    registerMinimapAction('switch-last', Tiling.activateLastWindow);
+    registerMinimapAction('focus-column-first', Tiling.activateFirstWindow);
+    registerMinimapAction('focus-column-last', Tiling.activateLastWindow);
 
-    registerMinimapAction('move-left', (_mw, space) =>
+    registerMinimapAction('move-column-left', (_mw, space) =>
         space.swap(Meta.MotionDirection.LEFT)
     );
-    registerMinimapAction('move-right', (_mw, space) =>
+    registerMinimapAction('move-column-right', (_mw, space) =>
         space.swap(Meta.MotionDirection.RIGHT)
     );
-    registerMinimapAction('move-up', (_mw, space) =>
+    registerMinimapAction('move-window-up', (_mw, space) =>
         space.swap(Meta.MotionDirection.UP)
     );
-    registerMinimapAction('move-down', (_mw, space) =>
+    registerMinimapAction('move-window-down', (_mw, space) =>
         space.swap(Meta.MotionDirection.DOWN)
     );
 
@@ -238,60 +244,60 @@ export function setupActions(settings: Gio.Settings) {
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
-    registerAlbumAction('switch-focus-mode', (_mw, space) =>
+    registerAlbumAction('cycle-focus-modes', (_mw, space) =>
         Tiling.switchToNextFocusMode(space)
     );
 
     registerAlbumAction(
-        'resize-h-inc',
+        'inc-window-height',
         Tiling.resizeHInc,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'resize-h-dec',
+        'dec-window-height',
         Tiling.resizeHDec,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'resize-w-inc',
+        'inc-column-width',
         Tiling.resizeWInc,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'resize-w-dec',
+        'dec-column-width',
         Tiling.resizeWDec,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'cycle-width',
+        'cycle-preset-column-width',
         Tiling.cycleWindowWidth,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'cycle-width-backwards',
+        'cycle-preset-column-width-backwards',
         Tiling.cycleWindowWidthBackwards,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'cycle-height',
+        'cycle-preset-window-height',
         Tiling.cycleWindowHeight,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'cycle-height-backwards',
+        'cycle-preset-window-height-backwards',
         Tiling.cycleWindowHeightBackwards,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'center',
+        'center-column',
         (mw, _space) => {
             Tiling.centerWindow(mw, true, true);
             Tiling.maybeWarpPointerToWindow(mw);
@@ -348,31 +354,31 @@ export function setupActions(settings: Gio.Settings) {
     );
 
     registerAlbumAction(
-        'slurp-in',
+        'consume-window-into-column',
         (mw, _space) => Tiling.slurp(mw),
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'barf-out',
+        'expel-window-from-column',
         (mw, _space) => Tiling.barf(mw),
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'barf-out-active',
+        'expel-window-right',
         (mw, _space) => Tiling.barf(mw, mw),
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'toggle-maximize-width',
+        'maximize-column-toggle',
         Tiling.toggleMaximizeHorizontally,
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
-        'album-toggle-fullscreen',
+        'fullscreen-window-toggle',
         metaWindow => {
             if (metaWindow.fullscreen) {
                 metaWindow.unmake_fullscreen();

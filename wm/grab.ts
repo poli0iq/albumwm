@@ -253,14 +253,14 @@ export class MoveGrab {
         const [x] = space.globalToViewport(gx, gy);
         if (!this.center && onSame && single && space[i]) {
             Tiling.moveTo(space, space[i][0], {
-                x: x + Settings.prefs!.window_gap / 2,
+                x: x + Settings.prefs!.column_gap / 2,
             });
         } else if (!this.center && onSame && single && space[i - 1]) {
             Tiling.moveTo(space, space[i - 1][0], {
                 x:
                     x -
                     space[i - 1][0].clone.width -
-                    Settings.prefs!.window_gap / 2,
+                    Settings.prefs!.column_gap / 2,
             });
         } else if (!this.center && onSame && space.length === 0) {
             space.targetX = x;
@@ -291,7 +291,7 @@ export class MoveGrab {
 
     /** x,y in scroll cooridinates */
     selectDndZone(space: Tiling.Space, x: number, y: number, initial = false) {
-        const gap = Settings.prefs!.window_gap;
+        const gap = Settings.prefs!.column_gap;
         const halfGap = gap / 2;
         const columnZoneMarginViz = 100 + halfGap;
         const columnZoneMargin =

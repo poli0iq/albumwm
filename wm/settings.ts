@@ -24,7 +24,7 @@ export enum EnsureViewportAnimation {
 }
 
 export type Prefs = {
-    window_gap: number;
+    column_gap: number;
     vertical_margin: number;
     horizontal_margin: number;
     animation_time: number;
@@ -32,9 +32,9 @@ export type Prefs = {
     default_show_top_bar: boolean;
     swipe_sensitivity: number[];
     swipe_friction: number[];
-    cycle_width_steps: number[];
-    cycle_height_steps: number[];
-    maximize_width_percent: number;
+    preset_column_widths: number[];
+    preset_window_heights: number[];
+    maximize_column_width: number;
     minimap_scale: number;
     minimap_shade_opacity: number;
     edge_preview_enable: boolean;

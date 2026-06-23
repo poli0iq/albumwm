@@ -148,7 +148,7 @@ class SettingsWidget {
         // };
 
         // General
-        intValueChanged('window_gap_spin', 'window-gap');
+        intValueChanged('window_gap_spin', 'column-gap');
         intValueChanged('hmargin_spinner', 'horizontal-margin');
         intValueChanged('vmargin_spinner', 'vertical-margin');
 
@@ -224,18 +224,18 @@ class SettingsWidget {
                 );
             });
             this.builder.get_object(resetElementName).connect('clicked', () => {
-                // text value here should match the gshema value for cycle-width-steps
+                // text value here should match the gshema value for preset-column-widths
                 element.set_text('38.195%; 50%; 61.804%');
             });
         };
         cycleProcessor(
             'cycle_widths_entry',
-            'cycle-width-steps',
+            'preset-column-widths',
             'cycle_widths_reset_button'
         );
         cycleProcessor(
             'cycle_heights_entry',
-            'cycle-height-steps',
+            'preset-window-heights',
             'cycle_heights_reset_button'
         );
 
@@ -377,7 +377,7 @@ class SettingsWidget {
         );
 
         // Other
-        percentValueChanged('maximize-width-percent', 'maximize-width-percent');
+        percentValueChanged('maximize-width-percent', 'maximize-column-width');
         booleanStateChanged('topbar-mouse-scroll-enable');
 
         // Gesture

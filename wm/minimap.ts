@@ -76,8 +76,8 @@ export class Minimap extends Array<Array<Container>> {
         actor.add_child(clip);
         clip.add_child(container);
         clip.set_position(
-            12 + Settings.prefs!.window_gap,
-            12 + Math.round(1.5 * Settings.prefs!.window_gap)
+            12 + Settings.prefs!.column_gap,
+            12 + Math.round(1.5 * Settings.prefs!.column_gap)
         );
         highlight.y = clip.y - 10;
         Main.layoutManager.uiGroup.add_child(this.actor);
@@ -220,7 +220,7 @@ export class Minimap extends Array<Array<Container>> {
         const scale = Settings.prefs!.minimap_scale;
         clone.set_size(
             buffer.width * scale,
-            buffer.height * scale - Settings.prefs!.window_gap
+            buffer.height * scale - Settings.prefs!.column_gap
         );
         clone.set_position(
             (buffer.x - frame.x) * scale,
@@ -231,7 +231,7 @@ export class Minimap extends Array<Array<Container>> {
 
     layout() {
         if (this.destroyed) return;
-        const gap = Settings.prefs!.window_gap;
+        const gap = Settings.prefs!.column_gap;
         let x = 0;
         for (const column of this) {
             let y = 0,
@@ -310,10 +310,10 @@ export class Minimap extends Array<Array<Container>> {
 
         if (container.x > 0) container.x = 0;
 
-        const gap = Settings.prefs!.window_gap;
+        const gap = Settings.prefs!.column_gap;
         highlight.x = Math.round(clip.x + container.x + selected.x - gap / 2);
         highlight.y = Math.round(
-            clip.y + selected.y - Settings.prefs!.window_gap
+            clip.y + selected.y - Settings.prefs!.column_gap
         );
         highlight.set_size(
             Math.round(selected.width + gap),
