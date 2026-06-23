@@ -62,10 +62,10 @@ const actions = {
         'cycle-focus-modes',
     ],
     monitors: [
-        'focus-monitor-right',
         'focus-monitor-left',
-        'focus-monitor-above',
         'focus-monitor-below',
+        'focus-monitor-above',
+        'focus-monitor-right',
     ],
     floating: [
         'toggle-window-floating',
