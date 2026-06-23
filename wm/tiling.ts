@@ -3381,7 +3381,7 @@ export function focusHandler(metaWindow: Window) {
 
 /**
  * Invoked by our callsites where the focus warp is appropriate
- * (focus movement keybindings, close-window, insertWindow, LiveAltTab etc.).
+ * (focus movement keybindings, close-window, insertWindow etc.).
  * Checks if "warp-pointer-on-focus" is true, and has a lot of other safeguards
  * and logic.
  */

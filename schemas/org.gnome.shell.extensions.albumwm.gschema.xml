@@ -4,24 +4,6 @@
   <schema id="org.gnome.shell.extensions.albumwm.keybindings"
           path="/org/gnome/shell/extensions/albumwm/keybindings/">
 
-    <key type="as" name="live-alt-tab">
-      <default><![CDATA[['<Super>Tab', '<Alt>Tab']]]></default>
-      <summary>Switch to previously active window</summary>
-    </key>
-    <key type="as" name="live-alt-tab-backward">
-      <default><![CDATA[['<Super><Shift>Tab', '<Alt><Shift>Tab']]]></default>
-      <summary>Switch to previously active window, backward order</summary>
-    </key>
-
-    <key type="as" name="live-alt-tab-scratch">
-        <default><![CDATA[['<Alt><Ctrl>Tab']]]></default>
-      <summary>Switch to previously active scratch window</summary>
-    </key>
-    <key type="as" name="live-alt-tab-scratch-backward">
-        <default><![CDATA[['<Shift><Alt><Ctrl>Tab']]]></default>
-      <summary>Switch to previously active scratch window, backward order</summary>
-    </key>
-
     <key type="as" name="switch-monitor-right">
         <default><![CDATA[['<Super><Shift>Right']]]></default>
         <summary>Switch to the right monitor</summary>

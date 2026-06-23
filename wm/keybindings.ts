@@ -12,7 +12,6 @@ import {
     Tiling,
     Navigator,
     Scratch,
-    LiveAltTab,
     GnomeSettings,
 } from './imports.js';
 
@@ -172,21 +171,6 @@ export function setupActions(settings: Gio.Settings) {
     keycomboMap = {};
 
     /* Initialize keybindings */
-    registerAction('live-alt-tab', LiveAltTab.liveAltTab, { settings });
-    registerAction('live-alt-tab-backward', LiveAltTab.liveAltTab, {
-        settings,
-        mutterFlags: Meta.KeyBindingFlags.IS_REVERSED,
-    });
-
-    registerAction('live-alt-tab-scratch', LiveAltTab.liveAltTabScratch, {
-        settings,
-    });
-    registerAction(
-        'live-alt-tab-scratch-backward',
-        LiveAltTab.liveAltTabScratch,
-        { settings, mutterFlags: Meta.KeyBindingFlags.IS_REVERSED }
-    );
-
     registerAction(
         'switch-monitor-right',
         () => {

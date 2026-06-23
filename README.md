@@ -39,6 +39,7 @@ Features that the fork author considered useless or harmful are dropped.
     Ratioale: the windows already indicate focus themselves.
 
 - Dropped the "take window" navigation mode
+- Dropped the custom "live alt-tab" switcher, use GNOME's native switcher instead
 
 ## Installation
 

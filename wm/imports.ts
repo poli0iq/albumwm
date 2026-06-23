@@ -4,7 +4,6 @@ export * as GnomeSettings from './gnomeSettings.js';
 export * as Grab from './grab.js';
 export * as Keybindings from './keybindings.js';
 export * as Lib from './lib.js';
-export * as LiveAltTab from './liveAltTab.js';
 export * as Minimap from './minimap.js';
 export * as Navigator from './navigator.js';
 export * as Patches from './patches.js';
