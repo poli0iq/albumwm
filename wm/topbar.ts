@@ -31,7 +31,15 @@ export function enable(extension: Extension) {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     focusButton = new FocusButton();
 
-    Main.panel.addToStatusArea('FocusButton', focusButton, 2, 'left');
+    Main.panel.addToStatusArea('FocusButton', focusButton, 1, 'left');
+
+    /* Keep us right of the workspace pill; e.g. appindicator-support inserts
+     * its icons at index 1 too. */
+    const leftBox = focusButton.container.get_parent();
+    if (leftBox) {
+        placeFocusButton();
+        signals.connect(leftBox, 'child-added', () => placeFocusButton());
+    }
 
     fixFocusModeIcon();
 
@@ -390,4 +398,23 @@ export function hideTopBar() {
 export function fixFocusModeIcon() {
     if (Settings.prefs!.show_focus_mode_icon) focusButton!.show();
     else focusButton!.hide();
+}
+
+/** Move the focus button directly to the right of the workspace pill. */
+function placeFocusButton() {
+    const activities = (
+        Main.panel.statusArea as typeof Main.panel.statusArea & {
+            activities?: panelMenu.Button;
+        }
+    ).activities;
+    const container = focusButton?.container;
+    if (!container || !activities) return;
+
+    const leftBox = container.get_parent();
+    if (!leftBox || activities.container.get_parent() !== leftBox) return;
+
+    const children = leftBox.get_children();
+    const target = children.indexOf(activities.container) + 1;
+    if (children.indexOf(container) !== target)
+        leftBox.set_child_at_index(container, target);
 }
