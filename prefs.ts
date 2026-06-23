@@ -150,8 +150,7 @@ class SettingsWidget {
         // General
         intValueChanged('window_gap_spin', 'window-gap');
         intValueChanged('hmargin_spinner', 'horizontal-margin');
-        intValueChanged('top_margin_spinner', 'vertical-margin');
-        intValueChanged('bottom_margin_spinner', 'vertical-margin-bottom');
+        intValueChanged('vmargin_spinner', 'vertical-margin');
 
         // processing function for cycle values
         const cycleProcessor = (

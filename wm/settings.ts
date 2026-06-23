@@ -26,7 +26,6 @@ export enum EnsureViewportAnimation {
 export type Prefs = {
     window_gap: number;
     vertical_margin: number;
-    vertical_margin_bottom: number;
     horizontal_margin: number;
     animation_time: number;
     drag_drift_speed: number;

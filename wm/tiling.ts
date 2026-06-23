@@ -177,7 +177,6 @@ export function enable(extension: Extension) {
         });
     };
     gsettings.connect('changed::vertical-margin', marginsGapChanged);
-    gsettings.connect('changed::vertical-margin-bottom', marginsGapChanged);
     gsettings.connect('changed::window-gap', marginsGapChanged);
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -549,10 +548,7 @@ export class Space extends Array<Array<Window>> {
             x: workArea.x - this.monitor!.x,
             y: workArea.y - this.monitor!.y + Settings.prefs!.vertical_margin,
             width: workArea.width,
-            height:
-                workArea.height -
-                Settings.prefs!.vertical_margin -
-                Settings.prefs!.vertical_margin_bottom,
+            height: workArea.height - 2 * Settings.prefs!.vertical_margin,
         };
     }
 

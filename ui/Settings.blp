@@ -104,22 +104,9 @@ Adw.PreferencesPage general_page {
       };
     }
 
-    Adw.SpinRow top_margin_spinner {
-      title: _("Top margin");
-      numeric: true;
-      snap-to-ticks: true;
-
-      adjustment: Gtk.Adjustment {
-        lower: 0;
-        upper: 100;
-        value: 0;
-        page-increment: 10;
-        step-increment: 1;
-      };
-    }
-
-    Adw.SpinRow bottom_margin_spinner {
-      title: _("Bottom margin");
+    Adw.SpinRow vmargin_spinner {
+      title: _("Vertical margin");
+      subtitle: _("Minimum margin to the top and bottom monitor edge");
       numeric: true;
       snap-to-ticks: true;
 
