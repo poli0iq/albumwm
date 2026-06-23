@@ -20,33 +20,46 @@ const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 const actions = {
     windows: [
         'close-window',
+
         'focus-column-left',
-        'focus-column-right',
-        'focus-window-up',
         'focus-window-down',
+        'focus-window-up',
+        'focus-column-right',
+
         'focus-column-first',
         'focus-column-last',
-        'cycle-focus-modes',
+
         'move-column-left',
-        'move-column-right',
-        'move-window-up',
         'move-window-down',
+        'move-window-up',
+        'move-column-right',
+
+        'expel-window-right',
+
         'consume-window-into-column',
         'expel-window-from-column',
-        'expel-window-right',
+
         'center-column',
-        'fullscreen-window-toggle',
+
         'maximize-column-toggle',
-        'inc-window-height',
-        'dec-window-height',
+        'fullscreen-window-toggle',
+
         'inc-column-width',
         'dec-column-width',
+
+        'inc-window-height',
+        'dec-window-height',
+
         'cycle-preset-column-width',
         'cycle-preset-column-width-backwards',
+
         'cycle-preset-window-height',
         'cycle-preset-window-height-backwards',
+
         'focus-window-down-or-column-right',
         'focus-window-up-or-column-left',
+
+        'cycle-focus-modes',
     ],
     monitors: [
         'focus-monitor-right',
