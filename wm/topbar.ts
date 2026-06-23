@@ -270,7 +270,8 @@ export class FocusButton extends panelMenu.Button {
     }
 
     _init() {
-        super._init(0.0, 'FocusMode');
+        // dontCreateMenu disables the base click gesture (an empty-menu toggle).
+        super._init(0.0, 'FocusMode', true);
 
         this._icon = new FocusIcon(
             {
@@ -281,7 +282,11 @@ export class FocusButton extends panelMenu.Button {
 
         this.setFocusMode();
         this.add_child(this._icon);
-        this.connect('event', this._onClicked.bind(this));
+
+        const click = new Clutter.ClickGesture();
+        click.set_recognize_on_press(true);
+        click.connect('recognize', () => this._onClicked());
+        this.add_action(click);
     }
 
     /**
@@ -294,21 +299,13 @@ export class FocusButton extends panelMenu.Button {
         return this;
     }
 
-    _onClicked(_actor: Clutter.Actor, event: Clutter.Event) {
+    _onClicked() {
         if (Main.overview.visible) {
-            return Clutter.EVENT_PROPAGATE;
-        }
-
-        if (
-            event.type() !== Clutter.EventType.TOUCH_BEGIN &&
-            event.type() !== Clutter.EventType.BUTTON_PRESS
-        ) {
-            return Clutter.EVENT_PROPAGATE;
+            return;
         }
 
         Tiling.switchToNextFocusMode();
         this._icon.updateTooltipText();
-        return Clutter.EVENT_PROPAGATE;
     }
 }
 
