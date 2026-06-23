@@ -3883,18 +3883,6 @@ export function centerWindow(
 }
 
 /**
- * Activates the window under the mouse cursor, if any.
- */
-export function activateWindowUnderCursor(_metaWindow: Window, space: Space) {
-    const [gx, gy] = global.get_pointer();
-    const [, x, y] = space.actor.transform_stage_point(gx, gy);
-    const mw = space?.getWindowAtPoint(x, y);
-    if (mw) {
-        ensureViewport(mw, space);
-    }
-}
-
-/**
  * Sets the focus mode for a space.
  */
 export function setFocusMode(mode: FocusModes, space: Space) {

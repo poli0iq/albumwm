@@ -51,7 +51,6 @@ const actions = {
         'cycle-width-backwards',
         'cycle-height',
         'cycle-height-backwards',
-        'activate-window-under-cursor',
     ],
     monitors: [
         'switch-monitor-right',

@@ -252,11 +252,6 @@ export function setupActions(settings: Gio.Settings) {
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
-    registerAlbumAction(
-        'activate-window-under-cursor',
-        Tiling.activateWindowUnderCursor
-    );
-
     registerAlbumAction('switch-focus-mode', (_mw, space) =>
         Tiling.switchToNextFocusMode(space)
     );
