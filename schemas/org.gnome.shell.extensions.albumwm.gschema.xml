@@ -4,133 +4,67 @@
   <schema id="org.gnome.shell.extensions.albumwm.keybindings"
           path="/org/gnome/shell/extensions/albumwm/keybindings/">
 
-    <key type="as" name="focus-monitor-right">
-        <default><![CDATA[['<Super><Shift>Right']]]></default>
-        <summary>Focus the monitor to the right</summary>
-    </key>
-    <key type="as" name="focus-monitor-left">
-        <default><![CDATA[['<Super><Shift>Left']]]></default>
-        <summary>Focus the monitor to the left</summary>
-    </key>
-    <key type="as" name="focus-monitor-above">
-        <default><![CDATA[['<Super><Shift>Up']]]></default>
-        <summary>Focus the monitor above</summary>
-    </key>
-    <key type="as" name="focus-monitor-below">
-        <default><![CDATA[['<Super><Shift>Down']]]></default>
-        <summary>Focus the monitor below</summary>
+    <!-- Windows -->
+    <key type="as" name="close-window">
+      <default><![CDATA[['<Super>q']]]></default>
+      <summary>Close the active window</summary>
     </key>
 
-    <key type="as" name="toggle-window-floating">
-        <default><![CDATA[['<Super>x']]]></default>
-        <summary>Float/unfloat the focused window</summary>
-    </key>
-    <key type="as" name="switch-focus-between-floating-and-tiling">
-        <default><![CDATA[['<Super><Shift>x']]]></default>
-        <summary>Switch focus between the floating and tiling layers</summary>
-    </key>
-
-    <key type="as" name="cycle-focus-modes">
-      <default><![CDATA[['<Super><Shift>c']]]></default>
-      <summary>Cycle between window focus modes (default, center, edge)</summary>
-    </key>
-
-    <key type="as" name="focus-column-right">
-        <default><![CDATA[['<Super>Right']]]></default>
-        <summary>Focus the column to the right</summary>
-    </key>
     <key type="as" name="focus-column-left">
-        <default><![CDATA[['<Super>Left']]]></default>
-        <summary>Focus the column to the left</summary>
-    </key>
-
-    <key type="as" name="focus-window-up">
-        <default><![CDATA[['<Super>Up']]]></default>
-        <summary>Focus the window above</summary>
+      <default><![CDATA[['<Super>h', '<Super>Left']]]></default>
+      <summary>Focus the column to the left</summary>
     </key>
     <key type="as" name="focus-window-down">
-        <default><![CDATA[['<Super>Down']]]></default>
-        <summary>Focus the window below</summary>
+      <default><![CDATA[['<Super>j', '<Ctrl><Super>Down']]]></default>
+      <summary>Focus the window below</summary>
+    </key>
+    <key type="as" name="focus-window-up">
+      <default><![CDATA[['<Super>k', '<Ctrl><Super>Up']]]></default>
+      <summary>Focus the window above</summary>
+    </key>
+    <key type="as" name="focus-column-right">
+      <default><![CDATA[['<Super>l', '<Super>Right']]]></default>
+      <summary>Focus the column to the right</summary>
     </key>
 
     <key type="as" name="focus-column-first">
-        <default><![CDATA[[]]]></default>
-        <summary>Focus the first column</summary>
+      <default><![CDATA[[]]]></default>
+      <summary>Focus the first column</summary>
     </key>
-
     <key type="as" name="focus-column-last">
-        <default><![CDATA[[]]]></default>
-        <summary>Focus the last column</summary>
+      <default><![CDATA[[]]]></default>
+      <summary>Focus the last column</summary>
     </key>
 
-    <key type="as" name="move-column-right">
-      <default><![CDATA[['<Super><Ctrl>period', '<Super><Shift>period', '<Super><Ctrl>Right']]]></default>
-      <summary>Move the focused column right</summary>
-    </key>
     <key type="as" name="move-column-left">
-      <default><![CDATA[['<Super><Ctrl>comma', '<Super><Shift>comma', '<Super><Ctrl>Left']]]></default>
+      <default><![CDATA[['<Shift><Super>h', '<Shift><Super>Left']]]></default>
       <summary>Move the focused column left</summary>
     </key>
-    <key type="as" name="move-window-up">
-        <default><![CDATA[['<Super><Ctrl>Up']]]></default>
-        <summary>Move the focused window up</summary>
-    </key>
     <key type="as" name="move-window-down">
-        <default><![CDATA[['<Super><Ctrl>Down']]]></default>
-        <summary>Move the focused window down</summary>
+      <default><![CDATA[['<Shift><Super>j', '<Shift><Super>Down']]]></default>
+      <summary>Move the focused window down</summary>
+    </key>
+    <key type="as" name="move-window-up">
+      <default><![CDATA[['<Shift><Super>k', '<Shift><Super>Up']]]></default>
+      <summary>Move the focused window up</summary>
+    </key>
+    <key type="as" name="move-column-right">
+      <default><![CDATA[['<Shift><Super>l', '<Shift><Super>Right']]]></default>
+      <summary>Move the focused column right</summary>
+    </key>
+
+    <key type="as" name="expel-window-right">
+      <default><![CDATA[['<Super>bracketright']]]></default>
+      <summary>Expel the focused window into its own column to the right</summary>
     </key>
 
     <key type="as" name="consume-window-into-column">
-        <default><![CDATA[['<Super>i']]]></default>
-        <summary>Consume the window on the right into the focused column</summary>
+      <default><![CDATA[['<Super>comma']]]></default>
+      <summary>Consume the window on the right into the focused column</summary>
     </key>
     <key type="as" name="expel-window-from-column">
-        <default><![CDATA[['<Super>o']]]></default>
-        <summary>Expel the bottom window into its own column to the right</summary>
-    </key>
-    <key type="as" name="expel-window-right">
-        <default><![CDATA[['<Super><Shift>o']]]></default>
-        <summary>Expel the focused window into its own column to the right</summary>
-    </key>
-
-    <key type="as" name="inc-window-height">
-      <default><![CDATA[['<Super><Shift>plus']]]></default>
-      <summary>Increment the focused window height</summary>
-    </key>
-
-    <key type="as" name="dec-window-height">
-      <default><![CDATA[['<Super><Shift>minus']]]></default>
-      <summary>Decrement the focused window height</summary>
-    </key>
-
-    <key type="as" name="inc-column-width">
-      <default><![CDATA[['<Super>plus']]]></default>
-      <summary>Increment the focused column width</summary>
-    </key>
-
-    <key type="as" name="dec-column-width">
-      <default><![CDATA[['<Super>minus']]]></default>
-      <summary>Decrement the focused column width</summary>
-    </key>
-
-    <key type="as" name="cycle-preset-column-width">
-      <default><![CDATA[['<Super>r']]]></default>
-      <summary>Cycle through useful column widths</summary>
-    </key>
-
-    <key type="as" name="cycle-preset-column-width-backwards">
-      <default><![CDATA[['<Super><Alt>r']]]></default>
-      <summary>Cycle through useful column widths backwards</summary>
-    </key>
-
-    <key type="as" name="cycle-preset-window-height">
-        <default><![CDATA[['<Super><Shift>r']]]></default>
-        <summary>Cycle through useful window heights</summary>
-    </key>
-
-    <key type="as" name="cycle-preset-window-height-backwards">
-        <default><![CDATA[['<Super><Alt><Shift>r']]]></default>
-        <summary>Cycle through useful window heights backwards</summary>
+      <default><![CDATA[['<Super>period']]]></default>
+      <summary>Expel the bottom window into its own column to the right</summary>
     </key>
 
     <key type="as" name="center-column">
@@ -142,15 +76,45 @@
       <default><![CDATA[['<Super>f']]]></default>
       <summary>Maximize/unmaximize the focused column</summary>
     </key>
-
     <key type="as" name="fullscreen-window-toggle">
       <default><![CDATA[['<Super><shift>f']]]></default>
       <summary>Toggle fullscreen for the focused window</summary>
     </key>
 
-    <key type="as" name="close-window">
-      <default><![CDATA[['<Super>BackSpace']]]></default>
-      <summary>Close the active window</summary>
+    <key type="as" name="inc-column-width">
+      <default><![CDATA[['<Super>plus']]]></default>
+      <summary>Increment the focused column width</summary>
+    </key>
+    <key type="as" name="dec-column-width">
+      <default><![CDATA[['<Super>minus']]]></default>
+      <summary>Decrement the focused column width</summary>
+    </key>
+
+    <key type="as" name="inc-window-height">
+      <default><![CDATA[['<Shift><Super>plus']]]></default>
+      <summary>Increment the focused window height</summary>
+    </key>
+    <key type="as" name="dec-window-height">
+      <default><![CDATA[['<Shift><Super>minus']]]></default>
+      <summary>Decrement the focused window height</summary>
+    </key>
+
+    <key type="as" name="cycle-preset-column-width">
+      <default><![CDATA[['<Super>r']]]></default>
+      <summary>Cycle through useful column widths</summary>
+    </key>
+    <key type="as" name="cycle-preset-column-width-backwards">
+      <default><![CDATA[['<Shift><Super>r']]]></default>
+      <summary>Cycle through useful column widths backwards</summary>
+    </key>
+
+    <key type="as" name="cycle-preset-window-height">
+      <default><![CDATA[['<Shift><Ctrl><Super>r']]]></default>
+      <summary>Cycle through useful window heights</summary>
+    </key>
+    <key type="as" name="cycle-preset-window-height-backwards">
+      <default><![CDATA[[]]]></default>
+      <summary>Cycle through useful window heights backwards</summary>
     </key>
 
     <key type="as" name="focus-window-down-or-column-right">
@@ -161,22 +125,55 @@
       <default><![CDATA[[]]]></default>
       <summary>Focus the window above, or the column to the left</summary>
     </key>
+
+    <key type="as" name="cycle-focus-modes">
+      <default><![CDATA[['<Super><Shift>c']]]></default>
+      <summary>Cycle between window focus modes (default, center, edge)</summary>
+    </key>
+
+    <!-- Monitors -->
+    <key type="as" name="focus-monitor-left">
+      <default><![CDATA[['<Ctrl><Super>h']]]></default>
+      <summary>Focus the monitor to the left</summary>
+    </key>
+    <key type="as" name="focus-monitor-below">
+      <default><![CDATA[['<Ctrl><Super>j']]]></default>
+      <summary>Focus the monitor below</summary>
+    </key>
+    <key type="as" name="focus-monitor-above">
+      <default><![CDATA[['<Ctrl><Super>k']]]></default>
+      <summary>Focus the monitor above</summary>
+    </key>
+    <key type="as" name="focus-monitor-right">
+      <default><![CDATA[['<Ctrl><Super>l']]]></default>
+      <summary>Focus the monitor to the right</summary>
+    </key>
+
+    <!-- Floating layer -->
+    <key type="as" name="toggle-window-floating">
+      <default><![CDATA[['<Super>x']]]></default>
+      <summary>Float/unfloat the focused window</summary>
+    </key>
+    <key type="as" name="switch-focus-between-floating-and-tiling">
+      <default><![CDATA[['<Super><Shift>x']]]></default>
+      <summary>Switch focus between the floating and tiling layers</summary>
+    </key>
   </schema>
 
   <schema id="org.gnome.shell.extensions.albumwm" path="/org/gnome/shell/extensions/albumwm/">
     <key type="s" name="restore-attach-modal-dialogs">
-        <default>''</default>
-        <summary>Original setting value (used for restore)</summary>
+      <default>''</default>
+      <summary>Original setting value (used for restore)</summary>
     </key>
 
     <key type="s" name="restore-workspaces-only-on-primary">
-        <default>''</default>
-        <summary>Original setting value (used for restore)</summary>
+      <default>''</default>
+      <summary>Original setting value (used for restore)</summary>
     </key>
 
     <key type="s" name="restore-edge-tiling">
-        <default>''</default>
-        <summary>Original setting value (used for restore)</summary>
+      <default>''</default>
+      <summary>Original setting value (used for restore)</summary>
     </key>
 
     <!-- Settings -->
@@ -186,12 +183,12 @@
     </key>
 
     <key type="i" name="vertical-margin">
-      <default>20</default>
+      <default>10</default>
       <summary>Minimum margin to the top and bottom monitor edge</summary>
     </key>
 
     <key type="i" name="column-gap">
-      <default>20</default>
+      <default>10</default>
       <summary>Minimum gap between columns</summary>
     </key>
 
@@ -246,23 +243,23 @@
     </key>
 
     <key type="ad" name="swipe-sensitivity">
-        <default><![CDATA[[2.0, 2.0]]]></default>
-        <summary>Swipe sensitivity in [x, y] coordinates</summary>
+      <default><![CDATA[[2.0, 2.0]]]></default>
+      <summary>Swipe sensitivity in [x, y] coordinates</summary>
     </key>
 
     <key type="ad" name="swipe-friction">
-        <default><![CDATA[[0.3, 0.1]]]></default>
-        <summary>Swipe friction in [x, y] coordinates</summary>
+      <default><![CDATA[[0.3, 0.1]]]></default>
+      <summary>Swipe friction in [x, y] coordinates</summary>
     </key>
 
     <key type="ad" name="preset-column-widths">
-        <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
-        <summary>cycle-preset-column-width cycles through these widths. value &lt; 1 is interpreted as a ratio of the monitor width. Mixed ratios and pixel values not allowed.</summary>
+      <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
+      <summary>cycle-preset-column-width cycles through these widths. value &lt; 1 is interpreted as a ratio of the monitor width. Mixed ratios and pixel values not allowed.</summary>
     </key>
 
     <key type="ad" name="preset-window-heights">
-        <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
-        <summary>cycle-preset-window-height cycles through these heights. value &lt; 1 is interpreted as a ratio of the monitor height. Mixed ratios and pixel values not allowed.</summary>
+      <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
+      <summary>cycle-preset-window-height cycles through these heights. value &lt; 1 is interpreted as a ratio of the monitor height. Mixed ratios and pixel values not allowed.</summary>
     </key>
 
     <key type="d" name="maximize-column-width">
@@ -271,18 +268,18 @@
     </key>
 
     <key type="b" name="default-show-top-bar">
-        <default>true</default>
-        <summary>Show the top bar on workspaces by default</summary>
+      <default>true</default>
+      <summary>Show the top bar on workspaces by default</summary>
     </key>
 
     <key type="i" name="default-focus-mode">
-        <default>0</default>
-        <summary>Set the default focus mode. 0:DEFAULT 1:CENTER 2:EDGE</summary>
+      <default>0</default>
+      <summary>Set the default focus mode. 0:DEFAULT 1:CENTER 2:EDGE</summary>
     </key>
 
     <key type="b" name="show-focus-mode-icon">
-        <default>true</default>
-        <summary>Show the focus mode icon in the topbar</summary>
+      <default>true</default>
+      <summary>Show the focus mode icon in the topbar</summary>
     </key>
 
     <key type="b" name="topbar-mouse-scroll-enable">
@@ -291,43 +288,43 @@
     </key>
 
     <key type="d" name="animation-time">
-        <default>0.25</default>
-        <summary>Duration of animations in seconds</summary>
+      <default>0.25</default>
+      <summary>Duration of animations in seconds</summary>
     </key>
 
     <key type="i" name="drag-drift-speed">
-        <default>2</default>
-        <summary>Drift speed (px/ms) when mouse is at edge of monitor when dragging windows</summary>
+      <default>2</default>
+      <summary>Drift speed (px/ms) when mouse is at edge of monitor when dragging windows</summary>
     </key>
 
     <key type="d" name="overview-max-window-scale">
-        <default>0.95</default>
-        <summary>Sets the maximum window scale (compared to actual window size) of Gnome overview windows</summary>
+      <default>0.95</default>
+      <summary>Sets the maximum window scale (compared to actual window size) of Gnome overview windows</summary>
     </key>
 
     <key type="i" name="overview-min-windows-per-row">
-        <default>5</default>
-        <summary>Sets the minimum number or windows per row before adding a new window row</summary>
+      <default>5</default>
+      <summary>Sets the minimum number or windows per row before adding a new window row</summary>
     </key>
 
     <key type="i" name="overview-ensure-viewport-animation">
-        <default>1</default>
-        <summary>Sets the animation when exiting GNOME overview and ensuring selected window is in view. 0:NONE, 1:TRANSLATE, 2:FADE</summary>
+      <default>1</default>
+      <summary>Sets the animation when exiting GNOME overview and ensuring selected window is in view. 0:NONE, 1:TRANSLATE, 2:FADE</summary>
     </key>
 
     <key type="as" name="winprops">
-        <default><![CDATA[[]]]></default>
-        <summary>Array of winprops as (JSON) string objects</summary>
+      <default><![CDATA[[]]]></default>
+      <summary>Array of winprops as (JSON) string objects</summary>
     </key>
 
     <key type="b" name="gesture-enabled">
-        <default>true</default>
-        <summary>Enables AlbumWM touchpad gestures</summary>
+      <default>false</default>
+      <summary>Enables AlbumWM touchpad gestures</summary>
     </key>
 
     <key type="i" name="gesture-horizontal-fingers">
-        <default>3</default>
-        <summary>Number of fingers for tiling horizontal swipe. 0:DISABLED 3:THREE_FINGERS 4:FOUR_FINGERS</summary>
+      <default>4</default>
+      <summary>Number of fingers for tiling horizontal swipe. 0:DISABLED 3:THREE_FINGERS 4:FOUR_FINGERS</summary>
     </key>
 
     <child name="keybindings" schema="org.gnome.shell.extensions.albumwm.keybindings"/>
