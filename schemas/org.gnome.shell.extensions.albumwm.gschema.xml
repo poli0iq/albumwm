@@ -85,22 +85,6 @@
         <summary>Switch to the window below</summary>
     </key>
 
-    <key type="as" name="switch-global-right">
-        <default><![CDATA[[]]]></default>
-        <summary>Switch to window to the right</summary>
-    </key>
-    <key type="as" name="switch-global-left">
-        <default><![CDATA[[]]]></default>
-        <summary>Switch to window to the left</summary>
-    </key>
-    <key type="as" name="switch-global-up">
-        <default><![CDATA[[]]]></default>
-        <summary>Switch to window above</summary>
-    </key>
-    <key type="as" name="switch-global-down">
-        <default><![CDATA[[]]]></default>
-        <summary>Switch to window below</summary>
-    </key>
     <key type="as" name="switch-first">
         <default><![CDATA[[]]]></default>
         <summary>Switch to the first window</summary>

@@ -1235,50 +1235,6 @@ export class Space extends Array<Array<Window>> {
         return true;
     }
 
-    switchGlobalLeft() {
-        this.switchGlobal(Meta.MotionDirection.LEFT);
-    }
-    switchGlobalRight() {
-        this.switchGlobal(Meta.MotionDirection.RIGHT);
-    }
-    switchGlobalUp() {
-        this.switchGlobal(Meta.MotionDirection.UP);
-    }
-    switchGlobalDown() {
-        this.switchGlobal(Meta.MotionDirection.DOWN);
-    }
-    switchGlobal(direction: Meta.MotionDirection) {
-        let index = this.selectedIndex();
-        if (index === -1) {
-            return;
-        }
-        let row = this[index].indexOf(this.selectedWindow!);
-
-        switch (direction) {
-            case Meta.MotionDirection.RIGHT:
-                index++;
-                break;
-            case Meta.MotionDirection.LEFT:
-                index--;
-        }
-        if (!Lib.inBounds(this, index)) return;
-
-        const column = this[index];
-        if (column.length <= row) row = column.length - 1;
-
-        switch (direction) {
-            case Meta.MotionDirection.UP:
-                row--;
-                break;
-            case Meta.MotionDirection.DOWN:
-                row++;
-        }
-        if (!Lib.inBounds(column, row)) return;
-
-        const metaWindow = this.getWindow(index, row);
-        ensureViewport(metaWindow!, this);
-    }
-
     /**
      * Return the x position of the visible element of this window.
      */

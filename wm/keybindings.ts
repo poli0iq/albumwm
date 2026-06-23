@@ -229,19 +229,6 @@ export function setupActions(settings: Gio.Settings) {
     registerMinimapAction('switch-first', Tiling.activateFirstWindow);
     registerMinimapAction('switch-last', Tiling.activateLastWindow);
 
-    registerMinimapAction('switch-global-right', (_mw, space) =>
-        space.switchGlobalRight()
-    );
-    registerMinimapAction('switch-global-left', (_mw, space) =>
-        space.switchGlobalLeft()
-    );
-    registerMinimapAction('switch-global-up', (_mw, space) =>
-        space.switchGlobalUp()
-    );
-    registerMinimapAction('switch-global-down', (_mw, space) =>
-        space.switchGlobalDown()
-    );
-
     registerMinimapAction('move-left', (_mw, space) =>
         space.swap(Meta.MotionDirection.LEFT)
     );
