@@ -1,27 +1,8 @@
-.space-workspace-indicator {
-    padding: 0 10px 0 0;
-    background-color: transparent;
-    border-image: none;
-    background-image: none;
-    border: none;
-}
-
 .focus-button-tooltip {
     background-color: rgba(0, 0, 0, 0.8);
     padding: 8px;
     border-radius: 8px;
     font-weight: 600;
-}
-
-.workspace-icon-button {
-    -st-icon-style: symbolic;
-    border: none;
-    border-radius: 8px;
-    padding: 8px;
-}
-
-.workspace-icon-button StIcon {
-    icon-size: 16px;
 }
 
 .albumwm-minimap-selection {
