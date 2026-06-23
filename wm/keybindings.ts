@@ -216,8 +216,10 @@ export function setupActions(settings: Gio.Settings) {
         { settings }
     );
 
-    registerMinimapAction('switch-next', (_mw, space) => space.switchLinear(1));
-    registerMinimapAction('switch-previous', (_mw, space) =>
+    registerMinimapAction('focus-window-down-or-column-right', (_mw, space) =>
+        space.switchLinear(1)
+    );
+    registerMinimapAction('focus-window-up-or-column-left', (_mw, space) =>
         space.switchLinear(-1)
     );
 

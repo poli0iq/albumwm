@@ -59,14 +59,6 @@
       <summary>Switch between Window Focus Modes (e.g. default, center)</summary>
     </key>
 
-    <key type="as" name="switch-next">
-      <default><![CDATA[['<Super>period']]]></default>
-      <summary>Switch to the next window</summary>
-    </key>
-    <key type="as" name="switch-previous">
-      <default><![CDATA[['<Super>comma']]]></default>
-      <summary>Switch to the previous window</summary>
-    </key>
     <key type="as" name="switch-right">
         <default><![CDATA[['<Super>Right']]]></default>
         <summary>Switch to the right window</summary>
@@ -183,6 +175,15 @@
     <key type="as" name="close-window">
       <default><![CDATA[['<Super>BackSpace']]]></default>
       <summary>Close the active window</summary>
+    </key>
+
+    <key type="as" name="focus-window-down-or-column-right">
+      <default><![CDATA[[]]]></default>
+      <summary>Focus the window below, or the column to the right</summary>
+    </key>
+    <key type="as" name="focus-window-up-or-column-left">
+      <default><![CDATA[[]]]></default>
+      <summary>Focus the window above, or the column to the left</summary>
     </key>
   </schema>
 

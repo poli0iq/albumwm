@@ -20,8 +20,6 @@ const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 const actions = {
     windows: [
         'close-window',
-        'switch-next',
-        'switch-previous',
         'switch-left',
         'switch-right',
         'switch-up',
@@ -51,6 +49,8 @@ const actions = {
         'cycle-width-backwards',
         'cycle-height',
         'cycle-height-backwards',
+        'focus-window-down-or-column-right',
+        'focus-window-up-or-column-left',
     ],
     monitors: [
         'switch-monitor-right',
