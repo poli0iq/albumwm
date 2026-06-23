@@ -76,7 +76,6 @@ export function disable() {
 
 type TooltipProps = {
     parent: St.Widget;
-    x_point: number;
 };
 
 class BaseIcon extends St.Icon {
@@ -85,7 +84,6 @@ class BaseIcon extends St.Icon {
     }
 
     declare tooltip_parent: St.Widget;
-    declare tooltip_x_point: number;
     declare mode: number;
     declare setMode: (mode?: number) => void;
     declare updateTooltipText: () => void;
@@ -101,9 +99,7 @@ class BaseIcon extends St.Icon {
     ) {
         super._init(props);
 
-        // allow custom x position for tooltip
         this.tooltip_parent = tooltipProps?.parent ?? this;
-        this.tooltip_x_point = tooltipProps?.x_point ?? 0;
 
         // assign functions
         this.setMode = setMode;
@@ -128,8 +124,8 @@ class BaseIcon extends St.Icon {
         // global.stage.add_child(tt);
         Utils.actorAddChild(global.stage, tt);
         this.tooltip_parent.connect('enter-event', _icon => {
-            this._updateTooltipPosition(this.tooltip_x_point);
             this.updateTooltipText();
+            this._updateTooltipPosition();
             tt.show();
 
             // alignment needs to be set after actor is shown
@@ -144,13 +140,17 @@ class BaseIcon extends St.Icon {
     }
 
     /**
-     * Updates tooltip position relative to this button.
+     * Centers the tooltip horizontally under the icon.
      */
-    _updateTooltipPosition(xpoint = 0) {
+    _updateTooltipPosition() {
+        const [, width] = this.tooltip.get_preferred_width(-1);
         const point = this.apply_transform_to_point(
-            new Graphene.Point3D({ x: xpoint, y: 0 })
+            new Graphene.Point3D({ x: this.width / 2, y: 0 })
         );
-        this.tooltip.set_position(Math.max(0, point.x - 62), point.y + 34);
+        this.tooltip.set_position(
+            Math.max(0, Math.round(point.x - width / 2)),
+            point.y + 34
+        );
     }
 
     /**
@@ -167,29 +167,6 @@ class BaseIcon extends St.Icon {
     setVisible(visible = true) {
         this.visible = visible;
         return this;
-    }
-
-    /**
-     * Returns a nicely formatted keybind string from AlbumWM
-     */
-    getKeybindString(key: string) {
-        // get first keybind
-        try {
-            const kb = gsettings!
-                .get_child('keybindings')
-                .get_strv(key)[0]
-                .replace(/[<>]/g, ' ')
-                .trim()
-                .replace(/\s+/g, '+');
-
-            // empty
-            if (kb.length === 0) {
-                return '';
-            }
-            return `\n<i>(${kb})</i>`;
-        } catch {
-            return '';
-        }
     }
 }
 
@@ -239,25 +216,17 @@ class FocusIcon extends BaseIcon {
                 return this;
             },
             () => {
-                const markup = (color: string, mode: string) => {
-                    const ct = this.tooltip.clutter_text;
-                    ct.set_markup(`<i>Window focus mode</i>
-Current mode: <span foreground="${color}"><b>${mode}</b></span>\
-${this.getKeybindString('switch-focus-mode')}`);
-                };
+                const label = (mode: string) =>
+                    this.tooltip.set_text(`AlbumWM focus mode:\n${mode}`);
                 switch (this.mode) {
-                    case Tiling.FocusModes.DEFAULT:
-                        markup('#6be67b', 'DEFAULT');
-                        return;
                     case Tiling.FocusModes.CENTER:
-                        markup('#6be6cb', 'CENTER');
+                        label('Center');
                         break;
                     case Tiling.FocusModes.EDGE:
-                        markup('#abe67b', 'EDGE');
+                        label('Edge');
                         break;
                     default:
-                        markup('#6be67b', 'DEFAULT');
-                        this.tooltip.set_text('');
+                        label('Default');
                         break;
                 }
             }
@@ -285,7 +254,7 @@ export class FocusButton extends panelMenu.Button {
             {
                 style_class: 'system-status-icon focus-mode-button',
             },
-            { parent: this, x_point: -10 }
+            { parent: this }
         );
 
         this.setFocusMode();
