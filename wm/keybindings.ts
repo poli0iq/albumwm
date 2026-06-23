@@ -323,18 +323,6 @@ export function setupActions(settings: Gio.Settings) {
     );
 
     registerAlbumAction(
-        'center-horizontally',
-        (mw, _space) => Tiling.centerWindow(mw, true, false),
-        Meta.KeyBindingFlags.PER_WINDOW
-    );
-
-    registerAlbumAction(
-        'center-vertically',
-        (mw, _space) => Tiling.centerWindow(mw, false, true),
-        Meta.KeyBindingFlags.PER_WINDOW
-    );
-
-    registerAlbumAction(
         'center',
         (mw, _space) => Tiling.centerWindow(mw, true, true),
         Meta.KeyBindingFlags.PER_WINDOW

@@ -44,8 +44,6 @@ const actions = {
         'slurp-in',
         'barf-out',
         'barf-out-active',
-        'center-horizontally',
-        'center-vertically',
         'center',
         'album-toggle-fullscreen',
         'toggle-maximize-width',

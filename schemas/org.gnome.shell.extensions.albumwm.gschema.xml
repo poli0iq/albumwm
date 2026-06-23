@@ -181,18 +181,8 @@
         <summary>Cycle through useful window heights backwards</summary>
     </key>
 
-    <key type="as" name="center-horizontally">
-      <default><![CDATA[['<Super>c']]]></default>
-      <summary>Center window horizontally</summary>
-    </key>
-
-    <key type="as" name="center-vertically">
-      <default><![CDATA[['<Super>v']]]></default>
-      <summary>Center window vertically (non-tiled window)</summary>
-    </key>
-
     <key type="as" name="center">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Super>c']]]></default>
       <summary>Center window</summary>
     </key>
 
