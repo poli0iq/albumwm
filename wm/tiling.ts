@@ -15,7 +15,7 @@ import {
     Navigator,
     Grab,
     Topbar,
-    Scratch,
+    Floating,
 } from './imports.js';
 import { Easer } from './utils.js';
 import { ClickOverlay } from './stackoverlay.js';
@@ -295,6 +295,7 @@ export type Window = Meta.Window & {
     unmaximizedRect?: Mtk.Rectangle | null;
     lastFrame?: Mtk.Rectangle;
     focusOnOpen?: boolean;
+    floatOnOpen?: boolean;
     overwriteSpace?: number;
     unmapped?: boolean;
     redirected?: boolean;
@@ -313,9 +314,8 @@ export type Window = Meta.Window & {
     };
     _fullscreen_lock?: boolean;
     _fullscreen_above?: boolean;
-    // Used by `scratch.ts`
-    _scratch?: boolean;
-    _scratchFrame?: Mtk.Rectangle;
+    // Floating window geometry, preserved across float/unfloat.
+    _floatFrame?: Mtk.Rectangle;
 };
 
 type LayoutOptions = {
@@ -1117,6 +1117,63 @@ export class Space extends Array<Array<Window>> {
         return true;
     }
 
+    /** Lift a tiled window out of the strip into the floating layer. */
+    floatWindow(metaWindow: Window) {
+        const fromTiling = this.columnOf(metaWindow) !== -1;
+        // Capture the on-screen position before the clone leaves the strip.
+        const [seenX, seenY] = fromTiling
+            ? metaWindow.clone.get_transformed_position().map(Math.round)
+            : [0, 0];
+
+        if (fromTiling) this.removeWindow(metaWindow);
+        this.addFloating(metaWindow);
+        metaWindow.make_above();
+        showWindow(metaWindow);
+
+        if (!fromTiling) {
+            Main.activateWindow(metaWindow);
+            return;
+        }
+
+        /* Restore the saved floating geometry, otherwise nudge the window down
+         * and trim its height so it reads as floating. */
+        const f = metaWindow.get_frame_rect();
+        const saved = metaWindow._floatFrame;
+        const onThisMonitor =
+            saved &&
+            Utils.monitorOfPoint(saved.x, saved.y)?.index ===
+                this.monitor?.index;
+        const vDisplacement = 30;
+        const targetX = onThisMonitor ? saved.x : seenX;
+        const targetY = onThisMonitor ? saved.y : seenY + vDisplacement;
+        const targetWidth = onThisMonitor ? saved.width : f.width;
+        const targetHeight = onThisMonitor
+            ? saved.height
+            : Math.min(f.height - vDisplacement, Math.floor(f.height * 0.9));
+
+        metaWindow.move_resize_frame(true, f.x, f.y, targetWidth, targetHeight);
+        /* Activate only once the ease settles: focusing mid-animation runs a
+         * layout that snaps the still-floating clone back to its old frame. */
+        Floating.easeFloating(metaWindow, targetX, targetY, {
+            onComplete: () => {
+                delete metaWindow._floatFrame;
+                Main.activateWindow(metaWindow);
+            },
+        });
+    }
+
+    /** Drop a floating window back into the tiling strip. */
+    unfloatWindow(metaWindow: Window) {
+        /* Remember the floating geometry so a later float can restore it. */
+        if (!metaWindow._floatFrame)
+            metaWindow._floatFrame = metaWindow.get_frame_rect();
+
+        /* Re-tile through the add path, like unminimize does: it slides the
+         * clone from where the window floats into its column in one layout. */
+        this.removeFloating(metaWindow);
+        insertWindow(metaWindow, { existing: true });
+    }
+
     /**
      * Returns true iff this space has a currently fullscreened window.
      */
@@ -1681,10 +1738,17 @@ export class Space extends Array<Array<Window>> {
             xzComparator(workspace.list_windows() as Window[])
         );
 
-        windows.forEach((metaWindow, _i) => {
-            if (metaWindow.above || metaWindow.minimized) {
-                // Rough heuristic to figure out if a window should float
-                Scratch.makeScratch(metaWindow);
+        windows.forEach(metaWindow => {
+            if (metaWindow.minimized) {
+                // Leave minimized windows minimized and untiled.
+                return;
+            }
+            if (metaWindow.above) {
+                /* Always-on-top windows (e.g. ones we previously floated)
+                 * belong in the floating layer, which keeps them above tiling. */
+                this.addFloating(metaWindow);
+                metaWindow.make_above();
+                showWindow(metaWindow);
                 return;
             }
             if (this.columnOf(metaWindow) < 0 && addFilter(metaWindow)) {
@@ -2150,14 +2214,13 @@ export class Spaces extends Map<Meta.Workspace, Space> {
 Signals.addSignalMethods(Spaces.prototype);
 
 /**
- * Return true if a window is tiled (e.g. not floating, not scratch, not transient).
+ * Return true if a window is tiled (e.g. not floating, not transient).
  */
 export function isTiled(metaWindow: Window) {
     if (
         !metaWindow ||
         metaWindow?.is_on_all_workspaces() ||
         isFloating(metaWindow) ||
-        isScratch(metaWindow) ||
         isTransient(metaWindow)
     ) {
         return false;
@@ -2207,13 +2270,6 @@ export function isFloating(metaWindow: Window) {
     }
     const space = spaces.spaceOfWindow(metaWindow);
     return space.isFloating?.(metaWindow) ?? false;
-}
-
-export function isScratch(metaWindow: Window) {
-    if (!metaWindow) {
-        return false;
-    }
-    return Scratch.isScratchWindow(metaWindow);
 }
 
 export function isMaximized(metaWindow: Window) {
@@ -2404,8 +2460,7 @@ export function removeAlbumWMFlags(w: Window) {
     delete w._fullscreen_frame;
     delete w._fullscreen_lock;
     delete w._fullscreen_above;
-    delete w._scratch;
-    delete w._scratchFrame;
+    delete w._floatFrame;
 }
 
 export function addPositionHandler(metaWindow: Window) {
@@ -2644,7 +2699,7 @@ export function addFilter(metaWindow: Window) {
     if (metaWindow.is_on_all_workspaces()) {
         return false;
     }
-    if (Scratch.isScratchWindow(metaWindow)) {
+    if (metaWindow.floatOnOpen) {
         return false;
     }
 
@@ -2746,19 +2801,17 @@ export function insertWindow(
 
     let overwriteSpace;
     if (!existing) {
-        let addToScratch = false;
-
         const winprop = Settings.findWinprop(metaWindow);
         if (winprop) {
             if (winprop.oneshot) {
                 Settings.winprops.splice(Settings.winprops.indexOf(winprop), 1);
             }
-            if (winprop.scratch_layer) {
+            if (winprop.float) {
                 console.debug(
                     '#winprops',
-                    `Move ${metaWindow?.title} to scratch`
+                    `Opening ${metaWindow?.title} in the floating layer`
                 );
-                addToScratch = true;
+                metaWindow.floatOnOpen = true;
             }
 
             // pass winprop properties to metaWindow
@@ -2784,13 +2837,6 @@ export function insertWindow(
                 );
                 metaWindow.focusOnOpen = true;
             }
-        }
-
-        if (addToScratch) {
-            connectSizeChanged();
-            Scratch.makeScratch(metaWindow);
-            activateWindowAfterRendered(actor, metaWindow);
-            return;
         }
 
         /**
@@ -2821,10 +2867,6 @@ export function insertWindow(
         // secondary monitors.
         connectSizeChanged();
         showWindow(metaWindow);
-        return;
-    } else if (Scratch.isScratchWindow(metaWindow)) {
-        // And make sure scratch windows are stuck
-        Scratch.makeScratch(metaWindow);
         return;
     }
 
@@ -2860,6 +2902,10 @@ Opening "${metaWindow?.title}" on current space.`
     }
 
     if (!addFilter(metaWindow)) {
+        /* Consume the open-time intent; floating state now lives in `_floating`
+         * and (across rebuilds) in the window's always-on-top flag. */
+        delete metaWindow.floatOnOpen;
+
         connectSizeChanged();
         space.addFloating(metaWindow);
         // Make sure the window is on the correct monitor
@@ -3274,12 +3320,6 @@ export function getDefaultFocusMode(): FocusModes {
 // `MetaWindow::focus` handling
 export function focusHandler(metaWindow: Window) {
     console.debug('focus:', metaWindow?.title);
-    if (Scratch.isScratchWindow(metaWindow)) {
-        Scratch.makeScratch(metaWindow);
-        Topbar.fixTopBar();
-        return;
-    }
-
     if (isTransient(metaWindow)) {
         return;
     }
@@ -3391,7 +3431,6 @@ export function maybeWarpPointerToWindow(metaWindow: Window) {
     if (!metaWindow) return;
     /* visibleX/Y read metaWindow.clone.targetX/targetY, which is only kept in
      * sync for tiled windows; skip the rest. */
-    if (Scratch.isScratchWindow(metaWindow)) return;
     if (isTransient(metaWindow)) return;
     if (isFloating(metaWindow)) return;
     if (!metaWindow.clone) return;
@@ -3417,25 +3456,22 @@ export function maybeWarpPointerToWindow(metaWindow: Window) {
 }
 
 /**
-   Push all minimized windows to the scratch layer
+ * Pull minimized windows out of the tiling so the strip closes up, and put
+ * them back when unminimized.
  */
 export function minimizeHandler(metaWindow: Window) {
+    const space = spaces.spaceOfWindow(metaWindow);
     if (metaWindow.minimized) {
         console.debug('minimized', metaWindow?.title);
-        // check if was tiled
-        if (isTiled(metaWindow)) {
+        if (space.columnOf(metaWindow) !== -1) {
             metaWindow._tiled_on_minimize = true;
+            space.removeWindow(metaWindow);
         }
-        Scratch.makeScratch(metaWindow);
     } else {
         console.debug('unminimized', metaWindow?.title);
         if (metaWindow._tiled_on_minimize) {
             delete metaWindow._tiled_on_minimize;
-            Utils.laterAdd(Meta.LaterType.IDLE, () => {
-                Scratch.unmakeScratch(metaWindow);
-
-                return GLib.SOURCE_REMOVE;
-            });
+            insertWindow(metaWindow, { existing: true });
         }
     }
 }
@@ -3709,7 +3745,7 @@ export function cycleWindowWidthDirection(
 
     let targetX = frame.x;
 
-    if (Scratch.isScratchWindow(metaWindow)) {
+    if (isFloating(metaWindow)) {
         if (
             targetX + targetWidth >
             workArea.x + workArea.width - Settings.prefs!.minimum_margin
@@ -3837,19 +3873,6 @@ export function activateLastWindow(_mw: Window, space: Space) {
 }
 
 /**
- * Calls `activateWindow` only after an actor is visible and rendered on the stage.
- * The standard `Main.activateWindow(mw)` should be used in general, but this method
- * may be requried under certain use cases (such as activating a floating window
- * programmatically before it's rendered, see
- * https://github.com/paperwm/PaperWM/issues/448 for details).
- */
-function activateWindowAfterRendered(actor: Clutter.Actor, mw: Window) {
-    callbackOnActorShow(actor, () => {
-        Main.activateWindow(mw);
-    });
-}
-
-/**
  * Centers the currently selected window.
  */
 export function centerWindow(
@@ -3870,7 +3893,7 @@ export function centerWindow(
         : frame.y;
     targetY = Math.max(targetY, workArea.y);
     if (space.columnOf(metaWindow) === -1) {
-        Scratch.easeScratch(
+        Floating.easeFloating(
             metaWindow,
             targetX + monitor.x,
             targetY + monitor.y

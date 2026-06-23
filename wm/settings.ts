@@ -45,8 +45,6 @@ export type Prefs = {
     edge_preview_timeout_continual: boolean;
     window_switcher_preview_scale: number;
     warp_pointer_on_focus: boolean;
-    only_scratch_in_overview: boolean;
-    disable_scratch_in_overview: boolean;
     show_focus_mode_icon: boolean;
     topbar_mouse_scroll_enable: boolean;
     default_focus_mode: number;
@@ -85,12 +83,12 @@ export function enable(extension: Extension) {
     // Prevent it from being inserted into the tiling causing flickering and general disorder
     defwinprop({
         wm_class: 'Gnome-shell-extension-prefs',
-        scratch_layer: true,
+        float: true,
         focus: true,
     });
     defwinprop({
         wm_class: '/gnome-screenshot/i',
-        scratch_layer: true,
+        float: true,
         focus: true,
     });
 
@@ -225,7 +223,7 @@ export type PreferredWidth = {
 type WinProp = {
     wm_class?: string | RegExp;
     title?: string | RegExp;
-    scratch_layer?: boolean;
+    float?: boolean;
     focus?: boolean;
     preferredWidth?: PreferredWidth;
     spaceIndex?: number;
@@ -236,7 +234,7 @@ type WinProp = {
 export type WinPropSpec = {
     wm_class?: string;
     title?: string;
-    scratch_layer?: boolean;
+    float?: boolean;
     focus?: boolean;
     preferredWidth?: string;
     spaceIndex?: number;
@@ -256,7 +254,7 @@ function maybeRegex(value: string | undefined): string | RegExp | undefined {
 
    defwinprop({
      wm_class: "Riot",
-     scratch_layer: true
+     float: true
    })
 */
 export let winprops: WinProp[] = [];
@@ -305,7 +303,7 @@ function defwinprop(spec: WinPropSpec) {
     const prop: WinProp = {
         wm_class: maybeRegex(spec.wm_class),
         title: maybeRegex(spec.title),
-        scratch_layer: spec.scratch_layer,
+        float: spec.float,
         focus: spec.focus,
         spaceIndex: spec.spaceIndex,
         gsetting: spec.gsetting,

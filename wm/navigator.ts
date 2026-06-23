@@ -11,7 +11,6 @@ import {
     Tiling,
     Keybindings,
     Topbar,
-    Scratch,
     Minimap,
     Grab,
 } from './imports.js';
@@ -80,7 +79,6 @@ export class NavigatorClass {
 
         Topbar.fixTopBar();
 
-        Scratch.animateWindows();
         this.space.startAnimate();
     }
 
@@ -179,8 +177,6 @@ export class NavigatorClass {
         if (selected) {
             Tiling.maybeWarpPointerToWindow(selected);
         }
-
-        if (!Tiling.inGrab) Scratch.showWindows();
 
         Topbar.fixTopBar();
 

@@ -5,7 +5,7 @@ import {
     Keybindings,
     Navigator,
     Stackoverlay,
-    Scratch,
+    Floating,
     Tiling,
     Topbar,
     Patches,
@@ -25,7 +25,7 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
      - keybindings is a utility wrapper around mutters keybinding facilities.
 
-     - scratch is used to manage floating windows, or scratch windows.
+     - floating manages the per-workspace floating layer.
 
      - stackoverlay is somewhat kludgy. It makes clicking on the left or right
        edge of the screen always activate the partially (or sometimes wholly)
@@ -53,7 +53,7 @@ export default class AlbumWM extends Extension {
         Keybindings,
         Navigator,
         Stackoverlay,
-        Scratch,
+        Floating,
         Tiling,
         Topbar,
         Grab,

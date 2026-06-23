@@ -27,6 +27,7 @@ Features that the fork author considered useless or harmful are dropped.
     Instead of unconditionally deleting GNOME shortcuts, show a warning and let
     the user decide.
 
+- **Replaced the global scratch layer with a per-workspace floating layer**
 - Implemented pointer warp on window focus (optional)
 - Dropped drawing a custom top bar on secondary displays
 - Dropped the window position indicator and top bar styling

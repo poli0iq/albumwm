@@ -11,7 +11,7 @@ import {
     Utils,
     Tiling,
     Navigator,
-    Scratch,
+    Floating,
     GnomeSettings,
 } from './imports.js';
 
@@ -234,14 +234,15 @@ export function setupActions(settings: Gio.Settings) {
         space.swap(Meta.MotionDirection.DOWN)
     );
 
-    registerAlbumAction('toggle-scratch-window', Scratch.toggleScratchWindow);
-
-    registerAlbumAction('toggle-scratch-layer', Scratch.toggleScratch);
+    registerAlbumAction(
+        'toggle-window-floating',
+        Floating.toggleWindowFloating,
+        Meta.KeyBindingFlags.PER_WINDOW
+    );
 
     registerAlbumAction(
-        'toggle-scratch',
-        Scratch.toggle,
-        Meta.KeyBindingFlags.PER_WINDOW
+        'switch-focus-between-floating-and-tiling',
+        Floating.switchFocusBetweenFloatingAndTiling
     );
 
     registerAlbumAction('cycle-focus-modes', (_mw, space) =>

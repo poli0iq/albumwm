@@ -10,7 +10,7 @@ import * as WindowManager from 'resource:///org/gnome/shell/ui/windowManager.js'
 import * as Screenshot from 'resource:///org/gnome/shell/ui/screenshot.js';
 import * as WindowPreview from 'resource:///org/gnome/shell/ui/windowPreview.js';
 
-import { Utils, Tiling, Scratch, Settings, OverviewLayout } from './imports.js';
+import { Utils, Tiling, Settings, OverviewLayout } from './imports.js';
 
 import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import type GObject from 'gi://GObject?version=2.0';
@@ -236,38 +236,6 @@ export function setupOverrides() {
             }
 
             return lastLayout;
-        }
-    );
-
-    registerOverridePrototype(
-        Workspace.Workspace,
-        '_isOverviewWindow',
-        function (this: Workspace.Workspace, win: Meta.Window) {
-            // Should be a Meta.Window, unwrap a clone if we get one
-            win = (win as { meta_window?: Meta.Window }).meta_window ?? win;
-            // upstream (gnome value result - what it would have done)
-            const saved = getSavedPrototype(
-                Workspace.Workspace,
-                '_isOverviewWindow'
-            );
-            const upstreamValue = saved?.call(this, win) ?? !win.skip_taskbar;
-
-            if (Scratch.isScratchWindow(win)) {
-                if (gsettings!.get_boolean('only-scratch-in-overview')) {
-                    return upstreamValue;
-                }
-
-                if (gsettings!.get_boolean('disable-scratch-in-overview')) {
-                    return false;
-                }
-            }
-
-            // if here then not scratch
-            if (gsettings!.get_boolean('only-scratch-in-overview')) {
-                return false;
-            }
-
-            return upstreamValue;
         }
     );
 

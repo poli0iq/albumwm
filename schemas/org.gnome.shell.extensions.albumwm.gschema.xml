@@ -21,19 +21,13 @@
         <summary>Focus the monitor below</summary>
     </key>
 
-    <key type="as" name="toggle-scratch-window">
-      <default><![CDATA[['<Super>Escape']]]></default>
-      <summary>Toggle the most recent scratch window</summary>
+    <key type="as" name="toggle-window-floating">
+        <default><![CDATA[['<Super>x']]]></default>
+        <summary>Float/unfloat the focused window</summary>
     </key>
-
-    <key type="as" name="toggle-scratch-layer">
-        <default><![CDATA[['<Super><Shift>Escape']]]></default>
-        <summary>Toggles the floating scratch layer</summary>
-    </key>
-
-    <key type="as" name="toggle-scratch">
-        <default><![CDATA[['<Super><Ctrl>Escape']]]></default>
-        <summary>Attach/detach the active window into the scratch layer</summary>
+    <key type="as" name="switch-focus-between-floating-and-tiling">
+        <default><![CDATA[['<Super><Shift>x']]]></default>
+        <summary>Switch focus between the floating and tiling layers</summary>
     </key>
 
     <key type="as" name="cycle-focus-modes">
@@ -249,16 +243,6 @@
     <key type="b" name="warp-pointer-on-focus">
       <default>false</default>
       <summary>Warp pointer onto window on focus change</summary>
-    </key>
-
-    <key type="b" name="only-scratch-in-overview">
-        <default>false</default>
-        <summary>Limit window previews in the overview to scratch windows</summary>
-    </key>
-
-    <key type="b" name="disable-scratch-in-overview">
-        <default>false</default>
-        <summary>Don't show scratch windows in the overview</summary>
     </key>
 
     <key type="ad" name="swipe-sensitivity">

@@ -252,37 +252,6 @@ class SettingsWidget {
 
         booleanStateChanged('warp-pointer-on-focus');
 
-        const scratchOverview = this.builder.get_object<Adw.ComboRow>(
-            'scratch-in-overview'
-        );
-        if (this._settings.get_boolean('only-scratch-in-overview'))
-            scratchOverview.set_selected(1); // 'only'
-        else if (this._settings.get_boolean('disable-scratch-in-overview'))
-            scratchOverview.set_selected(2); // 'never'
-        else scratchOverview.set_selected(0); // 'always'
-
-        scratchOverview.connect('notify::selected', obj => {
-            if (obj.selected === 1) {
-                // 'only'
-                this._settings.set_boolean('only-scratch-in-overview', true);
-                this._settings.set_boolean(
-                    'disable-scratch-in-overview',
-                    false
-                );
-            } else if (obj.selected === 2) {
-                // 'never'
-                this._settings.set_boolean('only-scratch-in-overview', false);
-                this._settings.set_boolean('disable-scratch-in-overview', true);
-            } else {
-                // 'always'
-                this._settings.set_boolean('only-scratch-in-overview', false);
-                this._settings.set_boolean(
-                    'disable-scratch-in-overview',
-                    false
-                );
-            }
-        });
-
         booleanStateChanged('gesture-enabled');
 
         comboRowSelectionChanged(

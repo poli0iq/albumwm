@@ -7,7 +7,7 @@ export * as Lib from './lib.js';
 export * as Minimap from './minimap.js';
 export * as Navigator from './navigator.js';
 export * as Patches from './patches.js';
-export * as Scratch from './scratch.js';
+export * as Floating from './floating.js';
 export * as Settings from './settings.js';
 export * as Stackoverlay from './stackoverlay.js';
 export * as Tiling from './tiling.js';

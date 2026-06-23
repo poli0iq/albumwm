@@ -37,18 +37,6 @@ Adw.PreferencesPage general_page {
       subtitle: _("Move the mouse pointer onto a window when it gains focus");
     }
 
-    Adw.ComboRow scratch-in-overview {
-      title: _("Show scratch windows in overview");
-
-      model: Gtk.StringList {
-        strings [
-          _("Always"),
-          _("Only"),
-          _("Never"),
-        ]
-      };
-    }
-
     Adw.ExpanderRow {
       title: _("Touchpad gesture");
       subtitle: _("Scroll tiled windows");

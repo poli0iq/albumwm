@@ -54,10 +54,9 @@ const actions = {
         'focus-monitor-above',
         'focus-monitor-below',
     ],
-    scratch: [
-        'toggle-scratch-layer',
-        'toggle-scratch',
-        'toggle-scratch-window',
+    floating: [
+        'toggle-window-floating',
+        'switch-focus-between-floating-and-tiling',
     ],
 };
 
@@ -1334,7 +1333,7 @@ export class KeybindingsPage extends Adw.PreferencesPage {
                 InternalChildren: [
                     'keybindings_windows_group',
                     'keybindings_monitors_group',
-                    'keybindings_scratch_group',
+                    'keybindings_floating_group',
                 ],
             },
             this
@@ -1342,14 +1341,14 @@ export class KeybindingsPage extends Adw.PreferencesPage {
     }
     declare _keybindings_windows_group: Adw.PreferencesGroup;
     declare _keybindings_monitors_group: Adw.PreferencesGroup;
-    declare _keybindings_scratch_group: Adw.PreferencesGroup;
+    declare _keybindings_floating_group: Adw.PreferencesGroup;
 
     declare acceleratorParse: AcceleratorParse;
     declare _settings: Gio.Settings;
     declare _model: KeybindingsModel;
     declare _windowsView: Gtk.FilterListModel;
     declare _monitorsView: Gtk.FilterListModel;
-    declare _scratchView: Gtk.FilterListModel;
+    declare _floatingView: Gtk.FilterListModel;
     declare _expandedRow: KeybindingsRow | null;
 
     init(extension: ExtensionPreferences) {
@@ -1359,7 +1358,7 @@ export class KeybindingsPage extends Adw.PreferencesPage {
 
         this._windowsView = sectionView(this._model, 'windows');
         this._monitorsView = sectionView(this._model, 'monitors');
-        this._scratchView = sectionView(this._model, 'scratch');
+        this._floatingView = sectionView(this._model, 'floating');
 
         this._keybindings_windows_group.bind_model(
             this._windowsView,
@@ -1369,8 +1368,8 @@ export class KeybindingsPage extends Adw.PreferencesPage {
             this._monitorsView,
             keybinding => this._createRow(keybinding as Keybinding)
         );
-        this._keybindings_scratch_group.bind_model(
-            this._scratchView,
+        this._keybindings_floating_group.bind_model(
+            this._floatingView,
             keybinding => this._createRow(keybinding as Keybinding)
         );
 

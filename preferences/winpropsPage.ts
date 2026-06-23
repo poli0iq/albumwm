@@ -22,7 +22,7 @@ export class WinpropsRow extends Adw.ExpanderRow {
                     'accel_label',
                     'wm_class',
                     'title',
-                    'scratch_layer',
+                    'float',
                     'preferred_width',
                     'space',
                     'focus',
@@ -52,7 +52,7 @@ export class WinpropsRow extends Adw.ExpanderRow {
     declare _accel_label: Gtk.Label;
     declare _wm_class: Adw.EntryRow;
     declare _title: Adw.EntryRow;
-    declare _scratch_layer: Adw.SwitchRow;
+    declare _float: Adw.SwitchRow;
     declare _preferred_width: Adw.EntryRow;
     declare _space: Adw.ComboRow;
     declare _focus: Adw.SwitchRow;
@@ -85,10 +85,10 @@ export class WinpropsRow extends Adw.ExpanderRow {
             this.emit('changed');
         });
 
-        this._scratch_layer.set_active(this.winprop.scratch_layer ?? false);
-        this._scratch_layer.connect('notify::active', () => {
-            const isActive = this._scratch_layer.get_active();
-            this.winprop.scratch_layer = isActive;
+        this._float.set_active(this.winprop.float ?? false);
+        this._float.connect('notify::active', () => {
+            const isActive = this._float.get_active();
+            this.winprop.float = isActive;
 
             // if is active then disable the preferredWidth input
             this._preferred_width.set_sensitive(!isActive);
@@ -97,10 +97,8 @@ export class WinpropsRow extends Adw.ExpanderRow {
         });
 
         this._preferred_width.set_text(this.winprop.preferredWidth ?? '');
-        // if scratchLayer is active then users can't edit preferredWidth
-        this._preferred_width.set_sensitive(
-            !(this.winprop.scratch_layer ?? false)
-        );
+        // if float is active then users can't edit preferredWidth
+        this._preferred_width.set_sensitive(!(this.winprop.float ?? false));
 
         this._preferred_width.connect('changed', () => {
             // if has value, needs to be valid (have a value or unit)
@@ -201,8 +199,8 @@ export class WinpropsRow extends Adw.ExpanderRow {
     }
 
     _setAccelLabel() {
-        if (this.winprop.scratch_layer ?? false) {
-            return 'scratch layer';
+        if (this.winprop.float ?? false) {
+            return 'floating';
         } else if (this.winprop.preferredWidth ?? false) {
             return 'preferred width';
         } else if (this.winprop.spaceIndex !== undefined) {

@@ -6,14 +6,7 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {
-    Settings,
-    Utils,
-    Tiling,
-    Navigator,
-    Scratch,
-    Gestures,
-} from './imports.js';
+import { Settings, Utils, Tiling, Navigator, Gestures } from './imports.js';
 import { DispatcherMode, Easer } from './utils.js';
 
 export let grabbed = false;
@@ -102,10 +95,7 @@ export class MoveGrab {
         this.zoneActors = new Set();
 
         // save whether this was tiled window at start of grab
-        this.wasTiled = !(
-            this.initialSpace.isFloating(metaWindow) ||
-            Scratch.isScratchWindow(metaWindow)
-        );
+        this.wasTiled = !this.initialSpace.isFloating(metaWindow);
 
         this.dndTargets = [];
     }
@@ -501,7 +491,7 @@ export class MoveGrab {
             }
             /* spaceMotion only fires over primary, so the last zone stays
                armed when the pointer leaves it. Clear it so end() can fall
-               through to scratch. */
+               through to the floating layer. */
             if (monitor !== this.initialSpace.monitor && this.dndTarget) {
                 this.deactivateDndTarget(this.dndTarget);
                 this.dndTarget = null;
@@ -564,8 +554,8 @@ export class MoveGrab {
             if (dndTarget) {
                 const space = dndTarget.space;
 
-                if (Scratch.isScratchWindow(metaWindow)) {
-                    Scratch.unmakeScratch(metaWindow);
+                if (space.isFloating(metaWindow)) {
+                    space.removeFloating(metaWindow);
                 }
 
                 // Remember the global coordinates of the clone
@@ -605,8 +595,11 @@ export class MoveGrab {
 
                 Utils.actorRaise(clone);
             } else if (clone) {
+                // Dropped onto empty space: leave it floating where it landed.
                 metaWindow.move_frame(true, clone.x, clone.y);
-                Scratch.makeScratch(metaWindow);
+                this.initialSpace.addFloating(metaWindow);
+                metaWindow.make_above();
+                Tiling.showWindow(metaWindow);
                 this.initialSpace.moveDone();
 
                 actor.set_scale(clone.scale_x, clone.scale_y);
@@ -616,20 +609,7 @@ export class MoveGrab {
                 clone.set_scale(1, 1);
                 clone.set_pivot_point(0, 0);
 
-                const halftime = 0.5 * Settings.prefs!.animation_time;
-                params.time = halftime;
-                // Drops off the tiled monitor stay scratch; only bounce back on primary.
-                const dropMonitor = Utils.monitorAtPoint(gx, gy);
-                if (dropMonitor === this.initialSpace.monitor) {
-                    params.onComplete = () => {
-                        Easer.addEase(actor, {
-                            time: halftime,
-                            onComplete: () => {
-                                Scratch.unmakeScratch(metaWindow);
-                            },
-                        });
-                    };
-                }
+                params.time = 0.5 * Settings.prefs!.animation_time;
                 Easer.addEase(actor, params);
             }
 

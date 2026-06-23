@@ -8,7 +8,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as panelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
-import { Settings, Utils, Tiling, Scratch } from './imports.js';
+import { Settings, Utils, Tiling } from './imports.js';
 
 import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -339,11 +339,9 @@ export function fixTopBar() {
     // selected is current (tiled) selected window (can be different to focused window)
     const selected = space.selectedWindow;
     const focused = display.focus_window as Tiling.Window;
-    const focusIsFloatOrScratch =
-        focused &&
-        (space.isFloating(focused) || Scratch.isScratchWindow(focused));
-    // check if is currently fullscreened (check focused-floating, focused-scratch, and selected/tiled window)
-    const fullscreen = focusIsFloatOrScratch
+    const focusIsFloating = focused && space.isFloating(focused);
+    // check if is currently fullscreened (check focused-floating and selected/tiled window)
+    const fullscreen = focusIsFloating
         ? focused.fullscreen
         : selected && selected.fullscreen;
 
