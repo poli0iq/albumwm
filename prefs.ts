@@ -163,37 +163,19 @@ class SettingsWidget {
                 .get_value<'ad'>(settingName)
                 .deep_unpack();
 
-            // need to check if current values are ratio or pixel ==> assume if all <=1 is ratio
-            const isRatio = steps.every(v => v <= 1);
-            let value;
-            if (isRatio) {
-                value = steps.map(v => `${(v * 100.0).toString()}%`).toString();
-            } else {
-                value = steps.map(v => `${v.toString()}px`).toString();
-            }
-            element.set_text(value.replaceAll(',', '; '));
+            element.set_text(steps.map(v => `${v * 100.0}%`).join('; '));
 
             element.connect('changed', () => {
-                // process values
-                // check if values are percent or pixel
+                // values are percentages of the monitor dimension
                 const text = element.get_text();
                 const isPercent = text
                     .split(';')
                     .map(v => v.trim())
                     .every(v => /^.*%$/.test(v));
-                const isPixels = text
-                    .split(';')
-                    .map(v => v.trim())
-                    .every(v => /^.*px$/.test(v));
-                if (isPercent && isPixels) {
+                if (!isPercent) {
                     console.error(
-                        'cycle width/height values cannot mix percentage and pixel values'
+                        'cycle width/height values must be percentages'
                     );
-                    element.add_css_class('error');
-                    return;
-                }
-                if (!isPercent && !isPixels) {
-                    console.error('no cycle width/height value units present');
                     element.add_css_class('error');
                     return;
                 }
@@ -205,7 +187,7 @@ class SettingsWidget {
                     .map(v => v.replaceAll(/[^\d.]/g, '')) // strip everything but digits and period
                     .filter(v => v.length > 0) // needed to remove invalid inputs
                     .map(Number) // only accept valid numbers
-                    .map(v => (isPercent ? v / 100.0 : v))
+                    .map(v => v / 100.0)
                     .sort((a, b) => a - b); // sort values to ensure monotonicity
 
                 // check to make sure if percent than input cannot be > 100%

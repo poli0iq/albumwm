@@ -3692,21 +3692,17 @@ export function resizeWDec(metaWindow: Window) {
 }
 
 export function getCycleWindowWidths(metaWindow: Window) {
-    let steps = Settings.prefs!.preset_column_widths;
+    const steps = Settings.prefs!.preset_column_widths;
     const space = spaces.spaceOfWindow(metaWindow);
     const workArea = space.workArea();
 
-    if (steps[0] <= 1) {
-        // Steps are specifed as ratios -> convert to pixels
-        // Make sure two windows of "compatible" width will have room:
-        const availableWidth =
-            workArea.width -
-            Settings.prefs!.horizontal_margin * 2 -
-            Settings.prefs!.column_gap;
-        steps = steps.map(x => Math.floor(x * availableWidth));
-    }
-
-    return steps;
+    // Steps are ratios of the available width -> convert to pixels.
+    // Make sure two windows of "compatible" width will have room:
+    const availableWidth =
+        workArea.width -
+        Settings.prefs!.horizontal_margin * 2 -
+        Settings.prefs!.column_gap;
+    return steps.map(x => Math.floor(x * availableWidth));
 }
 
 export function cycleWindowWidth(metaWindow: Window) {
@@ -3803,20 +3799,12 @@ export function cycleWindowHeightDirection(
             : Lib.findPrev;
 
     function calcTargetHeight(available: number) {
-        let targetHeight;
-        if (steps[0] <= 1) {
-            // ratio steps
-            const targetR = findFn(
-                frame.height / available,
-                steps,
-                sizeSlack / available
-            );
-            targetHeight = Math.floor(targetR * available);
-        } else {
-            // pixel steps
-            targetHeight = findFn(frame.height, steps, sizeSlack);
-        }
-        return Math.min(targetHeight, available);
+        const targetR = findFn(
+            frame.height / available,
+            steps,
+            sizeSlack / available
+        );
+        return Math.min(Math.floor(targetR * available), available);
     }
 
     if (i > -1) {
