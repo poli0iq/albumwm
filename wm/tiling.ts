@@ -353,6 +353,7 @@ export class Space extends Array<Array<Window>> {
     targetX: number;
     uuid: string;
     selectedWindow: Window | null;
+    columnsLastActiveWindows: WeakMap<Window[], Window>;
     leftStack: number;
     rightStack: number;
 
@@ -419,6 +420,7 @@ export class Space extends Array<Array<Window>> {
         this.initWorkspaceState();
 
         this.selectedWindow = null;
+        this.columnsLastActiveWindows = new WeakMap();
         this.leftStack = 0; // not implemented
         this.rightStack = 0; // not implemented
 
@@ -1271,7 +1273,9 @@ export class Space extends Array<Array<Window>> {
         const column = this[index];
 
         if (row === -1) {
-            const selected = sortWindows(this, column)[column.length - 1];
+            const selected =
+                this.columnGetLastActive(column) ??
+                sortWindows(this, column)[column.length - 1];
             row = column.indexOf(selected);
         }
 
@@ -1338,6 +1342,19 @@ export class Space extends Array<Array<Window>> {
             if (this[i].includes(metaWindow)) return i;
         }
         return -1;
+    }
+
+    /** Remember `metaWindow` as its column's last-focused window. */
+    columnSetLastActive(metaWindow: Window) {
+        const index = this.columnOf(metaWindow);
+        if (index !== -1)
+            this.columnsLastActiveWindows.set(this[index], metaWindow);
+    }
+
+    /** The window `column` last had focused, if still present; else null. */
+    columnGetLastActive(column: Window[]): Window | null {
+        const remembered = this.columnsLastActiveWindows.get(column);
+        return remembered && column.includes(remembered) ? remembered : null;
     }
 
     rowOf(metaWindow: Window) {
@@ -3127,6 +3144,7 @@ export function ensureViewport(
     const x = ensuredX(metaWindow, space);
 
     space.selectedWindow = metaWindow;
+    space.columnSetLastActive(metaWindow);
     const selected = space.selectedWindow;
     if (selected.fullscreen) {
         const y = 0;
