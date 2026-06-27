@@ -324,7 +324,7 @@
 
     <key type="i" name="gesture-horizontal-fingers">
       <default>4</default>
-      <summary>Number of fingers for tiling horizontal swipe. 0:DISABLED 3:THREE_FINGERS 4:FOUR_FINGERS</summary>
+      <summary>Number of fingers for tiling horizontal swipe. Supported values are 3 and 4.</summary>
     </key>
 
     <child name="keybindings" schema="org.gnome.shell.extensions.albumwm.keybindings"/>

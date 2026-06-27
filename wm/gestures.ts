@@ -141,15 +141,10 @@ export function horizontalScroll(
     }
 
     const fingers = event.get_touchpad_gesture_finger_count();
-    if (fingers <= 2 || gestureHorizontalFingers() !== fingers) {
-        return Clutter.EVENT_PROPAGATE;
-    } else if (
-        /**
-         * If gestures are disabled AND doing a 3-finger swipe (gnome default)
-         * AND horizontal fingers are set to 3, then propagate.
-         */
-        !gestureEnabled() &&
-        fingers === 3
+    if (
+        !gestureEnabled() ||
+        fingers <= 2 ||
+        gestureHorizontalFingers() !== fingers
     ) {
         return Clutter.EVENT_PROPAGATE;
     }
