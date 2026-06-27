@@ -4,7 +4,7 @@ import Shell from 'gi://Shell';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import { Patches, Settings, Tiling, Utils, Lib, Navigator } from './imports.js';
+import { Patches, Settings, Tiling, Utils, Lib } from './imports.js';
 import { Easer } from './utils.js';
 
 import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -14,12 +14,21 @@ enum DIRECTIONS {
     Vertical = 0,
 }
 
-let navigator: Navigator.NavigatorClass | null,
-    direction: DIRECTIONS | undefined,
-    signals: Utils.Signals | null;
+let direction: DIRECTIONS | undefined, signals: Utils.Signals | null;
 // 1 is natural scrolling, -1 is unnatural
 let natural = 1;
 export let gliding = false; // exported
+export let gestureInProgress = false;
+
+function startGesture(space: Tiling.Space) {
+    gestureInProgress = true;
+    space.startAnimate();
+}
+
+function endGesture(space: Tiling.Space) {
+    gestureInProgress = false;
+    space.moveDone();
+}
 
 let touchpadSettings: Gio.Settings | null;
 export function enable(extension: Extension) {
@@ -81,7 +90,9 @@ export function enable(extension: Extension) {
                     ? 1
                     : -1;
                 direction = undefined;
-                navigator = Navigator.getNavigator();
+                /* Track the background as chrome now, so UPDATE events reach
+                 * horizontalScroll even with the pointer over a window. */
+                startGesture(Tiling.spaces.activeSpace);
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -114,6 +125,7 @@ export function disable() {
     signals!.destroy();
     signals = null;
     touchpadSettings = null;
+    gestureInProgress = false;
 }
 
 export function gestureEnabled() {
@@ -215,7 +227,7 @@ export function horizontalTouchScroll(
             start = this.targetX;
             this.hState = Clutter.TouchpadGesturePhase.UPDATE;
             Easer.removeEase(this.cloneContainer);
-            navigator = Navigator.getNavigator();
+            startGesture(this);
             direction = DIRECTIONS.Horizontal;
             update(this, 0, event.get_time());
             return Clutter.EVENT_PROPAGATE;
@@ -258,32 +270,18 @@ export function update(space: Tiling.Space, dx: number, t: number) {
     space.cloneContainer.x -= dx;
     space.targetX = space.cloneContainer.x;
 
-    // Check which target window will be selected if we release the swipe at this
-    // moment
     dx = Lib.sum(dxs.slice(-3));
     const v = dx / (t - dts.slice(-3)[0]);
     if (Number.isFinite(v)) {
         space.vx = v;
     }
 
-    let accel = Settings.prefs!.swipe_friction[0] / 16; // px/ms^2
-    accel = space.vx! > 0 ? -accel : accel;
-    const duration = -space.vx! / accel;
-    const d = space.vx! * duration + 0.5 * accel * duration ** 2;
-    const target = Math.round(space.targetX - d);
-
-    space.targetX = target;
-    const selected = findTargetWindow(space, start - space.targetX > 0);
-    space.targetX = space.cloneContainer.x;
-    space.selectedWindow = selected;
-    space.emit('select');
-
     return Clutter.EVENT_STOP;
 }
 
 export function done(space: Tiling.Space) {
     if (!Number.isFinite(space.vx) || space.length === 0) {
-        navigator?.finish();
+        endGesture(space);
         space.hState = -1;
         return;
     }
@@ -328,6 +326,8 @@ export function done(space: Tiling.Space) {
         last || first || findTargetWindow(space, start - target > 0);
     if (selected) {
         delete selected.lastFrame; // Invalidate frame information
+        // Align selection with the snap target.
+        space.selectedWindow = selected;
         const x = Tiling.ensuredX(selected, space);
         target = x - selected.clone.targetX;
     }
@@ -345,8 +345,6 @@ export function done(space: Tiling.Space) {
     }
     space.targetX = target;
 
-    space.selectedWindow = selected;
-    space.emit('select');
     gliding = true;
     Easer.addEase(space.cloneContainer, {
         x: space.targetX,
@@ -356,7 +354,9 @@ export function done(space: Tiling.Space) {
             gliding = false;
         },
         onComplete: () => {
-            Navigator.getNavigator().finish();
+            endGesture(space);
+            // Move focus to the landed window.
+            if (selected) Main.activateWindow(selected);
         },
     });
 }

@@ -268,6 +268,11 @@ export function setInGrab(value: null | Grab.MoveGrab | Grab.ResizeGrab) {
     inGrab = value;
 }
 
+/** Whether keyboard navigation or scroll gesture are in progress. */
+export function inTransient() {
+    return Navigator.navigating || Gestures.gestureInProgress;
+}
+
 /**
  * A GNOME Shell monitor, augmented by AlbumWM with a click overlay.
  */
@@ -1403,7 +1408,7 @@ export class Space extends Array<Array<Window>> {
         if (
             this.cloneContainer.x !== this.targetX ||
             this.actor.y !== 0 ||
-            Navigator.navigating ||
+            inTransient() ||
             Main.overview.visible ||
             // Block when we're carrying a window in dnd
             (inGrab instanceof Grab.MoveGrab && inGrab.window)
@@ -1631,7 +1636,7 @@ export class Space extends Array<Array<Window>> {
             this.background,
             'scroll-event',
             (_actor: Clutter.Actor, event: Clutter.Event) => {
-                if (!inGrab && !Navigator.navigating) return;
+                if (!inGrab && !inTransient()) return;
                 const dir = event.get_scroll_direction();
                 if (dir === Clutter.ScrollDirection.SMOOTH) return;
 
@@ -2594,7 +2599,7 @@ export function resizeHandler(metaWindow: Window) {
     if (needLayout && !space._inLayout) {
         // Restore window position when eg. exiting fullscreen
         let callback = () => {};
-        if (addCallback && !Navigator.navigating && selected) {
+        if (addCallback && !inTransient() && selected) {
             callback = () => {
                 mover(x, true);
             };
