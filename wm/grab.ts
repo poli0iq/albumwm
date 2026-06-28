@@ -597,16 +597,35 @@ export class MoveGrab {
             } else if (clone) {
                 // Dropped onto empty space: leave it where it landed.
                 metaWindow.move_frame(true, clone.x, clone.y);
-                if (
-                    Utils.monitorAtPoint(gx, gy) === this.initialSpace.monitor
-                ) {
+                const dropMon = Utils.monitorAtPoint(gx, gy);
+                if (dropMon === this.initialSpace.monitor) {
                     // On the tiled monitor: park it in the floating layer.
                     this.initialSpace.addFloating(metaWindow);
                     metaWindow.make_above();
                     Tiling.showWindow(metaWindow);
                     this.initialSpace.moveDone();
+                } else if (dropMon) {
+                    /* On a secondary monitor: leave it a plain free window, but
+                     * resize it to fit. Mutter shoves a window taller than its
+                     * monitor back to the one that fits (the primary):
+                     * https://gitlab.gnome.org/GNOME/mutter/-/blob/50.2/src/core/constraints.c#L1829 */
+                    const wa = Main.layoutManager.getWorkAreaForMonitor(
+                        dropMon.index
+                    );
+                    const f = metaWindow.get_frame_rect();
+                    const w = Math.min(f.width, wa.width);
+                    const h = Math.min(f.height, wa.height);
+                    const x = Math.max(
+                        wa.x,
+                        Math.min(clone.x, wa.x + wa.width - w)
+                    );
+                    const y = Math.max(
+                        wa.y,
+                        Math.min(clone.y, wa.y + wa.height - h)
+                    );
+                    metaWindow.move_resize_frame(true, x, y, w, h);
+                    Tiling.showWindow(metaWindow);
                 } else {
-                    // On a secondary monitor: leave it as a plain free window.
                     Tiling.showWindow(metaWindow);
                 }
 
