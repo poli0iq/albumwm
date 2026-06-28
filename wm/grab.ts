@@ -595,12 +595,20 @@ export class MoveGrab {
 
                 Utils.actorRaise(clone);
             } else if (clone) {
-                // Dropped onto empty space: leave it floating where it landed.
+                // Dropped onto empty space: leave it where it landed.
                 metaWindow.move_frame(true, clone.x, clone.y);
-                this.initialSpace.addFloating(metaWindow);
-                metaWindow.make_above();
-                Tiling.showWindow(metaWindow);
-                this.initialSpace.moveDone();
+                if (
+                    Utils.monitorAtPoint(gx, gy) === this.initialSpace.monitor
+                ) {
+                    // On the tiled monitor: park it in the floating layer.
+                    this.initialSpace.addFloating(metaWindow);
+                    metaWindow.make_above();
+                    Tiling.showWindow(metaWindow);
+                    this.initialSpace.moveDone();
+                } else {
+                    // On a secondary monitor: leave it as a plain free window.
+                    Tiling.showWindow(metaWindow);
+                }
 
                 actor.set_scale(clone.scale_x, clone.scale_y);
                 actor.opacity = clone.opacity;
