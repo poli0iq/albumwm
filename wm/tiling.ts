@@ -2884,9 +2884,14 @@ export function insertWindow(
         }
     }
 
-    if (metaWindow.is_on_all_workspaces()) {
-        // Only connect the necessary signals and show windows on shared
-        // secondary monitors.
+    if (
+        metaWindow.is_on_all_workspaces() ||
+        (existing &&
+            primaryMonitor &&
+            metaWindow.get_monitor() !== primaryMonitor.index)
+    ) {
+        /* AlbumWM only tiles the primary monitor. Leave windows on secondary
+         * monitors (or sticky windows) alone. */
         connectSizeChanged();
         showWindow(metaWindow);
         return;
