@@ -338,10 +338,8 @@ export function sortWindows(a: WindowPreview, b: WindowPreview): number {
         return 1;
     }
 
-    const spaceA = Tiling.spaces.spaceOfWindow(aw)!;
-    const spaceB = Tiling.spaces.spaceOfWindow(bw)!;
-    const ia = spaceA.columnOf(aw);
-    const ib = spaceB.columnOf(bw);
+    const ia = Tiling.spaces.spaceOfWindow(aw)?.columnOf(aw) ?? -1;
+    const ib = Tiling.spaces.spaceOfWindow(bw)?.columnOf(bw) ?? -1;
     if (ia === -1 && ib === -1) {
         return aw.get_stable_sequence() - bw.get_stable_sequence();
     }

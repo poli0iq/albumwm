@@ -2123,8 +2123,19 @@ export class Spaces extends Map<Meta.Workspace, Space> {
         space.destroy();
     }
 
-    spaceOfWindow(metaWindow: Window) {
-        return this.get(metaWindow.get_workspace())!;
+    /**
+     * The space that manages metaWindow, i.e. has it tiled or in its
+     * floating layer. Undefined for unmanaged windows.
+     */
+    spaceOfWindow(metaWindow: Window): Space | undefined {
+        const space = this.get(metaWindow.get_workspace());
+        if (
+            space &&
+            (space.columnOf(metaWindow) !== -1 || space.isFloating(metaWindow))
+        ) {
+            return space;
+        }
+        return undefined;
     }
 
     spaceOf(workspace: Meta.Workspace): Space {
@@ -2290,8 +2301,7 @@ export function isFloating(metaWindow: Window) {
     if (!metaWindow) {
         return false;
     }
-    const space = spaces.spaceOfWindow(metaWindow);
-    return space.isFloating?.(metaWindow) ?? false;
+    return spaces.spaceOfWindow(metaWindow)?.isFloating(metaWindow) ?? false;
 }
 
 export function isMaximized(metaWindow: Window) {
@@ -2897,7 +2907,9 @@ export function insertWindow(
         return;
     }
 
-    const space = spaces.spaceOfWindow(metaWindow);
+    /* Admission point: the window isn't a member of any space yet, so key
+     * on its workspace. */
+    const space = spaces.spaceOf(metaWindow.get_workspace());
 
     if (overwriteSpace !== undefined) {
         const newspace = spaces.spaceOfIndex(overwriteSpace);
@@ -3050,6 +3062,7 @@ export function getOpenWindowPositionIndex(space: Space) {
 
 export function animateDown(metaWindow: Window) {
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const workArea = space.workArea();
     Easer.addEase(metaWindow.clone, {
         y: workArea.y,
@@ -3138,6 +3151,7 @@ export function ensureViewport(
     }
 ) {
     space = space ?? spaces.spaceOfWindow(metaWindow);
+    if (!space) return false;
     const force = options?.force ?? false;
     const moveto = options?.moveto ?? true;
     const animate = options?.animate ?? true;
@@ -3352,7 +3366,12 @@ export function focusHandler(metaWindow: Window) {
         return;
     }
 
+    /* Unmanaged window (e.g. on a secondary monitor): leave it and the
+     * pointer over it alone. */
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) {
+        return;
+    }
 
     // if window is on another monitor then warp pointer there
     if (
@@ -3491,7 +3510,7 @@ export function minimizeHandler(metaWindow: Window) {
     const space = spaces.spaceOfWindow(metaWindow);
     if (metaWindow.minimized) {
         console.debug('minimized', metaWindow?.title);
-        if (space.columnOf(metaWindow) !== -1) {
+        if (space && space.columnOf(metaWindow) !== -1) {
             metaWindow._tiled_on_minimize = true;
             space.removeWindow(metaWindow);
         }
@@ -3573,6 +3592,7 @@ export function toggleMaximizeHorizontally(metaWindow: Window) {
     maxWidthPrc = Math.min(1.0, maxWidthPrc);
 
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const workArea = space.workArea();
     const frame = metaWindow.get_frame_rect();
     const reqWidth =
@@ -3605,6 +3625,7 @@ export function resizeHInc(metaWindow: Window) {
     metaWindow = metaWindow || display.focus_window;
     const frame = metaWindow.get_frame_rect();
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const workArea = space.workArea();
 
     const maxHeight =
@@ -3634,6 +3655,7 @@ export function resizeHDec(metaWindow: Window) {
     metaWindow = metaWindow || display.focus_window;
     const frame = metaWindow.get_frame_rect();
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const workArea = space.workArea();
 
     const maxHeight =
@@ -3664,6 +3686,7 @@ export function resizeWInc(metaWindow: Window) {
     metaWindow = metaWindow || display.focus_window;
     const frame = metaWindow.get_frame_rect();
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const workArea = space.workArea();
 
     const maxWidth =
@@ -3693,6 +3716,7 @@ export function resizeWDec(metaWindow: Window) {
     metaWindow = metaWindow || display.focus_window;
     const frame = metaWindow.get_frame_rect();
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const workArea = space.workArea();
 
     const maxWidth =
@@ -3722,6 +3746,7 @@ export function resizeWDec(metaWindow: Window) {
 export function getCycleWindowWidths(metaWindow: Window) {
     const steps = Settings.prefs!.preset_column_widths;
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return [];
     const workArea = space.workArea();
 
     // Steps are ratios of the available width -> convert to pixels.
@@ -3753,6 +3778,7 @@ export function cycleWindowWidthDirection(
 ) {
     const frame = metaWindow.get_frame_rect();
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const workArea = space.workArea();
     workArea.x += space.monitor!.x;
 
@@ -3819,7 +3845,7 @@ export function cycleWindowHeightDirection(
     const frame = metaWindow.get_frame_rect();
 
     const space = spaces.spaceOfWindow(metaWindow);
-    const i = space.columnOf(metaWindow);
+    const i = space ? space.columnOf(metaWindow) : -1;
 
     const findFn =
         direction === CycleWindowSizesDirection.FORWARD
@@ -3835,7 +3861,7 @@ export function cycleWindowHeightDirection(
         return Math.min(Math.floor(targetR * available), available);
     }
 
-    if (i > -1) {
+    if (space && i > -1) {
         const allocate = (column: Window[], available: number) => {
             // NB: important to not retrieve the frame size inside allocate. Allocation of
             // metaWindow should stay the same during a potential fixpoint evaluation.
@@ -3898,6 +3924,7 @@ export function centerWindow(
 ) {
     const frame = metaWindow.get_frame_rect();
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const monitor = space.monitor!;
     const workArea = space.workArea();
 
@@ -4143,6 +4170,7 @@ export function barf(metaWindow: Window, expelWindow?: Window) {
     if (!metaWindow) return;
 
     const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     const index = space.columnOf(metaWindow);
     if (index === -1) return;
 

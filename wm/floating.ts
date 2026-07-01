@@ -62,6 +62,7 @@ export function easeFloating(
 export function toggleWindowFloating(metaWindow: Tiling.Window) {
     if (!metaWindow) return;
     const space = Tiling.spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
     // Both methods activate the window themselves once their animation settles.
     if (Tiling.isFloating(metaWindow)) {
         space.unfloatWindow(metaWindow);

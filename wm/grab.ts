@@ -91,7 +91,10 @@ export class MoveGrab {
 
         this.dragDriftPx = 12;
 
-        this.initialSpace = space || Tiling.spaces.spaceOfWindow(metaWindow);
+        /* The space the drag interacts with; keyed on the workspace since
+         * the grabbed window may not be a member of any space. */
+        this.initialSpace =
+            space || Tiling.spaces.spaceOf(metaWindow.get_workspace());
         this.zoneActors = new Set();
 
         // save whether this was tiled window at start of grab
