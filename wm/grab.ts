@@ -609,9 +609,10 @@ export class MoveGrab {
                     this.initialSpace.moveDone();
                 } else if (dropMon) {
                     /* On a secondary monitor: leave it a plain free window, but
-                     * resize it to fit. Mutter shoves a window taller than its
-                     * monitor back to the one that fits (the primary):
-                     * https://gitlab.gnome.org/GNOME/mutter/-/blob/50.2/src/core/constraints.c#L1829 */
+                     * resize it to fit. Ending the native op repositions the
+                     * window around the drag anchor while the resize is still
+                     * pending, pushing a too-tall window back onto the primary:
+                     * https://gitlab.gnome.org/GNOME/mutter/-/blob/50.2/src/compositor/meta-window-drag.c#L1285 */
                     const wa = Main.layoutManager.getWorkAreaForMonitor(
                         dropMon.index
                     );
@@ -627,6 +628,14 @@ export class MoveGrab {
                         Math.min(clone.y, wa.y + wa.height - h)
                     );
                     metaWindow.move_resize_frame(true, x, y, w, h);
+                    /* The native op outlives the drop (see the click-out
+                     * below); grabEnd re-asserts this rect. */
+                    Tiling.setSettlingDrop(metaWindow, {
+                        x,
+                        y,
+                        width: w,
+                        height: h,
+                    });
                     Tiling.showWindow(metaWindow);
                 } else {
                     Tiling.showWindow(metaWindow);

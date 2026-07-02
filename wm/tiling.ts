@@ -147,9 +147,28 @@ let startupTimeoutId: number | null,
     workspaceChangeTimeouts: (number | null)[] | null;
 let monitorChangeTimeout: number | null;
 export let inGrab: Grab.MoveGrab | Grab.ResizeGrab | null;
+/* The window a mutter grab op is moving. Unlike inGrab, also set for native
+ * grabs (moves of floating and unmanaged windows), i.e. when inGrab is null. */
+let grabbedWindow: Window | null = null;
+// A secondary-monitor drop whose native grab op hasn't ended; see grabEnd.
+let settlingDrop: {
+    window: Window;
+    rect: { x: number; y: number; width: number; height: number };
+} | null = null;
+
+/** Called by the drop handler; ignored if the native grab op already ended. */
+export function setSettlingDrop(
+    window: Window,
+    rect: { x: number; y: number; width: number; height: number }
+) {
+    if (grabbedWindow !== window) return;
+    settlingDrop = { window, rect };
+}
 
 export function enable(extension: Extension) {
     inGrab = null;
+    grabbedWindow = null;
+    settlingDrop = null;
 
     saveState = saveState ?? new SaveState();
 
@@ -257,6 +276,8 @@ export function disable() {
     saveState.prepare();
     spaces.destroy();
     inGrab = null;
+    grabbedWindow = null;
+    settlingDrop = null;
     gsettings = null;
 }
 
@@ -1891,6 +1912,13 @@ export class Spaces extends Map<Meta.Workspace, Space> {
         );
 
         this.signals.connect(
+            display,
+            'window-entered-monitor',
+            (_display: Meta.Display, _monitor: number, mw: Window) =>
+                syncMonitorMembership(mw)
+        );
+
+        this.signals.connect(
             global.window_manager,
             'switch-workspace',
             (wm, from, to, _direction) => this.switchWorkspace(wm, from, to)
@@ -2422,7 +2450,10 @@ export function registerWindow(metaWindow: Window) {
         // console.log(`num workspaceChangeTimeouts ${workspaceChangeTimeouts.length}`);
     };
     signals!.connect(metaWindow, 'workspace-changed', mw => {
-        if (!isTiled(mw)) {
+        /* Members only: a returning unmanaged window also changes workspace,
+         * and its stale _targetHeight must not apply. */
+        const space = spaces.spaceOfWindow(mw);
+        if (!space || space.columnOf(mw) === -1) {
             return;
         }
 
@@ -2524,6 +2555,32 @@ export function positionChangeHandler(metaWindow: Window) {
     }
 
     saveFullscreenFrame(metaWindow);
+}
+
+/**
+ * Monitor policy (on "window-entered-monitor": a crossing fires no
+ * workspace signal with workspaces-only-on-primary off): unmanaged windows
+ * reaching the primary go above the strip; native move grabs leaving it
+ * unmanage. Grab-gated since edge-stacked members hang past the monitor.
+ */
+function syncMonitorMembership(metaWindow: Window) {
+    if (metaWindow === settlingDrop?.window) return;
+    const primary = Main.layoutManager.primaryMonitor;
+    if (!primary) return;
+
+    const space = spaces.spaceOfWindow(metaWindow);
+    if (metaWindow.get_monitor() === primary.index) {
+        if (
+            !space &&
+            !metaWindow.is_on_all_workspaces() &&
+            !metaWindow.is_above()
+        ) {
+            metaWindow.make_above();
+        }
+    } else if (space && !inGrab && metaWindow === grabbedWindow) {
+        space.removeWindow(metaWindow);
+        showWindow(metaWindow);
+    }
 }
 
 export function resizeHandler(metaWindow: Window) {
@@ -2896,6 +2953,7 @@ export function insertWindow(
 
     if (
         metaWindow.is_on_all_workspaces() ||
+        metaWindow === settlingDrop?.window ||
         (existing &&
             primaryMonitor &&
             metaWindow.get_monitor() !== primaryMonitor.index)
@@ -2910,6 +2968,15 @@ export function insertWindow(
     /* Admission point: the window isn't a member of any space yet, so key
      * on its workspace. */
     const space = spaces.spaceOf(metaWindow.get_workspace());
+
+    /* Dragged in from a secondary monitor: stays unmanaged (the float
+     * toggle readopts), just kept above the tiled strip. */
+    if (existing && metaWindow === grabbedWindow) {
+        connectSizeChanged();
+        metaWindow.make_above();
+        showWindow(metaWindow);
+        return;
+    }
 
     if (overwriteSpace !== undefined) {
         const newspace = spaces.spaceOfIndex(overwriteSpace);
@@ -3272,12 +3339,16 @@ export function moveTo(
 }
 
 export function grabBegin(metaWindow: Window, type: Meta.GrabOp) {
+    grabbedWindow = metaWindow;
     switch (type) {
         case Meta.GrabOp.KEYBOARD_MOVING:
-            inGrab = new Grab.MoveGrab(metaWindow, type);
+            /* Floating and unmanaged windows move natively, like pointer
+             * moves below. */
             if (!isTiled(metaWindow)) {
                 return;
             }
+
+            inGrab = new Grab.MoveGrab(metaWindow, type);
 
             // NOTE: Keyboard grab moves the cursor, but it happens after grab
             // signals have run. Simply delay the dnd so it will get the correct
@@ -3331,6 +3402,20 @@ export function grabBegin(metaWindow: Window, type: Meta.GrabOp) {
 }
 
 export function grabEnd(_metaWindow: Window, _type: Meta.GrabOp) {
+    if (settlingDrop) {
+        /* Ending the op moves the window again and, while the drop resize is
+         * unacked, mutter can shove it off the drop monitor. Re-assert. */
+        const settling = settlingDrop;
+        Utils.laterAdd(Meta.LaterType.IDLE, () => {
+            const { x, y, width, height } = settling.rect;
+            if (settling.window.get_workspace())
+                settling.window.move_resize_frame(true, x, y, width, height);
+            settlingDrop = null;
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    grabbedWindow = null;
     if (
         !inGrab ||
         (inGrab instanceof Grab.MoveGrab && inGrab.dnd) ||

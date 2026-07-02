@@ -62,7 +62,18 @@ export function easeFloating(
 export function toggleWindowFloating(metaWindow: Tiling.Window) {
     if (!metaWindow) return;
     const space = Tiling.spaces.spaceOfWindow(metaWindow);
-    if (!space) return;
+    if (!space) {
+        /* Unmanaged: pull onto the primary and readopt. Insert explicitly:
+         * only a workspaces-only-on-primary sticky window's move fires
+         * window-added on its own (the explicit insert then no-ops). */
+        const primary = Main.layoutManager.primaryMonitor;
+        if (!primary) return;
+        if (metaWindow.is_on_all_workspaces()) metaWindow.unstick();
+        if (metaWindow.get_monitor() !== primary.index)
+            metaWindow.move_to_monitor(primary.index);
+        Tiling.insertWindow(metaWindow, { existing: true });
+        return;
+    }
     // Both methods activate the window themselves once their animation settles.
     if (Tiling.isFloating(metaWindow)) {
         space.unfloatWindow(metaWindow);
