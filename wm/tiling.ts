@@ -143,8 +143,7 @@ let gsettings: Gio.Settings | null;
 let signals: Utils.Signals | null, grabSignals: Utils.Signals | null;
 let startupTimeoutId: number | null,
     timerId: number | null,
-    fullscreenStartTimeout: number | null,
-    workspaceChangeTimeouts: (number | null)[] | null;
+    fullscreenStartTimeout: number | null;
 let monitorChangeTimeout: number | null;
 export let inGrab: Grab.MoveGrab | Grab.ResizeGrab | null;
 /* The window a mutter grab op is moving. Unlike inGrab, also set for native
@@ -176,8 +175,6 @@ export function enable(extension: Extension) {
 
     signals = new Utils.Signals();
     grabSignals = new Utils.Signals();
-
-    workspaceChangeTimeouts = []; // init array to hold timeouts
 
     // setup actions on gap changes
     const marginsGapChanged = () => {
@@ -263,8 +260,6 @@ export function disable() {
     timerId = null;
     Utils.timeoutRemove(fullscreenStartTimeout);
     fullscreenStartTimeout = null;
-    workspaceChangeTimeouts?.forEach(t => Utils.timeoutRemove(t));
-    workspaceChangeTimeouts = null;
     Utils.timeoutRemove(monitorChangeTimeout);
     monitorChangeTimeout = null;
 
@@ -2400,6 +2395,13 @@ export function registerWindow(metaWindow: Window) {
     signals!.connect(metaWindow, 'focus', (mw, _userData) => {
         focusHandler(mw);
     });
+    /* Once 'unmanaging' fires the wayland shell surface is detached and
+     * moving or resizing the window segfaults mutter, yet the refocus
+     * runs before 'window-removed' evicts it from its space. Evict up
+     * front so membership guards keep every handler off the window. */
+    signals!.connect(metaWindow, 'unmanaging', mw => {
+        spaces.spaceOfWindow(mw)?.removeWindow(mw);
+    });
     signals!.connect(metaWindow, 'size-changed', allocateClone);
     // Note: runs before gnome-shell's minimize handling code
     signals!.connect(metaWindow, 'notify::fullscreen', () => {
@@ -2437,51 +2439,6 @@ export function registerWindow(metaWindow: Window) {
         if (metaWindow._targetHeight !== f.height) {
             resizeHandler(metaWindow);
         }
-    });
-
-    /**
-     * Not all applications (and application states) work well with `stage-views-change`
-     * actor signal (and the resizeHandler).  For example, some apps if too wide
-     * (e.g. full width of tiling window) won't get detected with `stage-views-changed`
-     * signal when it's workspace has changed (e.g. keybind to move to another monitor).
-     * The below works around this issue by continually (up to a number of tries)
-     * checking the height and resizing.
-     */
-    const done = (t: number) => {
-        const index = workspaceChangeTimeouts!.indexOf(t);
-        workspaceChangeTimeouts!.splice(index, 1);
-        // console.log(`num workspaceChangeTimeouts ${workspaceChangeTimeouts.length}`);
-    };
-    signals!.connect(metaWindow, 'workspace-changed', mw => {
-        /* Members only: a returning unmanaged window also changes workspace,
-         * and its stale _targetHeight must not apply. */
-        const space = spaces.spaceOfWindow(mw);
-        if (!space || space.columnOf(mw) === -1) {
-            return;
-        }
-
-        const timeout = Utils.periodicTimeout({
-            period_ms: 100,
-            count: 10,
-            callback: () => {
-                const f = metaWindow.get_frame_rect();
-                if (metaWindow._targetHeight !== f.height) {
-                    if (!isNaN(metaWindow._targetHeight!)) {
-                        metaWindow.move_resize_frame(
-                            true,
-                            f.x,
-                            f.y,
-                            f.width,
-                            metaWindow._targetHeight!
-                        );
-                    }
-                }
-            },
-            onComplete: () => {
-                done(timeout);
-            },
-        });
-        workspaceChangeTimeouts!.push(timeout);
     });
 
     signals!.connect(actor, 'destroy', destroyHandler);
