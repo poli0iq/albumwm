@@ -2567,6 +2567,11 @@ export function positionChangeHandler(metaWindow: Window) {
  * unmanage. Grab-gated since edge-stacked members hang past the monitor.
  */
 function syncMonitorMembership(metaWindow: Window) {
+    /* No actor means mid-construction: mutter emits window-entered-monitor
+     * before stacking the window, and make_above here would stack it early,
+     * tripping meta_stack_add's re-entry check (abort). */
+    if (!metaWindow.get_compositor_private()) return;
+
     if (metaWindow === settlingDrop?.window) return;
     const primary = Main.layoutManager.primaryMonitor;
     if (!primary) return;
