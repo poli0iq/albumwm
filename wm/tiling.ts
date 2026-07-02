@@ -948,16 +948,34 @@ export class Space extends Array<Array<Window>> {
             x > min + workArea.width - stackMargin
         ) {
             return false;
-        } else {
-            // Fullscreen windows are only placeable on the monitor origin
+        }
+
+        // Fullscreen windows are only placeable on the monitor origin
+        if (
+            (isMaximized(metaWindow) && x !== min) ||
+            (metaWindow.fullscreen && x !== 0)
+        ) {
+            return false;
+        }
+
+        /* In workspaces-only-on-primary mutter force-stickies any window it
+         * attributes to another monitor and reassigns its workspace once it
+         * returns, so a position is only placeable if the real frame can sit
+         * there without changing monitors. Non-placeable windows are shown
+         * via their clone instead; moveDone keeps the frame on this.monitor. */
+        if (mutterSettings.get_boolean('workspaces-only-on-primary')) {
+            const frame = metaWindow.get_frame_rect();
+            frame.x = this.monitor!.x + x;
+            frame.y = this.visibleY(metaWindow);
             if (
-                (isMaximized(metaWindow) && x !== min) ||
-                (metaWindow.fullscreen && x !== 0)
+                display.get_monitor_index_for_rect(frame) !==
+                this.monitor!.index
             ) {
                 return false;
             }
-            return true;
         }
+
+        return true;
     }
 
     getWindows(): Window[] {
@@ -1016,21 +1034,10 @@ export class Space extends Array<Array<Window>> {
             const y = this.monitor!.y + clone.targetY;
             // Mirrors moveDone, see there.
             if (this.isPlaceable(w)) {
-                if (mutterSettings.get_boolean('workspaces-only-on-primary')) {
-                    const margin = Math.max(
-                        stackMargin,
-                        Math.ceil(f.width / 2) + 1
-                    );
-                    x = Math.max(
-                        margin - f.width,
-                        Math.min(this.width! - margin, x)
-                    );
-                } else {
-                    x = Math.min(
-                        this.width! - stackMargin,
-                        Math.max(stackMargin - f.width, x)
-                    );
-                }
+                x = Math.min(
+                    this.width! - stackMargin,
+                    Math.max(stackMargin - f.width, x)
+                );
             } else {
                 x = Math.max(0, Math.min(this.width! - f.width, x));
             }
@@ -1457,24 +1464,11 @@ export class Space extends Array<Array<Window>> {
             let x = this.visibleX(w);
             const y = this.visibleY(w);
             /* Non-placeable actors must stay on this.monitor or mutter
-               reassigns them. In workspaces-only-on-primary mutter additionally
-               auto-stickies any tiled window whose center crosses to a
-               neighbour, so cap placeable actors there too. The cap is a no-op
-               in safe positions; it only kicks in for swap and mouse-drag
-               cases where moveDone would otherwise park a window in the band
-               that crosses the boundary. */
+             * reassigns them; isPlaceable already rules out any position
+             * that would change the window's monitor. */
             if (placeable) {
-                if (mutterSettings.get_boolean('workspaces-only-on-primary')) {
-                    const margin = Math.max(
-                        stackMargin,
-                        Math.ceil(f.width / 2) + 1
-                    );
-                    x = Math.max(margin - f.width, x);
-                    x = Math.min(this.width! - margin, x);
-                } else {
-                    x = Math.max(stackMargin - f.width, x);
-                    x = Math.min(this.width! - stackMargin, x);
-                }
+                x = Math.max(stackMargin - f.width, x);
+                x = Math.min(this.width! - stackMargin, x);
             } else {
                 x = Math.max(0, Math.min(this.width! - f.width, x));
             }
