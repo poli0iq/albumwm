@@ -141,9 +141,7 @@ class SaveState {
 let saveState: SaveState;
 let gsettings: Gio.Settings | null;
 let signals: Utils.Signals | null, grabSignals: Utils.Signals | null;
-let startupTimeoutId: number | null,
-    timerId: number | null,
-    fullscreenStartTimeout: number | null;
+let startupTimeoutId: number | null, timerId: number | null;
 let monitorChangeTimeout: number | null;
 export let inGrab: Grab.MoveGrab | Grab.ResizeGrab | null;
 /* The window a mutter grab op is moving. Unlike inGrab, also set for native
@@ -258,8 +256,6 @@ export function disable() {
     startupTimeoutId = null;
     Utils.timeoutRemove(timerId);
     timerId = null;
-    Utils.timeoutRemove(fullscreenStartTimeout);
-    fullscreenStartTimeout = null;
     Utils.timeoutRemove(monitorChangeTimeout);
     monitorChangeTimeout = null;
 
@@ -2891,28 +2887,6 @@ export function insertWindow(
                 );
                 metaWindow.focusOnOpen = true;
             }
-        }
-
-        /**
-         * Address inserting windows that are already fullscreen: windows will be inserted
-         * as normal (non-fullscreen) and will be fullscreened after a timeout on actor show.
-         * see https://github.com/paperwm/PaperWM/issues/638
-         */
-        if (metaWindow.fullscreen) {
-            animateWindow(metaWindow);
-            callbackOnActorShow(actor, () => {
-                fullscreenStartTimeout = GLib.timeout_add(
-                    GLib.PRIORITY_DEFAULT,
-                    100,
-                    () => {
-                        metaWindow.unmake_fullscreen();
-                        showWindow(metaWindow);
-                        metaWindow.make_fullscreen();
-                        fullscreenStartTimeout = null;
-                        return false; // on return false destroys timeout
-                    }
-                );
-            });
         }
     }
 
