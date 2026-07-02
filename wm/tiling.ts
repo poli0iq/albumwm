@@ -935,7 +935,8 @@ export class Space extends Array<Array<Window>> {
         return min <= x && x + clone.width < min + workArea.width;
     }
 
-    isPlaceable(metaWindow: Window) {
+    /** Whether less than stackMargin of the window is inside the work area. */
+    isEdgeStacked(metaWindow: Window) {
         const clone = metaWindow.clone;
         const x = this.visibleX(metaWindow);
         const workArea = Main.layoutManager.getWorkAreaForMonitor(
@@ -943,12 +944,20 @@ export class Space extends Array<Array<Window>> {
         );
         const min = workArea.x - this.monitor!.x;
 
-        if (
+        return (
             x + clone.width < min + stackMargin ||
             x > min + workArea.width - stackMargin
-        ) {
-            return false;
-        }
+        );
+    }
+
+    isPlaceable(metaWindow: Window) {
+        if (this.isEdgeStacked(metaWindow)) return false;
+
+        const x = this.visibleX(metaWindow);
+        const workArea = Main.layoutManager.getWorkAreaForMonitor(
+            this.monitor!.index
+        );
+        const min = workArea.x - this.monitor!.x;
 
         // Fullscreen windows are only placeable on the monitor origin
         if (

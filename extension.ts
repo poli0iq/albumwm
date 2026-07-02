@@ -10,6 +10,7 @@ import {
     Topbar,
     Patches,
     Grab,
+    HoverFocus,
 } from './wm/imports.js';
 
 import Gio from 'gi://Gio?version=2.0';
@@ -30,6 +31,9 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
      - stackoverlay is somewhat kludgy. It makes clicking on the left or right
        edge of the screen always activate the partially (or sometimes wholly)
        concealed window at the edges.
+
+     - hoverFocus extends the sloppy/mouse focus modes to clone-rendered
+       windows, which mutter's own focus-follows-mouse can't see.
 
      - Patches is used for monkey patching gnome shell behavior which simply
        doesn't fit albumwm.
@@ -57,6 +61,7 @@ export default class AlbumWM extends Extension {
         Tiling,
         Topbar,
         Grab,
+        HoverFocus,
     ];
 
     _resource: Gio.Resource | null = null;

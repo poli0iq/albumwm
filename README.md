@@ -12,7 +12,6 @@ Features that the fork author considered useless or harmful are dropped.
 - **Ported to TypeScript**
 - **Dropped the custom workspaces functionality and the hacky multi-monitor support**
 
-    Now both the "Workspaces on all displays" and "Workspaces on primary display only" modes work.
     Scrollable tiling is only done on the primary display, though.
 
     Rationale: PaperWM's custom emulation never worked good.
@@ -29,6 +28,7 @@ Features that the fork author considered useless or harmful are dropped.
 
 - **Replaced the global scratch layer with a per-workspace floating layer**
 - **Remember each column's last focused window and activate it on column focus**
+- **Made workspaces-only-on-primary mode usable**
 - Implemented pointer warp on window focus (optional)
 - Improved the scroll gesture
 - Dropped drawing a custom top bar on secondary displays
