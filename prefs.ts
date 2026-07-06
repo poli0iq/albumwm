@@ -310,45 +310,6 @@ class SettingsWidget {
         // Other
         percentValueChanged('maximize-width-percent', 'maximize-column-width');
         booleanStateChanged('topbar-mouse-scroll-enable');
-
-        // Gesture
-        const vSens = this.builder.get_object<Adw.SpinRow>(
-            'vertical-sensitivity'
-        );
-        const hSens = this.builder.get_object<Adw.SpinRow>(
-            'horizontal-sensitivity'
-        );
-        const [sx, sy] = this._settings
-            .get_value<'ad'>('swipe-sensitivity')
-            .deep_unpack();
-        hSens.set_value(sx);
-        vSens.set_value(sy);
-        const sensChanged = () => {
-            this._settings.set_value(
-                'swipe-sensitivity',
-                new GLib.Variant('ad', [hSens.get_value(), vSens.get_value()])
-            );
-        };
-        vSens.connect('changed', sensChanged);
-        hSens.connect('changed', sensChanged);
-
-        const vFric = this.builder.get_object<Adw.SpinRow>('vertical-friction');
-        const hFric = this.builder.get_object<Adw.SpinRow>(
-            'horizontal-friction'
-        );
-        const [fx, fy] = this._settings
-            .get_value<'ad'>('swipe-friction')
-            .deep_unpack();
-        hFric.set_value(fx);
-        vFric.set_value(fy);
-        const fricChanged = () => {
-            this._settings.set_value(
-                'swipe-friction',
-                new GLib.Variant('ad', [hFric.get_value(), vFric.get_value()])
-            );
-        };
-        vFric.connect('changed', fricChanged);
-        hFric.connect('changed', fricChanged);
     }
 }
 

@@ -30,8 +30,6 @@ export type Prefs = {
     animation_time: number;
     drag_drift_speed: number;
     default_show_top_bar: boolean;
-    swipe_sensitivity: number[];
-    swipe_friction: number[];
     preset_column_widths: number[];
     preset_window_heights: number[];
     maximize_column_width: number;
