@@ -4188,7 +4188,8 @@ export function slurp(
 }
 
 /**
- * Barfs (expels) a specific window from a column.
+ * Barfs (expels) @expelWindow, or the bottom window of @metaWindow's
+ * column, into its own new column to the right.
  */
 export function barf(metaWindow: Window, expelWindow?: Window) {
     if (!metaWindow) return;
@@ -4201,24 +4202,18 @@ export function barf(metaWindow: Window, expelWindow?: Window) {
     const column = space[index];
     if (column.length < 2) return;
 
-    const to = index + 1;
-
-    // // remove metawindow from column
     if (expelWindow) {
-        // remove expelWindow from current column
-        const indexOfWindow = column.indexOf(expelWindow);
-        column.splice(indexOfWindow, 1);
+        column.splice(column.indexOf(expelWindow), 1);
     } else {
-        // remove from bottom
         expelWindow = column.splice(-1, 1)[0];
     }
-    space.splice(to, 0, [expelWindow]);
+    space.splice(index + 1, 0, [expelWindow]);
 
     space.layout(true, {
         customAllocators: {
-            [space.columnOf(metaWindow)]: allocateEqualHeight,
-            ensure: false,
+            [index]: allocateEqualHeight,
         },
+        ensure: false,
     });
 }
 
