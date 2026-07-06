@@ -3509,19 +3509,21 @@ export function maybeWarpPointerToWindow(metaWindow: Window) {
     const space = spaces.spaceOfWindow(metaWindow);
     if (!space) return;
 
-    /* Use post-scroll coordinates instead of the current frame_rect, which
-     * only catches up at moveDone (end of strip animation). */
+    /* Use post-scroll and post-resize coordinates: the frame_rect position
+     * only catches up at moveDone (end of strip animation), and its size
+     * only when the client acks a pending resize. */
     const f = metaWindow.get_frame_rect();
+    const width = metaWindow._targetWidth ?? f.width;
+    const height = metaWindow._targetHeight ?? f.height;
     const tx = space.visibleX(metaWindow) + space.monitor!.x;
     const ty = space.visibleY(metaWindow);
     const [px, py] = global.get_pointer();
-    const inside =
-        px >= tx && px < tx + f.width && py >= ty && py < ty + f.height;
+    const inside = px >= tx && px < tx + width && py >= ty && py < ty + height;
     if (inside) return;
 
     Utils.warpPointer(
-        tx + Math.floor(f.width / 2),
-        ty + Math.floor(f.height / 2),
+        tx + Math.floor(width / 2),
+        ty + Math.floor(height / 2),
         false
     );
 }

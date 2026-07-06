@@ -356,25 +356,37 @@ export function setupActions(settings: Gio.Settings) {
 
     registerAlbumAction(
         'consume-window-into-column',
-        (mw, _space) => Tiling.slurp(mw),
+        (mw, _space) => {
+            Tiling.slurp(mw);
+            Tiling.maybeWarpPointerToWindow(mw);
+        },
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
         'expel-window-from-column',
-        (mw, _space) => Tiling.barf(mw),
+        (mw, _space) => {
+            Tiling.barf(mw);
+            Tiling.maybeWarpPointerToWindow(mw);
+        },
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
         'consume-or-expel-window-left',
-        (mw, _space) => Tiling.consumeOrExpel(mw, Meta.MotionDirection.LEFT),
+        (mw, _space) => {
+            Tiling.consumeOrExpel(mw, Meta.MotionDirection.LEFT);
+            Tiling.maybeWarpPointerToWindow(mw);
+        },
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
     registerAlbumAction(
         'consume-or-expel-window-right',
-        (mw, _space) => Tiling.consumeOrExpel(mw, Meta.MotionDirection.RIGHT),
+        (mw, _space) => {
+            Tiling.consumeOrExpel(mw, Meta.MotionDirection.RIGHT);
+            Tiling.maybeWarpPointerToWindow(mw);
+        },
         Meta.KeyBindingFlags.PER_WINDOW
     );
 
