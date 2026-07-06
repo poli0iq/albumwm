@@ -4223,6 +4223,52 @@ export function barf(metaWindow: Window, expelWindow?: Window) {
 }
 
 /**
+ * Moves @metaWindow in and out of a column: a window alone in its column is
+ * consumed into the bottom of the adjacent column in @direction, a window with
+ * siblings is expelled into its own new column on that side.
+ */
+export function consumeOrExpel(
+    metaWindow: Window,
+    direction: Meta.MotionDirection
+) {
+    if (!metaWindow) return;
+
+    const space = spaces.spaceOfWindow(metaWindow);
+    if (!space) return;
+    const index = space.columnOf(metaWindow);
+    if (index === -1) return;
+
+    const left = direction === Meta.MotionDirection.LEFT;
+    const column = space[index];
+
+    if (column.length === 1) {
+        // Consume into the adjacent column
+        const target = space[left ? index - 1 : index + 1];
+        if (!target) return;
+
+        // Consuming fullscreen windows is trouble, unfullscreen first
+        if (metaWindow.fullscreen) {
+            metaWindow.unmake_fullscreen();
+        }
+
+        target.push(metaWindow);
+        space.splice(index, 1);
+
+        space.layout(true, {
+            customAllocators: {
+                [space.columnOf(metaWindow)]: allocateEqualHeight,
+            },
+        });
+    } else {
+        // Expel into a new column
+        column.splice(column.indexOf(metaWindow), 1);
+        space.splice(left ? index : index + 1, 0, [metaWindow]);
+
+        space.layout(true);
+    }
+}
+
+/**
    Sort the @windows based on their clone's stacking order
    in @space.cloneContainer.
  */

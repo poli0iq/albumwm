@@ -53,9 +53,13 @@
       <summary>Move the focused column right</summary>
     </key>
 
-    <key type="as" name="expel-window-right">
+    <key type="as" name="consume-or-expel-window-left">
+      <default><![CDATA[['<Super>bracketleft']]]></default>
+      <summary>Consume or expel the focused window to the left</summary>
+    </key>
+    <key type="as" name="consume-or-expel-window-right">
       <default><![CDATA[['<Super>bracketright']]]></default>
-      <summary>Expel the focused window into its own column to the right</summary>
+      <summary>Consume or expel the focused window to the right</summary>
     </key>
 
     <key type="as" name="consume-window-into-column">

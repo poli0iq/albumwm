@@ -367,8 +367,14 @@ export function setupActions(settings: Gio.Settings) {
     );
 
     registerAlbumAction(
-        'expel-window-right',
-        (mw, _space) => Tiling.barf(mw, mw),
+        'consume-or-expel-window-left',
+        (mw, _space) => Tiling.consumeOrExpel(mw, Meta.MotionDirection.LEFT),
+        Meta.KeyBindingFlags.PER_WINDOW
+    );
+
+    registerAlbumAction(
+        'consume-or-expel-window-right',
+        (mw, _space) => Tiling.consumeOrExpel(mw, Meta.MotionDirection.RIGHT),
         Meta.KeyBindingFlags.PER_WINDOW
     );
 

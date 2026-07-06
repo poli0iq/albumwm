@@ -34,7 +34,8 @@ const actions = {
         'move-window-up',
         'move-column-right',
 
-        'expel-window-right',
+        'consume-or-expel-window-left',
+        'consume-or-expel-window-right',
 
         'consume-window-into-column',
         'expel-window-from-column',
