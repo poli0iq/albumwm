@@ -14,6 +14,11 @@ enum DIRECTIONS {
     Vertical = 0,
 }
 
+// Touchpad scroll gesture tuning, should resemble gnome-shell's.
+const PAN_GAIN = 1.0; // live pan tracks the fingers 1:1
+const DECELERATION = 0.01875; // px/ms^2, constant-deceleration fling
+const MIN_GLIDE_DURATION = 100; // ms, so slow flicks still animate
+
 let direction: DIRECTIONS | undefined, signals: Utils.Signals | null;
 // 1 is natural scrolling, -1 is unnatural
 let natural = 1;
@@ -181,11 +186,7 @@ export function horizontalScroll(
                 Easer.removeEase(space.cloneContainer);
                 direction = DIRECTIONS.Horizontal;
             }
-            return update(
-                space,
-                -dx * natural * Settings.prefs!.swipe_sensitivity[0],
-                event.get_time()
-            );
+            return update(space, -dx * natural * PAN_GAIN, event.get_time());
         case Clutter.TouchpadGesturePhase.CANCEL:
         case Clutter.TouchpadGesturePhase.END:
             if (direction !== DIRECTIONS.Horizontal) {
@@ -289,7 +290,7 @@ export function done(space: Tiling.Space) {
     const startGlide = space.targetX;
 
     // timetravel
-    let accel = Settings.prefs!.swipe_friction[0] / 16; // px/ms^2
+    let accel = DECELERATION;
     accel = space.vx! > 0 ? -accel : accel;
     let t = -space.vx! / accel;
     const d = space.vx! * t + 0.5 * accel * t ** 2;
@@ -336,13 +337,14 @@ export function done(space: Tiling.Space) {
     const newD = Math.abs(startGlide - target);
     if (newD < Math.abs(d)) t *= Math.abs(newD / d);
 
-    // Use a minimum duration if we've adjusted travel
+    // Use a longer minimum duration if we've adjusted travel
     if (
         target !== space.targetX ||
         mode === Clutter.AnimationMode.EASE_OUT_BACK
     ) {
         t = Math.max(t, 200);
     }
+    t = Math.max(t, MIN_GLIDE_DURATION);
     space.targetX = target;
 
     gliding = true;
