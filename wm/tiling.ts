@@ -2693,6 +2693,22 @@ export function saveFullscreenFrame(metaWindow: Window, tiled?: boolean) {
     }
 }
 
+/**
+ * A window that opened fullscreen has no windowed frame to restore on exit,
+ * so make one up: half the work area wide.
+ */
+export function seedFullscreenFrame(metaWindow: Window, space: Space) {
+    const workArea = space.workArea();
+    const width = Math.round(workArea.width / 2);
+    metaWindow._fullscreen_frame = {
+        x: space.monitor!.x + workArea.x + Settings.prefs!.horizontal_margin,
+        y: space.monitor!.y + workArea.y,
+        width,
+        height: workArea.height,
+        tiledWidth: width,
+    };
+}
+
 /* Switch keyboard focus to a neighbouring monitor. Moving windows between
    monitors is handled by mutter's built-in move-to-monitor-* keybindings. */
 export function switchMonitor(direction: Meta.DisplayDirection) {
@@ -2986,6 +3002,10 @@ Opening "${metaWindow?.title}" on current space.`
     if (ok) clone.set_position(x, y);
 
     if (!space.addWindow(metaWindow, getOpenWindowPositionIndex(space))) return;
+
+    if (metaWindow.fullscreen && !metaWindow._fullscreen_frame) {
+        seedFullscreenFrame(metaWindow, space);
+    }
 
     metaWindow.unmake_above();
     if (isMaximized(metaWindow)) {
