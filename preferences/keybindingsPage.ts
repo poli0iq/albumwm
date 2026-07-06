@@ -34,12 +34,6 @@ const actions = {
         'move-window-up',
         'move-column-right',
 
-        'consume-or-expel-window-left',
-        'consume-or-expel-window-right',
-
-        'consume-window-into-column',
-        'expel-window-from-column',
-
         'center-column',
 
         'maximize-column-toggle',
@@ -61,6 +55,13 @@ const actions = {
         'focus-window-up-or-column-left',
 
         'cycle-focus-modes',
+    ],
+    columns: [
+        'consume-or-expel-window-left',
+        'consume-or-expel-window-right',
+
+        'consume-window-into-column',
+        'expel-window-from-column',
     ],
     monitors: [
         'focus-monitor-left',
@@ -1346,6 +1347,7 @@ export class KeybindingsPage extends Adw.PreferencesPage {
                 ),
                 InternalChildren: [
                     'keybindings_windows_group',
+                    'keybindings_columns_group',
                     'keybindings_monitors_group',
                     'keybindings_floating_group',
                 ],
@@ -1354,6 +1356,7 @@ export class KeybindingsPage extends Adw.PreferencesPage {
         );
     }
     declare _keybindings_windows_group: Adw.PreferencesGroup;
+    declare _keybindings_columns_group: Adw.PreferencesGroup;
     declare _keybindings_monitors_group: Adw.PreferencesGroup;
     declare _keybindings_floating_group: Adw.PreferencesGroup;
 
@@ -1361,6 +1364,7 @@ export class KeybindingsPage extends Adw.PreferencesPage {
     declare _settings: Gio.Settings;
     declare _model: KeybindingsModel;
     declare _windowsView: Gtk.FilterListModel;
+    declare _columnsView: Gtk.FilterListModel;
     declare _monitorsView: Gtk.FilterListModel;
     declare _floatingView: Gtk.FilterListModel;
     declare _expandedRow: KeybindingsRow | null;
@@ -1371,11 +1375,16 @@ export class KeybindingsPage extends Adw.PreferencesPage {
         this._model = new KeybindingsModel(this.acceleratorParse);
 
         this._windowsView = sectionView(this._model, 'windows');
+        this._columnsView = sectionView(this._model, 'columns');
         this._monitorsView = sectionView(this._model, 'monitors');
         this._floatingView = sectionView(this._model, 'floating');
 
         this._keybindings_windows_group.bind_model(
             this._windowsView,
+            keybinding => this._createRow(keybinding as Keybinding)
+        );
+        this._keybindings_columns_group.bind_model(
+            this._columnsView,
             keybinding => this._createRow(keybinding as Keybinding)
         );
         this._keybindings_monitors_group.bind_model(

@@ -53,24 +53,6 @@
       <summary>Move the focused column right</summary>
     </key>
 
-    <key type="as" name="consume-or-expel-window-left">
-      <default><![CDATA[['<Super>bracketleft']]]></default>
-      <summary>Consume or expel the focused window to the left</summary>
-    </key>
-    <key type="as" name="consume-or-expel-window-right">
-      <default><![CDATA[['<Super>bracketright']]]></default>
-      <summary>Consume or expel the focused window to the right</summary>
-    </key>
-
-    <key type="as" name="consume-window-into-column">
-      <default><![CDATA[['<Super>comma']]]></default>
-      <summary>Consume the window on the right into the focused column</summary>
-    </key>
-    <key type="as" name="expel-window-from-column">
-      <default><![CDATA[['<Super>period']]]></default>
-      <summary>Expel the bottom window into its own column to the right</summary>
-    </key>
-
     <key type="as" name="center-column">
       <default><![CDATA[['<Super>c']]]></default>
       <summary>Center the focused column or floating window</summary>
@@ -133,6 +115,25 @@
     <key type="as" name="cycle-focus-modes">
       <default><![CDATA[['<Super><Shift>c']]]></default>
       <summary>Cycle between window focus modes (default, center, edge)</summary>
+    </key>
+
+    <!-- Column management -->
+    <key type="as" name="consume-or-expel-window-left">
+      <default><![CDATA[['<Super>bracketleft']]]></default>
+      <summary>Consume or expel the focused window to the left</summary>
+    </key>
+    <key type="as" name="consume-or-expel-window-right">
+      <default><![CDATA[['<Super>bracketright']]]></default>
+      <summary>Consume or expel the focused window to the right</summary>
+    </key>
+
+    <key type="as" name="consume-window-into-column">
+      <default><![CDATA[['<Super>comma']]]></default>
+      <summary>Consume the window on the right into the focused column</summary>
+    </key>
+    <key type="as" name="expel-window-from-column">
+      <default><![CDATA[['<Super>period']]]></default>
+      <summary>Expel the bottom window into its own column to the right</summary>
     </key>
 
     <!-- Monitors -->
