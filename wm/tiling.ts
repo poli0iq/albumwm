@@ -2244,16 +2244,7 @@ export class Spaces extends Map<Meta.Workspace, Space> {
 
         console.debug('window-created', metaWindow?.title);
 
-        /* Pull windows off secondary monitors before first-frame paints.
-           workspaces-only-on-primary auto-sticks them; unstick so the move
-           takes and downstream guards see a normal new window. */
-        const primary = Main.layoutManager.primaryMonitor;
-        if (primary && metaWindow.get_monitor() !== primary.index) {
-            if (metaWindow.is_on_all_workspaces()) {
-                metaWindow.unstick();
-            }
-            metaWindow.move_to_monitor(primary.index);
-        }
+        // Windows opening on a secondary monitor stay there, unmanaged.
 
         const actor = metaWindow.get_compositor_private();
         animateWindow(metaWindow);
@@ -2829,18 +2820,7 @@ export function insertWindow(
     const dropping = options?.dropping ?? false;
     const dropCallback = options?.dropCallback ?? function () {};
 
-    // Mirrors window_created's monitor pull, for the addHandler path.
     const primaryMonitor = Main.layoutManager.primaryMonitor;
-    if (
-        !existing &&
-        primaryMonitor &&
-        metaWindow.get_monitor() !== primaryMonitor.index
-    ) {
-        if (metaWindow.is_on_all_workspaces()) {
-            metaWindow.unstick();
-        }
-        metaWindow.move_to_monitor(primaryMonitor.index);
-    }
 
     // Add newly created windows to the space being previewed
     if (
@@ -2909,8 +2889,7 @@ export function insertWindow(
     if (
         metaWindow.is_on_all_workspaces() ||
         metaWindow === settlingDrop?.window ||
-        (existing &&
-            primaryMonitor &&
+        (primaryMonitor &&
             metaWindow.get_monitor() !== primaryMonitor.index)
     ) {
         /* AlbumWM only tiles the primary monitor. Leave windows on secondary
