@@ -3008,10 +3008,7 @@ Opening "${metaWindow?.title}" on current space.`
     }
 
     metaWindow.unmake_above();
-    if (isMaximized(metaWindow)) {
-        unmaximize(metaWindow, Meta.MaximizeFlags.BOTH);
-        toggleMaximizeHorizontally(metaWindow);
-    }
+    // Leave map-time maximized windows maximized; the strip holds them as a full-width column.
 
     // run a simple layout in pre-prepare layout
     space.layout(false);
