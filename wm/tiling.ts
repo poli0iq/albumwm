@@ -2730,6 +2730,49 @@ export function switchMonitor(direction: Meta.DisplayDirection) {
 }
 
 /**
+ * Move the focused window to a neighbouring monitor, preserving gnome-shell's
+ * move-to-monitor animation. Counterpart to switchMonitor.
+ */
+export function moveWindowToMonitor(
+    metaWindow: Window,
+    direction: Meta.DisplayDirection
+) {
+    if (!metaWindow) return;
+    const i = metaWindow.get_monitor();
+    const j = display.get_monitor_neighbor_index(i, direction);
+    if (j === -1) return;
+
+    /* If it's managed on the primary, remove it from the tiling and reveal the
+     * real actor so gnome-shell can animate it. removeWindow handles the
+     * floating layer too. */
+    const space = spaces.spaceOfWindow(metaWindow);
+    if (space) {
+        space.removeWindow(metaWindow);
+        showWindow(metaWindow);
+    }
+
+    /* Pre-fit to the target work area: a window taller/wider than the target
+     * is returned back by mutter. */
+    const wa = Main.layoutManager.getWorkAreaForMonitor(j);
+    const f = metaWindow.get_frame_rect();
+    if (f.width > wa.width || f.height > wa.height) {
+        metaWindow.move_resize_frame(
+            true,
+            f.x,
+            f.y,
+            Math.min(f.width, wa.width),
+            Math.min(f.height, wa.height)
+        );
+    }
+
+    // Emits META_SIZE_CHANGE_MONITOR_MOVE -> gnome-shell's fly animation.
+    metaWindow.move_to_monitor(j);
+
+    // Follow the window to its new monitor.
+    warpPointerToWindowOrMonitor(Main.layoutManager.monitors[j], metaWindow);
+}
+
+/**
  * Convenience method to run a callback method when an actor is shown the stage.
  * Uses a `connectOneShot` signal.
  */

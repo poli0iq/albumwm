@@ -200,6 +200,35 @@ export function setupActions(settings: Gio.Settings) {
         { settings }
     );
 
+    registerAction(
+        'move-window-to-monitor-right',
+        mw => {
+            Tiling.moveWindowToMonitor(mw, Meta.DisplayDirection.RIGHT);
+        },
+        { settings, mutterFlags: Meta.KeyBindingFlags.PER_WINDOW }
+    );
+    registerAction(
+        'move-window-to-monitor-left',
+        mw => {
+            Tiling.moveWindowToMonitor(mw, Meta.DisplayDirection.LEFT);
+        },
+        { settings, mutterFlags: Meta.KeyBindingFlags.PER_WINDOW }
+    );
+    registerAction(
+        'move-window-to-monitor-above',
+        mw => {
+            Tiling.moveWindowToMonitor(mw, Meta.DisplayDirection.UP);
+        },
+        { settings, mutterFlags: Meta.KeyBindingFlags.PER_WINDOW }
+    );
+    registerAction(
+        'move-window-to-monitor-below',
+        mw => {
+            Tiling.moveWindowToMonitor(mw, Meta.DisplayDirection.DOWN);
+        },
+        { settings, mutterFlags: Meta.KeyBindingFlags.PER_WINDOW }
+    );
+
     registerMinimapAction('focus-window-down-or-column-right', (_mw, space) =>
         space.switchLinear(1)
     );

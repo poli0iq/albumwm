@@ -68,6 +68,11 @@ const actions = {
         'focus-monitor-below',
         'focus-monitor-above',
         'focus-monitor-right',
+
+        'move-window-to-monitor-left',
+        'move-window-to-monitor-below',
+        'move-window-to-monitor-above',
+        'move-window-to-monitor-right',
     ],
     floating: [
         'toggle-window-floating',

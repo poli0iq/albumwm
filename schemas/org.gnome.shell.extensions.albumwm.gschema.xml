@@ -154,6 +154,23 @@
       <summary>Focus the monitor to the right</summary>
     </key>
 
+    <key type="as" name="move-window-to-monitor-left">
+      <default><![CDATA[['<Ctrl><Shift><Super>h']]]></default>
+      <summary>Move the window to the monitor on the left</summary>
+    </key>
+    <key type="as" name="move-window-to-monitor-below">
+      <default><![CDATA[['<Ctrl><Shift><Super>j']]]></default>
+      <summary>Move the window to the monitor below</summary>
+    </key>
+    <key type="as" name="move-window-to-monitor-above">
+      <default><![CDATA[['<Ctrl><Shift><Super>k']]]></default>
+      <summary>Move the window to the monitor above</summary>
+    </key>
+    <key type="as" name="move-window-to-monitor-right">
+      <default><![CDATA[['<Ctrl><Shift><Super>l']]]></default>
+      <summary>Move the window to the monitor on the right</summary>
+    </key>
+
     <!-- Floating layer -->
     <key type="as" name="toggle-window-floating">
       <default><![CDATA[['<Super>x']]]></default>
