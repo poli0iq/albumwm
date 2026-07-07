@@ -2,8 +2,16 @@ using Gtk 4.0;
 using Adw 1;
 
 template $KeybindingsPage: Adw.PreferencesPage {
-  Adw.PreferencesGroup keybindings_windows_group {
-    title: _("Windows");
+  Adw.PreferencesGroup keybindings_general_group {
+    title: _("General");
+  }
+
+  Adw.PreferencesGroup keybindings_movements_group {
+    title: _("Window movements");
+  }
+
+  Adw.PreferencesGroup keybindings_resizing_group {
+    title: _("Window resizing");
   }
 
   Adw.PreferencesGroup keybindings_columns_group {

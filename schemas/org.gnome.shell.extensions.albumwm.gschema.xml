@@ -4,12 +4,21 @@
   <schema id="org.gnome.shell.extensions.albumwm.keybindings"
           path="/org/gnome/shell/extensions/albumwm/keybindings/">
 
-    <!-- Windows -->
+    <!-- General -->
     <key type="as" name="close-window">
       <default><![CDATA[['<Super>q']]]></default>
       <summary>Close the active window</summary>
     </key>
+    <key type="as" name="fullscreen-window-toggle">
+      <default><![CDATA[['<Super><shift>f']]]></default>
+      <summary>Toggle fullscreen for the focused window</summary>
+    </key>
+    <key type="as" name="cycle-focus-modes">
+      <default><![CDATA[['<Super><Shift>c']]]></default>
+      <summary>Cycle between window focus modes (default, center, edge)</summary>
+    </key>
 
+    <!-- Window movements -->
     <key type="as" name="focus-column-left">
       <default><![CDATA[['<Super>h', '<Super>Left']]]></default>
       <summary>Focus the column to the left</summary>
@@ -58,13 +67,19 @@
       <summary>Center the focused column or floating window</summary>
     </key>
 
+    <key type="as" name="focus-window-down-or-column-right">
+      <default><![CDATA[[]]]></default>
+      <summary>Focus the window below, or the column to the right</summary>
+    </key>
+    <key type="as" name="focus-window-up-or-column-left">
+      <default><![CDATA[[]]]></default>
+      <summary>Focus the window above, or the column to the left</summary>
+    </key>
+
+    <!-- Window resizing -->
     <key type="as" name="maximize-column-toggle">
       <default><![CDATA[['<Super>f']]]></default>
       <summary>Maximize/unmaximize the focused column</summary>
-    </key>
-    <key type="as" name="fullscreen-window-toggle">
-      <default><![CDATA[['<Super><shift>f']]]></default>
-      <summary>Toggle fullscreen for the focused window</summary>
     </key>
 
     <key type="as" name="inc-column-width">
@@ -101,20 +116,6 @@
     <key type="as" name="cycle-preset-window-height-backwards">
       <default><![CDATA[[]]]></default>
       <summary>Cycle through useful window heights backwards</summary>
-    </key>
-
-    <key type="as" name="focus-window-down-or-column-right">
-      <default><![CDATA[[]]]></default>
-      <summary>Focus the window below, or the column to the right</summary>
-    </key>
-    <key type="as" name="focus-window-up-or-column-left">
-      <default><![CDATA[[]]]></default>
-      <summary>Focus the window above, or the column to the left</summary>
-    </key>
-
-    <key type="as" name="cycle-focus-modes">
-      <default><![CDATA[['<Super><Shift>c']]]></default>
-      <summary>Cycle between window focus modes (default, center, edge)</summary>
     </key>
 
     <!-- Column management -->

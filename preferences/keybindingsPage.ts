@@ -18,9 +18,8 @@ type ConflictEntry = { description: string; source: 'albumwm' | 'gnome' };
 const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
 
 const actions = {
-    windows: [
-        'close-window',
-
+    general: ['close-window', 'fullscreen-window-toggle', 'cycle-focus-modes'],
+    movements: [
         'focus-column-left',
         'focus-window-down',
         'focus-window-up',
@@ -36,8 +35,11 @@ const actions = {
 
         'center-column',
 
+        'focus-window-down-or-column-right',
+        'focus-window-up-or-column-left',
+    ],
+    resizing: [
         'maximize-column-toggle',
-        'fullscreen-window-toggle',
 
         'inc-column-width',
         'dec-column-width',
@@ -50,11 +52,6 @@ const actions = {
 
         'cycle-preset-window-height',
         'cycle-preset-window-height-backwards',
-
-        'focus-window-down-or-column-right',
-        'focus-window-up-or-column-left',
-
-        'cycle-focus-modes',
     ],
     columns: [
         'consume-or-expel-window-left',
@@ -1351,7 +1348,9 @@ export class KeybindingsPage extends Adw.PreferencesPage {
                     GLib.UriFlags.NONE
                 ),
                 InternalChildren: [
-                    'keybindings_windows_group',
+                    'keybindings_general_group',
+                    'keybindings_movements_group',
+                    'keybindings_resizing_group',
                     'keybindings_columns_group',
                     'keybindings_monitors_group',
                     'keybindings_floating_group',
@@ -1360,7 +1359,9 @@ export class KeybindingsPage extends Adw.PreferencesPage {
             this
         );
     }
-    declare _keybindings_windows_group: Adw.PreferencesGroup;
+    declare _keybindings_general_group: Adw.PreferencesGroup;
+    declare _keybindings_movements_group: Adw.PreferencesGroup;
+    declare _keybindings_resizing_group: Adw.PreferencesGroup;
     declare _keybindings_columns_group: Adw.PreferencesGroup;
     declare _keybindings_monitors_group: Adw.PreferencesGroup;
     declare _keybindings_floating_group: Adw.PreferencesGroup;
@@ -1368,7 +1369,9 @@ export class KeybindingsPage extends Adw.PreferencesPage {
     declare acceleratorParse: AcceleratorParse;
     declare _settings: Gio.Settings;
     declare _model: KeybindingsModel;
-    declare _windowsView: Gtk.FilterListModel;
+    declare _generalView: Gtk.FilterListModel;
+    declare _movementsView: Gtk.FilterListModel;
+    declare _resizingView: Gtk.FilterListModel;
     declare _columnsView: Gtk.FilterListModel;
     declare _monitorsView: Gtk.FilterListModel;
     declare _floatingView: Gtk.FilterListModel;
@@ -1379,13 +1382,23 @@ export class KeybindingsPage extends Adw.PreferencesPage {
         this.acceleratorParse = new AcceleratorParse();
         this._model = new KeybindingsModel(this.acceleratorParse);
 
-        this._windowsView = sectionView(this._model, 'windows');
+        this._generalView = sectionView(this._model, 'general');
+        this._movementsView = sectionView(this._model, 'movements');
+        this._resizingView = sectionView(this._model, 'resizing');
         this._columnsView = sectionView(this._model, 'columns');
         this._monitorsView = sectionView(this._model, 'monitors');
         this._floatingView = sectionView(this._model, 'floating');
 
-        this._keybindings_windows_group.bind_model(
-            this._windowsView,
+        this._keybindings_general_group.bind_model(
+            this._generalView,
+            keybinding => this._createRow(keybinding as Keybinding)
+        );
+        this._keybindings_movements_group.bind_model(
+            this._movementsView,
+            keybinding => this._createRow(keybinding as Keybinding)
+        );
+        this._keybindings_resizing_group.bind_model(
+            this._resizingView,
             keybinding => this._createRow(keybinding as Keybinding)
         );
         this._keybindings_columns_group.bind_model(
