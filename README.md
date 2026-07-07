@@ -33,6 +33,7 @@ Features that the fork author considered useless or harmful are dropped.
 - Improved the scroll gesture
 - Better default shortcuts (inspired by sway and niri)
 - Improved the column management shortcuts (niri-style `consume-or-expel-window-{left,right}`)
+- Proper pointer warp on monitor focus
 - Dropped drawing a custom top bar on secondary displays
 - Dropped the window position indicator and top bar styling
 - Dropped all the remnants of X11 support

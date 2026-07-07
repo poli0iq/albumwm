@@ -2723,10 +2723,10 @@ export function switchMonitor(direction: Meta.DisplayDirection) {
     }
     if (focusTarget) {
         Main.activateWindow(focusTarget);
-        maybeWarpPointerToWindow(focusTarget);
-    } else {
-        Utils.warpPointerToMonitor(target);
     }
+    /* Warp explicitly: focusHandler, skips unmanaged windows on secondary
+     * monitors and never runs for an empty target monitor. */
+    warpPointerToWindowOrMonitor(target, focusTarget);
 }
 
 /**
@@ -2889,8 +2889,7 @@ export function insertWindow(
     if (
         metaWindow.is_on_all_workspaces() ||
         metaWindow === settlingDrop?.window ||
-        (primaryMonitor &&
-            metaWindow.get_monitor() !== primaryMonitor.index)
+        (primaryMonitor && metaWindow.get_monitor() !== primaryMonitor.index)
     ) {
         /* AlbumWM only tiles the primary monitor. Leave windows on secondary
          * monitors (or sticky windows) alone. */
@@ -3393,12 +3392,12 @@ export function focusHandler(metaWindow: Window) {
         return;
     }
 
-    // if window is on another monitor then warp pointer there
+    // Window is on another monitor: warp the pointer there.
     if (
         !Main.overview.visible &&
         Utils.monitorAtCurrentPoint() !== space.monitor
     ) {
-        Utils.warpPointerToMonitor(space.monitor!);
+        warpPointerToWindowOrMonitor(space.monitor!, metaWindow);
     }
 
     if (metaWindow.fullscreen) {
@@ -3491,19 +3490,20 @@ export function focusHandler(metaWindow: Window) {
  * (focus movement keybindings, close-window, insertWindow etc.).
  * Checks if "warp-pointer-on-focus" is true, and has a lot of other safeguards
  * and logic.
+ * @returns whether the pointer was warped.
  */
-export function maybeWarpPointerToWindow(metaWindow: Window) {
-    if (!Settings.prefs!.warp_pointer_on_focus) return;
-    if (Main.overview.visible) return;
-    if (!metaWindow) return;
+export function maybeWarpPointerToWindow(metaWindow: Window): boolean {
+    if (!Settings.prefs!.warp_pointer_on_focus) return false;
+    if (Main.overview.visible) return false;
+    if (!metaWindow) return false;
     /* visibleX/Y read metaWindow.clone.targetX/targetY, which is only kept in
      * sync for tiled windows; skip the rest. */
-    if (isTransient(metaWindow)) return;
-    if (isFloating(metaWindow)) return;
-    if (!metaWindow.clone) return;
+    if (isTransient(metaWindow)) return false;
+    if (isFloating(metaWindow)) return false;
+    if (!metaWindow.clone) return false;
 
     const space = spaces.spaceOfWindow(metaWindow);
-    if (!space) return;
+    if (!space) return false;
 
     /* Use post-scroll and post-resize coordinates: the frame_rect position
      * only catches up at moveDone (end of strip animation), and its size
@@ -3515,13 +3515,26 @@ export function maybeWarpPointerToWindow(metaWindow: Window) {
     const ty = space.visibleY(metaWindow);
     const [px, py] = global.get_pointer();
     const inside = px >= tx && px < tx + width && py >= ty && py < ty + height;
-    if (inside) return;
+    if (inside) return false;
 
     Utils.warpPointer(
         tx + Math.floor(width / 2),
         ty + Math.floor(height / 2),
         false
     );
+    return true;
+}
+
+/**
+ * Warp the pointer to `monitor`, or onto `metaWindow` instead if it's a tiled
+ * window and warp-pointer-on-focus is on.
+ */
+function warpPointerToWindowOrMonitor(
+    monitor: Layout.Monitor,
+    metaWindow?: Window
+) {
+    if (metaWindow && maybeWarpPointerToWindow(metaWindow)) return;
+    Utils.warpPointerToMonitor(monitor);
 }
 
 /**
