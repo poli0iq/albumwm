@@ -31,6 +31,7 @@ Features that the fork author considered useless or harmful are dropped.
 - **Made workspaces-only-on-primary mode usable**
 - Implemented pointer warp on window focus (optional)
 - Improved the scroll gesture
+- Better default shortcuts (inspired by sway and niri)
 - Improved the column management shortcuts (niri-style `consume-or-expel-window-{left,right}`)
 - Dropped drawing a custom top bar on secondary displays
 - Dropped the window position indicator and top bar styling
