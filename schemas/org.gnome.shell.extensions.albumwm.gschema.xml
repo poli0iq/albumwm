@@ -313,7 +313,7 @@
     </key>
 
     <key type="b" name="gesture-enabled">
-      <default>false</default>
+      <default>true</default>
       <summary>Enables AlbumWM touchpad gestures</summary>
     </key>
 
