@@ -144,9 +144,13 @@ let signals: Utils.Signals | null, grabSignals: Utils.Signals | null;
 let startupTimeoutId: number | null, timerId: number | null;
 let monitorChangeTimeout: number | null;
 export let inGrab: Grab.MoveGrab | Grab.ResizeGrab | null;
-/* The window a mutter grab op is moving. Unlike inGrab, also set for native
- * grabs (moves of floating and unmanaged windows), i.e. when inGrab is null. */
-let grabbedWindow: Window | null = null;
+/**
+ * The window a grab op or a move-to-monitor keybinding is moving.
+ *
+ * Tracks movement between monitors: insertWindow leaves such windows untiled
+ * when they land on the primary.
+ */
+let movingWindow: Window | null = null;
 // A secondary-monitor drop whose native grab op hasn't ended; see grabEnd.
 let settlingDrop: {
     window: Window;
@@ -158,13 +162,13 @@ export function setSettlingDrop(
     window: Window,
     rect: { x: number; y: number; width: number; height: number }
 ) {
-    if (grabbedWindow !== window) return;
+    if (movingWindow !== window) return;
     settlingDrop = { window, rect };
 }
 
 export function enable(extension: Extension) {
     inGrab = null;
-    grabbedWindow = null;
+    movingWindow = null;
     settlingDrop = null;
 
     saveState = saveState ?? new SaveState();
@@ -267,7 +271,7 @@ export function disable() {
     saveState.prepare();
     spaces.destroy();
     inGrab = null;
-    grabbedWindow = null;
+    movingWindow = null;
     settlingDrop = null;
     gsettings = null;
 }
@@ -2529,7 +2533,7 @@ function syncMonitorMembership(metaWindow: Window) {
         ) {
             metaWindow.make_above();
         }
-    } else if (space && !inGrab && metaWindow === grabbedWindow) {
+    } else if (space && !inGrab && metaWindow === movingWindow) {
         space.removeWindow(metaWindow);
         showWindow(metaWindow);
     }
@@ -2765,8 +2769,12 @@ export function moveWindowToMonitor(
         );
     }
 
+    /* With workspaces-only-on-primary, landing on the primary un-sticks the
+     * window and fires window-added from within move_to_monitor. */
+    movingWindow = metaWindow;
     // Emits META_SIZE_CHANGE_MONITOR_MOVE -> gnome-shell's fly animation.
     metaWindow.move_to_monitor(j);
+    movingWindow = null;
 
     // Follow the window to its new monitor.
     warpPointerToWindowOrMonitor(Main.layoutManager.monitors[j], metaWindow);
@@ -2945,9 +2953,9 @@ export function insertWindow(
      * on its workspace. */
     const space = spaces.spaceOf(metaWindow.get_workspace());
 
-    /* Dragged in from a secondary monitor: stays unmanaged (the float
-     * toggle readopts), just kept above the tiled strip. */
-    if (existing && metaWindow === grabbedWindow) {
+    /* Dragged or moved in from a secondary monitor: stays unmanaged (the
+     * float toggle readopts), just kept above the tiled strip. */
+    if (existing && metaWindow === movingWindow) {
         connectSizeChanged();
         metaWindow.make_above();
         showWindow(metaWindow);
@@ -3316,7 +3324,7 @@ export function moveTo(
 }
 
 export function grabBegin(metaWindow: Window, type: Meta.GrabOp) {
-    grabbedWindow = metaWindow;
+    movingWindow = metaWindow;
     switch (type) {
         case Meta.GrabOp.KEYBOARD_MOVING:
             /* Floating and unmanaged windows move natively, like pointer
@@ -3392,7 +3400,7 @@ export function grabEnd(_metaWindow: Window, _type: Meta.GrabOp) {
         });
     }
 
-    grabbedWindow = null;
+    movingWindow = null;
     if (
         !inGrab ||
         (inGrab instanceof Grab.MoveGrab && inGrab.dnd) ||
