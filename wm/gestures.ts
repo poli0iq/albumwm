@@ -439,5 +439,11 @@ export function findTargetWindow(
  */
 export function swipeTrackersEnable(option?: boolean) {
     const enabled = option ?? true;
-    Patches.swipeTrackers!.forEach(t => (t.enabled = enabled));
+    Patches.swipeTrackers!.forEach(t => {
+        /* Disabling a tracker mid-gesture makes gnome-shell interrupt it,
+         * breaking the overview animation. State enum isn't exported;
+         * NONE is 0. */
+        if (!enabled && t._state) return;
+        t.enabled = enabled;
+    });
 }
