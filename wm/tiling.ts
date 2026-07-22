@@ -2598,27 +2598,6 @@ export function resizeHandler(metaWindow: Window) {
         return;
     }
 
-    const fsf = metaWindow?._fullscreen_frame;
-    const selected = metaWindow === space.selectedWindow;
-    let addCallback = false;
-    let x;
-
-    let needLayout = false;
-    // if target width differs ==> layout
-    if (
-        metaWindow._targetWidth !== f.width ||
-        metaWindow._targetHeight !== f.height
-    ) {
-        needLayout = true;
-    }
-
-    // if saved size differs ==> layout
-    if (fsf) {
-        if (fsf.width !== f.width || fsf.height !== f.height) {
-            needLayout = true;
-        }
-    }
-
     const mover = (mx: number, animate: boolean) => {
         moveTo(space, metaWindow, {
             x: mx,
@@ -2636,34 +2615,33 @@ export function resizeHandler(metaWindow: Window) {
         return;
     }
 
-    x = metaWindow?._fullscreen_frame?.x ?? f.x;
-    x -= space.monitor!.x;
+    let x = (metaWindow._fullscreen_frame?.x ?? f.x) - space.monitor!.x;
 
     // for non-maximised windows, enforce horizontal margin in restore position
     if (!isMaximized(metaWindow) && !isMaximizedHorizontal(metaWindow)) {
         x = Math.max(x, Settings.prefs!.horizontal_margin);
     }
 
-    // if pwm fullscreen previously
-    if (metaWindow._fullscreen_lock) {
+    const wasFullscreen = metaWindow._fullscreen_lock;
+    if (wasFullscreen) {
         delete metaWindow._fullscreen_lock;
-        needLayout = true;
-        addCallback = true;
     } else {
         // save width for later exit-fullscreen restoring
         saveFullscreenFrame(metaWindow, true);
     }
 
-    if (needLayout && !space._inLayout) {
+    if (!space._inLayout) {
         // Restore window position when eg. exiting fullscreen
         let callback = () => {};
-        if (addCallback && !inTransient() && selected) {
-            callback = () => {
-                mover(x, true);
-            };
+        if (
+            wasFullscreen &&
+            !inTransient() &&
+            metaWindow === space.selectedWindow
+        ) {
+            callback = () => mover(x, true);
         }
 
-        // Resizing from within a size-changed signal is troube (#73). Queue instead.
+        // Resizing from within a size-changed signal is trouble; queue instead.
         space.queueLayout(true, { callback, centerIfOne: false });
     }
 
