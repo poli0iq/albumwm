@@ -863,8 +863,9 @@ export class Space extends Array<Array<Window>> {
                 onComplete: this.moveDone.bind(this),
             });
         }
-        if (animate && ensure) {
-            ensureViewport(this.selectedWindow!, this);
+        // moveDone must run even without a selected window.
+        if (animate && ensure && this.selectedWindow) {
+            ensureViewport(this.selectedWindow, this);
         } else {
             this.moveDone();
         }
