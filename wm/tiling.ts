@@ -2866,166 +2866,117 @@ export function addHandler(_ws: Meta.Workspace, metaWindow: Window) {
 }
 
 /**
-   Insert the window into its space if appropriate. Requires MetaWindowActor
-
-   This gets called from `Workspace::window-added` if the window already exists,
-   and `Display::window-created` through `WindowActor::show` if window is newly
-   created to ensure that the WindowActor exists.
-*/
-export function insertWindow(
-    metaWindow: Window,
-    options?: {
-        existing?: boolean;
-        dropping?: boolean;
-        dropCallback?: (mw: Window) => void;
+ * Hook up geometry tracking for a window entering management and mark it
+ * as mapped.
+ */
+function connectSizeChanged(metaWindow: Window, tiled = false) {
+    if (tiled) {
+        animateWindow(metaWindow);
     }
-) {
-    const existing = options?.existing ?? false;
-    const dropping = options?.dropping ?? false;
-    const dropCallback = options?.dropCallback ?? function () {};
+    addResizeHandler(metaWindow);
+    addPositionHandler(metaWindow);
 
+    delete metaWindow.unmapped;
+}
+
+/**
+ * Apply any matching winprop to a newly opened window.
+ * @returns the validated target space index, if the winprop requests one.
+ */
+function applyOpenWinprops(metaWindow: Window): number | undefined {
+    const winprop = Settings.findWinprop(metaWindow);
+    if (!winprop) return undefined;
+
+    if (winprop.oneshot) {
+        Settings.winprops.splice(Settings.winprops.indexOf(winprop), 1);
+    }
+    if (winprop.float) {
+        console.debug(
+            '#winprops',
+            `Opening ${metaWindow?.title} in the floating layer`
+        );
+        metaWindow.floatOnOpen = true;
+    }
+    if (winprop.focus) {
+        console.debug(
+            '#winprops',
+            `setting ${metaWindow?.title} to focusOnOpen`
+        );
+        metaWindow.focusOnOpen = true;
+    }
+
+    // pass winprop properties to metaWindow
+    metaWindow.preferredWidth = winprop.preferredWidth;
+
+    let overwriteSpace = winprop.spaceIndex;
+    if (overwriteSpace !== undefined) {
+        if (typeof overwriteSpace !== 'number') {
+            console.error(
+                '#winprops',
+                `${overwriteSpace} is not a valid index. Ignoring.`
+            );
+            overwriteSpace = undefined;
+        }
+        // save temporary as metaWindow property
+        metaWindow.overwriteSpace = overwriteSpace;
+    }
+
+    return overwriteSpace;
+}
+
+/**
+ * Move a window opened with a winprop space index onto that space and insert
+ * it there.
+ * @returns false if the space doesn't exist, falling back to normal insertion.
+ */
+function insertIntoWinpropSpace(metaWindow: Window, spaceIndex: number) {
+    const newspace = spaces.spaceOfIndex(spaceIndex);
+    if (!newspace) {
+        Main.notify(
+            `AlbumWM [winprop]: cannot open window on workspace ${spaceIndex} (index)`,
+            `"${metaWindow?.title}" cannot be opened on workspace with index ${spaceIndex}
+(workspace not found). Opening on current workspace instead.`
+        );
+        console.warn(
+            '#winprops',
+            `overwriteSpace with index ${spaceIndex} does not exist. \
+Opening "${metaWindow?.title}" on current space.`
+        );
+        return false;
+    }
+
+    console.debug('#winprops', `inserting window into space ${newspace.index}`);
+    metaWindow.change_workspace(newspace.workspace);
+    metaWindow.foreach_transient(t => {
+        newspace.addFloating(t as Window);
+        return true;
+    });
+    connectSizeChanged(metaWindow, true);
+    insertWindow(metaWindow, { existing: true });
+    return true;
+}
+
+/**
+ * AlbumWM only tiles the primary monitor. Windows on secondary monitors,
+ * sticky windows, and a drop still settling into place are left alone.
+ */
+function staysUnmanaged(metaWindow: Window) {
     const primaryMonitor = Main.layoutManager.primaryMonitor;
-
-    // Add newly created windows to the space being previewed
-    if (
-        !existing &&
-        !metaWindow.is_on_all_workspaces() &&
-        metaWindow.get_workspace() !== spaces.selectedSpace.workspace
-    ) {
-        metaWindow.redirected = true;
-        metaWindow.change_workspace(spaces.selectedSpace.workspace);
-        return;
-    }
-
-    const connectSizeChanged = (tiled?: boolean) => {
-        if (tiled) {
-            animateWindow(metaWindow);
-        }
-        addResizeHandler(metaWindow);
-        addPositionHandler(metaWindow);
-
-        delete metaWindow.unmapped;
-    };
-
-    const actor = metaWindow.get_compositor_private<Clutter.Actor>();
-
-    let overwriteSpace;
-    if (!existing) {
-        const winprop = Settings.findWinprop(metaWindow);
-        if (winprop) {
-            if (winprop.oneshot) {
-                Settings.winprops.splice(Settings.winprops.indexOf(winprop), 1);
-            }
-            if (winprop.float) {
-                console.debug(
-                    '#winprops',
-                    `Opening ${metaWindow?.title} in the floating layer`
-                );
-                metaWindow.floatOnOpen = true;
-            }
-
-            // pass winprop properties to metaWindow
-            metaWindow.preferredWidth = winprop.preferredWidth;
-
-            overwriteSpace = winprop.spaceIndex;
-            if (overwriteSpace !== undefined) {
-                if (typeof overwriteSpace !== 'number') {
-                    console.error(
-                        '#winprops',
-                        `${overwriteSpace} is not a valid index. Ignoring.`
-                    );
-                    overwriteSpace = undefined;
-                }
-                // save temporary as metaWindow property
-                metaWindow.overwriteSpace = overwriteSpace;
-            }
-
-            if (winprop.focus) {
-                console.debug(
-                    '#winprops',
-                    `setting ${metaWindow?.title} to focusOnOpen`
-                );
-                metaWindow.focusOnOpen = true;
-            }
-        }
-    }
-
-    if (
+    return (
         metaWindow.is_on_all_workspaces() ||
         metaWindow === settlingDrop?.window ||
-        (primaryMonitor && metaWindow.get_monitor() !== primaryMonitor.index)
-    ) {
-        /* AlbumWM only tiles the primary monitor. Leave windows on secondary
-         * monitors (or sticky windows) alone. */
-        connectSizeChanged();
-        showWindow(metaWindow);
-        return;
-    }
+        (!!primaryMonitor && metaWindow.get_monitor() !== primaryMonitor.index)
+    );
+}
 
-    /* Admission point: the window isn't a member of any space yet, so key
-     * on its workspace. */
-    const space = spaces.spaceOf(metaWindow.get_workspace());
-
-    /* Dragged or moved in from a secondary monitor: stays unmanaged (the
-     * float toggle readopts), just kept above the tiled strip. */
-    if (existing && metaWindow === movingWindow) {
-        connectSizeChanged();
-        metaWindow.make_above();
-        showWindow(metaWindow);
-        return;
-    }
-
-    if (overwriteSpace !== undefined) {
-        const newspace = spaces.spaceOfIndex(overwriteSpace);
-        if (!newspace) {
-            Main.notify(
-                `AlbumWM [winprop]: cannot open window on workspace ${overwriteSpace} (index)`,
-                `"${metaWindow?.title}" cannot be opened on workspace with index ${overwriteSpace}
-(workspace not found). Opening on current workspace instead.`
-            );
-            console.warn(
-                '#winprops',
-                `overwriteSpace with index ${overwriteSpace} does not exist. \
-Opening "${metaWindow?.title}" on current space.`
-            );
-        } else {
-            console.debug(
-                '#winprops',
-                `inserting window into space ${newspace.index}`
-            );
-            metaWindow.change_workspace(newspace.workspace);
-            metaWindow.foreach_transient(t => {
-                newspace.addFloating(t as Window);
-                return true;
-            });
-            connectSizeChanged(true);
-            insertWindow(metaWindow, { existing: true });
-            return;
-        }
-    }
-
-    if (!addFilter(metaWindow)) {
-        /* Consume the open-time intent; floating state now lives in `_floating`
-         * and (across rebuilds) in the window's always-on-top flag. */
-        delete metaWindow.floatOnOpen;
-
-        connectSizeChanged();
-        space.addFloating(metaWindow);
-        // Make sure the window is on the correct monitor
-        metaWindow.move_to_monitor(space.monitor!.index);
-        showWindow(metaWindow);
-        // Make sure the window isn't hidden behind the space (eg. dialogs)
-        if (!existing) metaWindow.make_above();
-        return;
-    }
-
-    if (space.columnOf(metaWindow) !== -1) {
-        return;
-    }
-
+/**
+ * Position the clone over the window's current stage position, so tiling
+ * animates from where the window actually is. Must run before the clone is
+ * reparented into the space's cloneContainer.
+ */
+function alignCloneToWindow(metaWindow: Window, space: Space) {
     const clone = metaWindow.clone;
     let ok, x, y;
-    // Figure out the matching coordinates before the clone is reparented.
     if (isWindowAnimating(metaWindow)) {
         const point = clone.apply_transform_to_point(
             new Graphene.Point3D({ x: 0, y: 0 })
@@ -3042,6 +2993,119 @@ Opening "${metaWindow?.title}" on current space.`
         );
     }
     if (ok) clone.set_position(x, y);
+}
+
+/**
+ * Give an already-existing window its focus/viewport treatment after
+ * insertion, honoring a winprop focusOnOpen.
+ */
+function focusInsertedWindow(metaWindow: Window, space: Space) {
+    if (metaWindow.overwriteSpace !== undefined) {
+        delete metaWindow.overwriteSpace;
+        if (!metaWindow.focusOnOpen) return;
+
+        delete metaWindow.focusOnOpen;
+        console.debug('#winprops', 'focusing space of inserted window');
+        Utils.laterAdd(Meta.LaterType.IDLE, () => {
+            spaces.spaceOfWindow(metaWindow)?.activateWithFocus(metaWindow);
+
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    if (metaWindow === display.focus_window) {
+        focusHandler(metaWindow);
+    } else if (space === spaces.activeSpace) {
+        Main.activateWindow(metaWindow);
+    } else {
+        ensureViewport(space.selectedWindow!, space);
+    }
+}
+
+/**
+ * Send a newly created window to the space being previewed instead of its own
+ * workspace.
+ * @returns false if the window already belongs there (or is sticky).
+ */
+function redirectToSelectedSpace(metaWindow: Window) {
+    if (
+        metaWindow.is_on_all_workspaces() ||
+        metaWindow.get_workspace() === spaces.selectedSpace.workspace
+    ) {
+        return false;
+    }
+
+    metaWindow.redirected = true;
+    metaWindow.change_workspace(spaces.selectedSpace.workspace);
+    return true;
+}
+
+/**
+   Insert the window into its space if appropriate. Requires MetaWindowActor
+
+   This gets called from `Workspace::window-added` if the window already exists,
+   and `Display::window-created` through `WindowActor::show` if window is newly
+   created to ensure that the WindowActor exists.
+*/
+export function insertWindow(
+    metaWindow: Window,
+    options?: { existing?: boolean }
+) {
+    const existing = options?.existing ?? false;
+
+    if (!existing && redirectToSelectedSpace(metaWindow)) return;
+
+    let overwriteSpace;
+    if (!existing) {
+        overwriteSpace = applyOpenWinprops(metaWindow);
+    }
+
+    if (staysUnmanaged(metaWindow)) {
+        connectSizeChanged(metaWindow);
+        showWindow(metaWindow);
+        return;
+    }
+
+    /* Admission point: the window isn't a member of any space yet, so key
+     * on its workspace. */
+    const space = spaces.spaceOf(metaWindow.get_workspace());
+
+    /* Dragged or moved in from a secondary monitor: stays unmanaged (the
+     * float toggle readopts), just kept above the tiled strip. */
+    if (existing && metaWindow === movingWindow) {
+        connectSizeChanged(metaWindow);
+        metaWindow.make_above();
+        showWindow(metaWindow);
+        return;
+    }
+
+    if (
+        overwriteSpace !== undefined &&
+        insertIntoWinpropSpace(metaWindow, overwriteSpace)
+    ) {
+        return;
+    }
+
+    if (!addFilter(metaWindow)) {
+        /* Consume the open-time intent; floating state now lives in `_floating`
+         * and (across rebuilds) in the window's always-on-top flag. */
+        delete metaWindow.floatOnOpen;
+
+        connectSizeChanged(metaWindow);
+        space.addFloating(metaWindow);
+        // Make sure the window is on the correct monitor
+        metaWindow.move_to_monitor(space.monitor!.index);
+        showWindow(metaWindow);
+        // Make sure the window isn't hidden behind the space (eg. dialogs)
+        if (!existing) metaWindow.make_above();
+        return;
+    }
+
+    if (space.columnOf(metaWindow) !== -1) {
+        return;
+    }
+
+    alignCloneToWindow(metaWindow, space);
 
     if (!space.addWindow(metaWindow, getOpenWindowPositionIndex(space))) return;
 
@@ -3060,6 +3124,7 @@ Opening "${metaWindow?.title}" on current space.`
      * after actor is shown on stage.
      */
     if (!existing) {
+        const clone = metaWindow.clone;
         clone.x = clone.targetX;
         clone.y = clone.targetY;
         space.layout();
@@ -3067,17 +3132,16 @@ Opening "${metaWindow?.title}" on current space.`
         // run focus and resize to ensure new window is correctly shown
         focusHandler(metaWindow);
         resizeHandler(metaWindow);
-        connectSizeChanged(true);
+        connectSizeChanged(metaWindow, true);
 
-        // // remove winprop props after window shown
+        // remove winprop props after window shown
+        const actor = metaWindow.get_compositor_private<Clutter.Actor>();
         callbackOnActorShow(actor, () => {
             delete metaWindow.preferredWidth;
 
             Main.activateWindow(metaWindow);
             ensureViewport(space.selectedWindow!, space);
             maybeWarpPointerToWindow(metaWindow);
-
-            dropCallback(metaWindow);
         });
 
         return;
@@ -3085,32 +3149,7 @@ Opening "${metaWindow?.title}" on current space.`
 
     space.layout();
     animateWindow(metaWindow);
-    if (metaWindow.overwriteSpace !== undefined) {
-        delete metaWindow.overwriteSpace;
-        if (!metaWindow.focusOnOpen) {
-            return;
-        } else {
-            delete metaWindow.focusOnOpen;
-            console.debug('#winprops', 'focusing space of inserted window');
-            Utils.laterAdd(Meta.LaterType.IDLE, () => {
-                spaces.spaceOfWindow(metaWindow)?.activateWithFocus(metaWindow);
-
-                return GLib.SOURCE_REMOVE;
-            });
-        }
-    }
-
-    if (metaWindow === display.focus_window) {
-        focusHandler(metaWindow);
-    } else if (space === spaces.activeSpace) {
-        Main.activateWindow(metaWindow);
-    } else {
-        ensureViewport(space.selectedWindow!, space);
-    }
-
-    if (dropping) {
-        dropCallback(metaWindow);
-    }
+    focusInsertedWindow(metaWindow, space);
 }
 
 /**
