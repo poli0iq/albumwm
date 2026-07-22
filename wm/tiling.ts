@@ -339,16 +339,15 @@ export type Window = Meta.Window & {
     _floatFrame?: Mtk.Rectangle;
 };
 
+type Allocator = (
+    column: Window[],
+    availableHeight: number,
+    selectedInColumn: Window | null
+) => number[];
+
 type LayoutOptions = {
     ensure?: boolean;
-    customAllocators?: Record<
-        number,
-        (
-            column: Window[],
-            availableHeight: number,
-            selectedInColumn: Window | null
-        ) => number[]
-    > & { ensure?: boolean };
+    customAllocators?: Record<number, Allocator> & { ensure?: boolean };
     centerIfOne?: boolean;
     callback?: () => void;
 };
@@ -725,16 +724,139 @@ export class Space extends Array<Array<Window>> {
         return [targetWidth, y];
     }
 
+    /**
+     * Lays out one column at horizontal position x, dispatching between the
+     * grab-anchored and the plain allocator paths.
+     * @returns the column's resulting width.
+     */
+    layoutColumn(
+        column: Window[],
+        selectedInColumn: Window | null,
+        x: number,
+        workArea: { y: number; width: number; height: number },
+        time: number,
+        allocator?: Allocator
+    ): number {
+        let targetWidth;
+        if (selectedInColumn) {
+            // if selected window - use tiledWidth or frame.width (fallback)
+            targetWidth =
+                selectedInColumn._fullscreen_frame?.tiledWidth ??
+                selectedInColumn.get_frame_rect().width;
+        } else {
+            // otherwise get max of tiledWidth or frame.width (fallback)
+            targetWidth = Math.max(
+                ...column.map(
+                    w =>
+                        w._fullscreen_frame?.tiledWidth ??
+                        w.get_frame_rect().width
+                )
+            );
+        }
+
+        // enforce minimum
+        targetWidth = Math.min(
+            targetWidth,
+            workArea.width - 2 * Settings.prefs!.minimum_margin
+        );
+
+        if (
+            inGrab instanceof Grab.MoveGrab &&
+            inGrab.dnd &&
+            column.includes(inGrab.window!) &&
+            !allocator
+        ) {
+            return this.layoutGrabColumn(
+                column,
+                x,
+                workArea.y,
+                targetWidth,
+                workArea.height,
+                time,
+                inGrab.window!
+            );
+        }
+
+        const targetHeights = (allocator ?? allocateDefault)(
+            column,
+            workArea.height,
+            selectedInColumn
+        );
+        const [resultingWidth] = this.layoutColumnSimple(
+            column,
+            x,
+            workArea.y,
+            targetWidth,
+            targetHeights,
+            time
+        );
+        return resultingWidth;
+    }
+
+    /**
+     * Resizes cloneContainer to the new layout width and, if the viewport was
+     * automatically positioned (fitted or centered), eases it back into such
+     * a position.
+     */
+    layoutViewport(
+        width: number,
+        workArea: { x: number; width: number },
+        time: number,
+        animate: boolean
+    ) {
+        const oldWidth = this.cloneContainer.width;
+        const min = workArea.x;
+        const auto =
+            (this.targetX + oldWidth >= min + workArea.width &&
+                this.targetX <= 0) ||
+            this.targetX === min + Math.round((workArea.width - oldWidth) / 2);
+
+        this.cloneContainer.width = width;
+
+        if (!auto || !animate) return;
+        if (width < workArea.width) {
+            this.targetX = min + Math.round((workArea.width - width) / 2);
+        } else if (this.targetX + width < min + workArea.width) {
+            this.targetX = min + workArea.width - width;
+        } else if (this.targetX > min) {
+            this.targetX = workArea.x;
+        }
+        Easer.addEase(this.cloneContainer, {
+            x: this.targetX,
+            time,
+            onComplete: this.moveDone.bind(this),
+        });
+    }
+
+    /**
+     * Work area to lay out into: with the top bar hidden, or the selected
+     * window fullscreen, it extends over the top bar's area.
+     */
+    layoutWorkArea() {
+        const workArea = this.workArea();
+        /* If current window is fullscreened, treat workarea as fullscreen (y = 0)
+         * to avoid a "flash of topbar spacing" before the next layout call resolves. */
+        if (this.selectedWindow?.fullscreen) {
+            workArea.y = 0;
+        } else if (!this.showTopBar) {
+            const panelBoxHeight = Topbar.panelBox.height;
+            workArea.y -= panelBoxHeight;
+            workArea.height += panelBoxHeight;
+        }
+        return workArea;
+    }
+
     layout(animate = true, options?: LayoutOptions) {
         // Guard against recursively calling layout
         if (!this._populated) return;
         if (this._inLayout) return;
 
-        // option properties
-        const ensure = options?.ensure ?? true;
-        const allocators = options?.customAllocators;
-        const centerIfOne = options?.centerIfOne ?? true;
-        const callback = options?.callback;
+        const {
+            ensure = true,
+            customAllocators: allocators,
+            centerIfOne = true,
+            callback,
+        } = options ?? {};
 
         this._inLayout = true;
         this.startAnimate();
@@ -743,26 +865,13 @@ export class Space extends Array<Array<Window>> {
         const gap = Settings.prefs!.column_gap;
         let x = gap; // init (ensures autostart apps in particular start properly gapped)
         const selectedIndex = this.selectedIndex();
-        const workArea = this.workArea();
+        const workArea = this.layoutWorkArea();
 
         // Happens on monitors-changed
         if (workArea.width === 0) {
             this._inLayout = false;
             return;
         }
-
-        /* If current window is fullscreened, treat workarea as fullscreen (y = 0)
-           to avoid a "flash of topbar spacing" before the next layout call resolves. */
-        if (this.selectedWindow?.fullscreen) {
-            workArea.y = 0;
-        } else if (!this.showTopBar) {
-            const panelBoxHeight = Topbar.panelBox.height;
-            workArea.y -= panelBoxHeight;
-            workArea.height += panelBoxHeight;
-        }
-
-        const availableHeight = workArea.height;
-        const y0 = workArea.y;
 
         for (let i = 0; i < this.length; i++) {
             let column = this[i];
@@ -774,63 +883,14 @@ export class Space extends Array<Array<Window>> {
             const selectedInColumn =
                 i === selectedIndex ? this.selectedWindow : null;
 
-            let targetWidth;
-            if (selectedInColumn) {
-                // if selected window - use tiledWidth or frame.width (fallback)
-                targetWidth =
-                    selectedInColumn?._fullscreen_frame?.tiledWidth ??
-                    selectedInColumn.get_frame_rect().width;
-            } else {
-                // otherwise get max of tiledWith or frame.with (fallback)
-                targetWidth = Math.max(
-                    ...column.map(w => {
-                        return (
-                            w?._fullscreen_frame?.tiledWidth ??
-                            w.get_frame_rect().width
-                        );
-                    })
-                );
-            }
-
-            // enforce minimum
-            targetWidth = Math.min(
-                targetWidth,
-                workArea.width - 2 * Settings.prefs!.minimum_margin
+            const resultingWidth = this.layoutColumn(
+                column,
+                selectedInColumn,
+                x,
+                workArea,
+                time,
+                allocators?.[i]
             );
-
-            let resultingWidth;
-            let allocator = allocators && allocators[i];
-            if (
-                inGrab instanceof Grab.MoveGrab &&
-                inGrab.dnd &&
-                column.includes(inGrab.window!) &&
-                !allocator
-            ) {
-                resultingWidth = this.layoutGrabColumn(
-                    column,
-                    x,
-                    y0,
-                    targetWidth,
-                    availableHeight,
-                    time,
-                    inGrab.window!
-                );
-            } else {
-                allocator = allocator || allocateDefault;
-                const targetHeights = allocator(
-                    column,
-                    availableHeight,
-                    selectedInColumn
-                );
-                [resultingWidth] = this.layoutColumnSimple(
-                    column,
-                    x,
-                    y0,
-                    targetWidth,
-                    targetHeights,
-                    time
-                );
-            }
 
             x += resultingWidth + gap;
         }
@@ -838,31 +898,9 @@ export class Space extends Array<Array<Window>> {
         x += gap;
 
         this._inLayout = false;
-        const oldWidth = this.cloneContainer.width;
-        const min = workArea.x;
-        const auto =
-            (this.targetX + oldWidth >= min + workArea.width &&
-                this.targetX <= 0) ||
-            this.targetX === min + Math.round((workArea.width - oldWidth) / 2);
-
         // transforms break on width 1
-        const width = Math.max(1, x - gap);
-        this.cloneContainer.width = width;
+        this.layoutViewport(Math.max(1, x - gap), workArea, time, animate);
 
-        if (auto && animate) {
-            if (width < workArea.width) {
-                this.targetX = min + Math.round((workArea.width - width) / 2);
-            } else if (this.targetX + width < min + workArea.width) {
-                this.targetX = min + workArea.width - width;
-            } else if (this.targetX > min) {
-                this.targetX = workArea.x;
-            }
-            Easer.addEase(this.cloneContainer, {
-                x: this.targetX,
-                time,
-                onComplete: this.moveDone.bind(this),
-            });
-        }
         // moveDone must run even without a selected window.
         if (animate && ensure && this.selectedWindow) {
             ensureViewport(this.selectedWindow, this);
