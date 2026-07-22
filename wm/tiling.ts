@@ -3361,66 +3361,49 @@ export function moveTo(
     }
 }
 
+/** Whether the grab op moves the window rather than resizing it. */
+function isMoveGrabOp(type: Meta.GrabOp) {
+    return (
+        type === Meta.GrabOp.MOVING ||
+        type === Meta.GrabOp.MOVING_UNCONSTRAINED ||
+        type === Meta.GrabOp.KEYBOARD_MOVING
+    );
+}
+
 export function grabBegin(metaWindow: Window, type: Meta.GrabOp) {
     movingWindow = metaWindow;
-    switch (type) {
-        case Meta.GrabOp.KEYBOARD_MOVING:
-            /* Floating and unmanaged windows move natively, like pointer
-             * moves below. */
-            if (!isTiled(metaWindow)) {
-                return;
-            }
 
-            inGrab = new Grab.MoveGrab(metaWindow, type);
+    if (!isMoveGrabOp(type)) {
+        inGrab = new Grab.ResizeGrab();
+        return;
+    }
 
-            // NOTE: Keyboard grab moves the cursor, but it happens after grab
-            // signals have run. Simply delay the dnd so it will get the correct
-            // pointer coordinates.
-            Utils.laterAdd(Meta.LaterType.IDLE, () => {
-                (inGrab as Grab.MoveGrab).begin();
-                (inGrab as Grab.MoveGrab).beginDnD();
+    // Floating and unmanaged windows move natively.
+    if (!isTiled(metaWindow)) {
+        return;
+    }
 
-                return GLib.SOURCE_REMOVE;
-            });
-            break;
-        case Meta.GrabOp.MOVING:
-        case Meta.GrabOp.MOVING_UNCONSTRAINED: // introduced in Gnome 44
-            if (!isTiled(metaWindow)) {
-                return;
-            }
+    const grab = new Grab.MoveGrab(metaWindow, type);
+    inGrab = grab;
 
-            inGrab = new Grab.MoveGrab(metaWindow, type);
+    if (type === Meta.GrabOp.KEYBOARD_MOVING) {
+        /* Keyboard grab moves the cursor, but only after the grab signals
+         * have run. Delay the dnd so it gets the correct pointer
+         * coordinates. */
+        Utils.laterAdd(Meta.LaterType.IDLE, () => {
+            grab.begin();
+            grab.beginDnD();
 
-            if (Utils.getModiferState() & Clutter.ModifierType.CONTROL_MASK) {
-                (inGrab as Grab.MoveGrab).begin();
-                (inGrab as Grab.MoveGrab).beginDnD();
-            } else if (
-                (inGrab as Grab.MoveGrab).initialSpace &&
-                (inGrab as Grab.MoveGrab).initialSpace.columnOf(metaWindow) > -1
-            ) {
-                (inGrab as Grab.MoveGrab).begin();
-            }
+            return GLib.SOURCE_REMOVE;
+        });
+        return;
+    }
 
-            break;
-        case Meta.GrabOp.RESIZING_NW:
-        case Meta.GrabOp.RESIZING_N:
-        case Meta.GrabOp.RESIZING_NE:
-        case Meta.GrabOp.RESIZING_E:
-        case Meta.GrabOp.RESIZING_SW:
-        case Meta.GrabOp.RESIZING_S:
-        case Meta.GrabOp.RESIZING_SE:
-        case Meta.GrabOp.RESIZING_W:
-        case Meta.GrabOp.KEYBOARD_RESIZING_UNKNOWN:
-        case Meta.GrabOp.KEYBOARD_RESIZING_NW:
-        case Meta.GrabOp.KEYBOARD_RESIZING_N:
-        case Meta.GrabOp.KEYBOARD_RESIZING_NE:
-        case Meta.GrabOp.KEYBOARD_RESIZING_E:
-        case Meta.GrabOp.KEYBOARD_RESIZING_SW:
-        case Meta.GrabOp.KEYBOARD_RESIZING_S:
-        case Meta.GrabOp.KEYBOARD_RESIZING_SE:
-        case Meta.GrabOp.KEYBOARD_RESIZING_W:
-            inGrab = new Grab.ResizeGrab();
-            break;
+    if (Utils.getModiferState() & Clutter.ModifierType.CONTROL_MASK) {
+        grab.begin();
+        grab.beginDnD();
+    } else if (grab.initialSpace.columnOf(metaWindow) > -1) {
+        grab.begin();
     }
 }
 
