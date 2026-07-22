@@ -3256,15 +3256,8 @@ export function ensureViewport(
 ) {
     space = space ?? spaces.spaceOfWindow(metaWindow);
     if (!space) return false;
-    const force = options?.force ?? false;
-    const moveto = options?.moveto ?? true;
-    const animate = options?.animate ?? true;
-    const ensureAnimation =
-        options?.ensureAnimation ?? Settings.EnsureViewportAnimation.TRANSLATE;
-    const callback = options?.callback ?? function () {};
 
-    const index = space.columnOf(metaWindow);
-    if (index === -1 || space.length === 0) return false;
+    if (space.columnOf(metaWindow) === -1) return false;
 
     if (space.selectedWindow!.fullscreen && !metaWindow.fullscreen) {
         animateDown(space.selectedWindow!);
@@ -3273,14 +3266,13 @@ export function ensureViewport(
 
     space.selectedWindow = metaWindow;
     space.columnSetLastActive(metaWindow);
-    const selected = space.selectedWindow;
-    if (selected.fullscreen) {
+    if (metaWindow.fullscreen) {
         const y = 0;
-        const ty = selected.clone.get_transition('y');
-        if (!space.isVisible(selected)) {
-            selected.clone.y = y;
+        const ty = metaWindow.clone.get_transition('y');
+        if (!space.isVisible(metaWindow)) {
+            metaWindow.clone.y = y;
         } else if (!ty || ty.get_interval().final !== y) {
-            Easer.addEase(selected.clone, {
+            Easer.addEase(metaWindow.clone, {
                 y,
                 time: Settings.prefs!.animation_time,
                 onComplete: space.moveDone.bind(space),
@@ -3288,18 +3280,12 @@ export function ensureViewport(
         }
     }
 
-    if (moveto) {
-        moveTo(space, metaWindow, {
-            x,
-            force,
-            animate,
-            ensureAnimation,
-            callback,
-        });
+    if (options?.moveto ?? true) {
+        moveTo(space, metaWindow, { ...options, x });
     }
 
-    selected.raise();
-    Utils.actorRaise(selected.clone);
+    metaWindow.raise();
+    Utils.actorRaise(metaWindow.clone);
     space.emit('select');
 
     return true;
