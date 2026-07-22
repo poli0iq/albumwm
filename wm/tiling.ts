@@ -1422,19 +1422,15 @@ export class Space extends Array<Array<Window>> {
     /**
      * Moves the space viewport to position x.
      */
-    viewportMoveToX(x: number, animate = true) {
+    viewportMoveToX(x: number) {
         this.targetX = x;
         this.cloneContainer.x = x;
         this.startAnimate();
-        if (animate) {
-            Easer.addEase(this.cloneContainer, {
-                x,
-                time: Settings.prefs!.animation_time,
-                onComplete: this.moveDone.bind(this),
-            });
-        } else {
-            this.moveDone.bind(this);
-        }
+        Easer.addEase(this.cloneContainer, {
+            x,
+            time: Settings.prefs!.animation_time,
+            onComplete: this.moveDone.bind(this),
+        });
     }
 
     moveDone(focusedWindowCallback = (_focusedWindow: Meta.Window) => {}) {
