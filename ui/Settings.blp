@@ -366,5 +366,24 @@ Adw.PreferencesPage advanced_page {
         "link",
       ]
     }
+
+    Adw.ActionRow source_code_row {
+      title: _("Source code");
+      subtitle: _("Star me 🥺");
+      activatable: true;
+
+      [suffix]
+      Gtk.Image {
+        icon-name: "external-link-symbolic";
+
+        accessibility {
+          label: _("Open external link");
+        }
+      }
+
+      styles [
+        "link",
+      ]
+    }
   }
 }

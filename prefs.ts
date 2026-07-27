@@ -322,6 +322,18 @@ class SettingsWidget {
                 null
             );
         });
+
+        const sourceCodeUri = 'https://github.com/poli0iq/albumwm';
+        const sourceCodeRow =
+            this.builder.get_object<Adw.ActionRow>('source_code_row');
+        sourceCodeRow.tooltip_text = sourceCodeUri;
+        sourceCodeRow.connect('activated', () => {
+            new Gtk.UriLauncher({ uri: sourceCodeUri }).launch(
+                this.window,
+                null,
+                null
+            );
+        });
     }
 }
 
