@@ -51,6 +51,10 @@ programs.gnome-shell.extensions = [
 
 </details>
 
+## Usage
+
+[User Guide](docs/user_guide.md).
+
 ## Differences from PaperWM
 
 For now, there are mostly removals and code maintainability improvements.
