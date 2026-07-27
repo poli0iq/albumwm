@@ -6,7 +6,8 @@ AlbumWM is a fork of [PaperWM](https://github.com/paperwm/PaperWM).
 
 ## Installation
 
-### Manual
+<details>
+<summary>Manual</summary>
 
 Install:
 
@@ -22,7 +23,10 @@ Uninstall:
 npm run uninstall:ext
 ```
 
-### Nix
+</details>
+
+<details>
+<summary>Nix</summary>
 
 The flake provides a `gnome-shell-extension-albumwm` package,
 which can be installed and enabled like any regular GNOME extension package from nixpkgs,
@@ -44,6 +48,8 @@ programs.gnome-shell.extensions = [
   { package = inputs.albumwm.packages.${pkgs.stdenv.hostPlatform.system}.default; }
 ];
 ```
+
+</details>
 
 ## Differences from PaperWM
 
