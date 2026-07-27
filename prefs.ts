@@ -227,6 +227,8 @@ class SettingsWidget {
             4
         );
 
+        booleanStateChanged('topbar-mouse-scroll-enable');
+
         // Keybindings
         const keybindingsPage =
             this.builder.get_object<KeybindingsPage>('keybindings_page');
@@ -321,7 +323,6 @@ class SettingsWidget {
             );
         });
         percentValueChanged('maximize-width-percent', 'maximize-column-width');
-        booleanStateChanged('topbar-mouse-scroll-enable');
     }
 }
 

@@ -57,6 +57,11 @@ Adw.PreferencesPage general_page {
         };
       }
     }
+
+    Adw.SwitchRow topbar-mouse-scroll-enable {
+      title: _("Switch windows on top bar scroll");
+      subtitle: _("Scrolling top bar moves the focus");
+    }
   }
 
   Adw.PreferencesGroup {
@@ -375,11 +380,6 @@ Adw.PreferencesPage advanced_page {
         page-increment: 10;
         step-increment: 1;
       };
-    }
-
-    Adw.SwitchRow topbar-mouse-scroll-enable {
-      title: _("Switch windows on top bar scroll");
-      subtitle: _("Scrolling top bar activates the left or right window");
     }
   }
 }
