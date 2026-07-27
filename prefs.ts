@@ -309,7 +309,7 @@ class SettingsWidget {
             'overview-max-window-scale'
         );
 
-        // Other
+        // Misc
         const userGuideUri =
             'https://github.com/poli0iq/albumwm/blob/main/docs/user_guide.md';
         const userGuideRow =
