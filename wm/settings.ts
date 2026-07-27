@@ -32,7 +32,6 @@ export type Prefs = {
     default_show_top_bar: boolean;
     preset_column_widths: number[];
     preset_window_heights: number[];
-    maximize_column_width: number;
     minimap_scale: number;
     minimap_shade_opacity: number;
     edge_preview_enable: boolean;

@@ -3693,17 +3693,11 @@ export function toggleMaximizeHorizontally(metaWindow: Window) {
         return;
     }
 
-    let maxWidthPrc = Settings.prefs!.maximize_column_width;
-    // add some sane limits to width percents: 0.5 <= x <= 1.0
-    maxWidthPrc = Math.max(0.5, maxWidthPrc);
-    maxWidthPrc = Math.min(1.0, maxWidthPrc);
-
     const space = spaces.spaceOfWindow(metaWindow);
     if (!space) return;
     const workArea = space.workArea();
     const frame = metaWindow.get_frame_rect();
-    const reqWidth =
-        maxWidthPrc * workArea.width - Settings.prefs!.horizontal_margin * 2;
+    const reqWidth = workArea.width - Settings.prefs!.horizontal_margin * 2;
 
     // Some windows only resize in increments > 1px so we can't rely on a precise width
     // Hopefully this heuristic is good enough

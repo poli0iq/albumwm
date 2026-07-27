@@ -366,20 +366,5 @@ Adw.PreferencesPage advanced_page {
         "link",
       ]
     }
-
-    Adw.SpinRow maximize-width-percent {
-      title: _("Maximized horizontal width (%)");
-      subtitle: _("Maximum width of a tiled window");
-      numeric: true;
-      snap-to-ticks: true;
-
-      adjustment: Gtk.Adjustment {
-        lower: 50;
-        upper: 100;
-        value: 0;
-        page-increment: 10;
-        step-increment: 1;
-      };
-    }
   }
 }

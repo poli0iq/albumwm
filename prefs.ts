@@ -322,7 +322,6 @@ class SettingsWidget {
                 null
             );
         });
-        percentValueChanged('maximize-width-percent', 'maximize-column-width');
     }
 }
 

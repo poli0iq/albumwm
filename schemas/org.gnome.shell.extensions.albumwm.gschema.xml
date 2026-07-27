@@ -275,11 +275,6 @@
       <summary>cycle-preset-window-height cycles through these heights, each a ratio of the monitor height.</summary>
     </key>
 
-    <key type="d" name="maximize-column-width">
-      <default>1.00</default>
-      <summary>Percent of workspace width used by a maximized column</summary>
-    </key>
-
     <key type="b" name="default-show-top-bar">
       <default>true</default>
       <summary>Show the top bar on workspaces by default</summary>
