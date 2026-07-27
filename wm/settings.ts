@@ -1,7 +1,5 @@
 import Gio from 'gi://Gio';
 
-import { AcceleratorParse } from './acceleratorparse.js';
-
 import type { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import type Meta from 'gi://Meta';
 
@@ -10,11 +8,6 @@ import type Meta from 'gi://Meta';
     settings.js shouldn't depend on other modules (e.g with `imports` for other modules
     at the top).
  */
-
-const KEYBINDINGS_KEY = 'org.gnome.shell.extensions.albumwm.keybindings';
-
-// This is the value mutter uses for the keyvalue of above_tab
-const META_KEY_ABOVE_TAB = 0x2f7259c9;
 
 // Animation used when ensuring viewport on a window
 export enum EnsureViewportAnimation {
@@ -53,13 +46,10 @@ export type Prefs = {
 };
 
 export let prefs: Prefs | null;
-let gsettings: Gio.Settings | null, keybindSettings: Gio.Settings;
-let acceleratorParse: AcceleratorParse | null;
+let gsettings: Gio.Settings | null;
 export function enable(extension: Extension) {
     gsettings = extension.getSettings();
-    keybindSettings = extension.getSettings(KEYBINDINGS_KEY);
 
-    acceleratorParse = new AcceleratorParse();
     prefs = {} as Prefs;
     for (const key of gsettings.list_keys()) {
         if (key.startsWith('restore-') || key === 'winprops') continue;
@@ -94,7 +84,6 @@ export function enable(extension: Extension) {
 let conflictSettings: Gio.Settings[] | null;
 export function disable() {
     gsettings = null;
-    acceleratorParse = null;
     prefs = null;
     conflictSettings = null;
 }
@@ -145,69 +134,6 @@ function addSchemaToConflictSettings(schemaId: string, warn = true) {
             );
         }
     }
-}
-
-// / Keybindings
-
-export function parseAccelerator(keystr: string) {
-    return acceleratorParse!.accelerator_parse(keystr);
-}
-
-/**
- * Two keystrings can represent the same key combination
- */
-export function keystrToKeycombo(keystr: string) {
-    // Above_Tab is a fake keysymbol provided by mutter
-    let aboveTab = false;
-    if (keystr.match(/Above_Tab/) || keystr.match(/grave/)) {
-        keystr = keystr.replace('Above_Tab', 'a');
-        aboveTab = true;
-    }
-
-    const [, key, mask] = parseAccelerator(keystr);
-    // Since js doesn't have a mapable tuple type
-    return `${aboveTab ? META_KEY_ABOVE_TAB : key}|${mask}`;
-}
-
-export type KeycomboMap = { [key: string]: string[] };
-
-function generateKeycomboMap(settings: Gio.Settings): KeycomboMap {
-    const map: KeycomboMap = {};
-    for (const name of settings.list_keys()) {
-        const value = settings.get_value<'as'>(name);
-        if (value.get_type_string() !== 'as') continue;
-
-        for (const combo of value.deep_unpack().map(keystrToKeycombo)) {
-            if (combo === '0|0') continue;
-            if (map[combo]) {
-                map[combo].push(name);
-            } else {
-                map[combo] = [name];
-            }
-        }
-    }
-    return map;
-}
-
-export function findConflicts(schemas?: Gio.Settings[]) {
-    schemas = schemas || getConflictSettings();
-    const conflicts = [];
-    const albumMap = generateKeycomboMap(keybindSettings);
-
-    for (const settings of schemas) {
-        const against = generateKeycomboMap(settings);
-        for (const combo in albumMap) {
-            if (against[combo]) {
-                conflicts.push({
-                    name: albumMap[combo][0],
-                    conflicts: against[combo],
-                    settings,
-                    combo,
-                });
-            }
-        }
-    }
-    return conflicts;
 }
 
 // / Winprops

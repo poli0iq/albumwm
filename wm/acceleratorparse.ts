@@ -1,77 +1,73 @@
-import Gdk from 'gi://Gdk?version=4.0';
+import Clutter from 'gi://Clutter';
 
 /**
- * Provides replacement for Gtk.accelerator_parse.
+ * Replacement for Gtk.accelerator_parse for the shell process, where GTK
+ * libraries must not be imported. Clutter ships the same X11 keysym
+ * constants and modifier masks as Gdk.
  */
-export class AcceleratorParse {
-    accelerator_parse(keystr: string): [boolean, number, number] {
-        let mask = this.accelerator_mask(keystr);
-        const mods = this.accelerator_mods(keystr);
 
-        // remove mods from keystr
-        let key = keystr;
-        mods.forEach(m => {
-            key = key.replace(m, '');
-        });
-        key = key.trim();
+/**
+ * The fake keysym mutter assigns to the key above Tab. Refer to:
+ * https://gitlab.gnome.org/GNOME/mutter/-/blob/50.3/src/core/meta-accel-parse.h#L34
+ */
+const META_KEY_ABOVE_TAB = 0x2f7259c9;
 
-        // now lookup keyval
-        let ok = true;
-        let keyval: number;
-        const mapped = Gdk.keyval_from_name(key);
-        if (mapped !== Gdk.KEY_VoidSymbol) {
-            keyval = mapped;
-        } else {
-            ok = false;
-            keyval = 0;
-            mask = 0;
-        }
+const modMasks: { [mod: string]: number } = {
+    '<shift>': Clutter.ModifierType.SHIFT_MASK,
+    '<control>': Clutter.ModifierType.CONTROL_MASK,
+    '<ctrl>': Clutter.ModifierType.CONTROL_MASK,
+    '<primary>': Clutter.ModifierType.CONTROL_MASK,
+    '<alt>': Clutter.ModifierType.MOD1_MASK,
+    '<super>': Clutter.ModifierType.SUPER_MASK,
+    '<hyper>': Clutter.ModifierType.HYPER_MASK,
+    '<meta>': Clutter.ModifierType.META_MASK,
+};
 
-        // console.log(keystr, keyval, mask);
-        return [ok, keyval, mask];
+/**
+ * Clutter's KEY_ constants strip the XF86 prefix that keysym names carry
+ * (e.g. XF86AudioMute is KEY_AudioMute), so try both.
+ */
+function keyvalFromName(name: string): number {
+    const keysyms = Clutter as unknown as Record<string, unknown>;
+    const keyval =
+        keysyms[`KEY_${name}`] ?? keysyms[`KEY_${name.replace(/^XF86/, '')}`];
+    return typeof keyval === 'number' ? keyval : Clutter.KEY_VoidSymbol;
+}
+
+export function parse(keystr: string): [boolean, number, number] {
+    const mods = keystr.match(/<.*?>/g) ?? [];
+
+    let mask = 0;
+    for (const mod of mods) {
+        mask |= modMasks[mod.toLowerCase()] ?? 0;
     }
 
-    /**
-     * Returns array of mods for a keystr, e.g. ['<Control>', '<Shift>', '<Alt>'].
-     */
-    accelerator_mods(keystr: string) {
-        return keystr.match(/<.*?>/g) ?? [];
+    // remove mods from keystr, leaving the keysym name
+    let key = keystr;
+    mods.forEach(m => {
+        key = key.replace(m, '');
+    });
+    key = key.trim();
+
+    const keyval = keyvalFromName(key);
+    if (keyval === Clutter.KEY_VoidSymbol) {
+        return [false, 0, 0];
+    }
+    return [true, keyval, mask];
+}
+
+/**
+ * Two keystrings can represent the same key combination
+ */
+export function keystrToKeycombo(keystr: string) {
+    // Above_Tab is a fake keysymbol provided by mutter
+    let aboveTab = false;
+    if (keystr.match(/Above_Tab/) || keystr.match(/grave/)) {
+        keystr = keystr.replace('Above_Tab', 'a');
+        aboveTab = true;
     }
 
-    /**
-     * Returns the GDK mask value for a keystr (keybind string representation).
-     * Refer to:
-     * https://gitlab.gnome.org/GNOME/gtk/-/blob/4.13.0/gdk/gdkenums.h?ref_type=tags#L115
-     * https://gitlab.gnome.org/GNOME/gtk/-/blob/4.13.0/gtk/gtkaccelgroup.c#L571
-     */
-    accelerator_mask(keystr: string) {
-        // need to extact all mods from keystr
-        const mods = this.accelerator_mods(keystr);
-        let result = 0;
-        for (const mod of mods) {
-            switch (mod.toLowerCase()) {
-                case '<shift>':
-                    result |= Gdk.ModifierType.SHIFT_MASK;
-                    break;
-                case '<control>':
-                case '<ctrl>':
-                case '<primary>':
-                    result |= Gdk.ModifierType.CONTROL_MASK;
-                    break;
-                case '<alt>':
-                    result |= Gdk.ModifierType.ALT_MASK;
-                    break;
-                case '<super>':
-                    result |= Gdk.ModifierType.SUPER_MASK;
-                    break;
-                case '<hyper>':
-                    result |= Gdk.ModifierType.HYPER_MASK;
-                    break;
-                case '<meta>':
-                    result |= Gdk.ModifierType.META_MASK;
-            }
-        }
-
-        return result;
-    }
+    const [, key, mask] = parse(keystr);
+    // Since js doesn't have a mapable tuple type
+    return `${aboveTab ? META_KEY_ABOVE_TAB : key}|${mask}`;
 }

@@ -7,6 +7,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
 import {
+    AcceleratorParse,
     Settings,
     Utils,
     Tiling,
@@ -71,11 +72,11 @@ export function enable(extension: Extension) {
     );
     actions!.forEach(enableAction);
 
-    notifyConflicts(extension, Settings.findConflicts());
+    notifyConflicts(extension, findConflicts());
 
     Settings.getConflictSettings().forEach(schema => {
         signals!.connect(schema, 'changed', (settings, key) => {
-            const conflicts = Settings.findConflicts([settings]).filter(c =>
+            const conflicts = findConflicts([settings]).filter(c =>
                 c.conflicts.includes(key)
             );
             notifyConflicts(extension, conflicts);
@@ -103,9 +104,50 @@ export function disable() {
     keycomboMap = null;
 }
 
+function generateKeycomboMap(settings: Gio.Settings) {
+    const map: { [combo: string]: string[] } = {};
+    for (const name of settings.list_keys()) {
+        const value = settings.get_value<'as'>(name);
+        if (value.get_type_string() !== 'as') continue;
+
+        for (const combo of value
+            .deep_unpack()
+            .map(AcceleratorParse.keystrToKeycombo)) {
+            if (combo === '0|0') continue;
+            if (map[combo]) {
+                map[combo].push(name);
+            } else {
+                map[combo] = [name];
+            }
+        }
+    }
+    return map;
+}
+
+function findConflicts(schemas?: Gio.Settings[]) {
+    schemas = schemas || Settings.getConflictSettings();
+    const conflicts = [];
+    const albumMap = generateKeycomboMap(keybindSettings!);
+
+    for (const settings of schemas) {
+        const against = generateKeycomboMap(settings);
+        for (const combo in albumMap) {
+            if (against[combo]) {
+                conflicts.push({
+                    name: albumMap[combo][0],
+                    conflicts: against[combo],
+                    settings,
+                    combo,
+                });
+            }
+        }
+    }
+    return conflicts;
+}
+
 function notifyConflicts(
     extension: Extension,
-    conflicts: ReturnType<typeof Settings.findConflicts>
+    conflicts: ReturnType<typeof findConflicts>
 ) {
     if (!conflicts.length) return;
     const source = MessageTray.getSystemSource();
@@ -565,7 +607,7 @@ export function bindkey(
     );
 
     let action = actionName && actions!.find(a => a.name === actionName);
-    const keycombo = Settings.keystrToKeycombo(keystr);
+    const keycombo = AcceleratorParse.keystrToKeycombo(keystr);
 
     if (!action) {
         action = registerAction(actionName!, handler!, options);
@@ -630,7 +672,7 @@ export function unbindkey(actionIdOrKeystr: Meta.KeyBindingAction | string) {
     let actionId;
     if (typeof actionIdOrKeystr === 'string') {
         const action =
-            keycomboMap![Settings.keystrToKeycombo(actionIdOrKeystr)];
+            keycomboMap![AcceleratorParse.keystrToKeycombo(actionIdOrKeystr)];
         actionId = action && action.id;
     } else {
         actionId = actionIdOrKeystr;
@@ -649,7 +691,7 @@ export function devirtualizeMask(_gdkVirtualMask: number): number {
 }
 
 export function rawMaskOfKeystr(keystr: string) {
-    const [, , mask] = Settings.parseAccelerator(keystr);
+    const [, , mask] = AcceleratorParse.parse(keystr);
     return devirtualizeMask(mask);
 }
 
@@ -669,7 +711,7 @@ export function openNavigatorHandler(actionName: string, keystr: string) {
 }
 
 export function getBoundActionId(keystr: string) {
-    const [, keyval, mask] = Settings.parseAccelerator(keystr);
+    const [, keyval, mask] = AcceleratorParse.parse(keystr);
     const rawMask = devirtualizeMask(mask);
     return Display.get_keybinding_action(keyval, rawMask);
 }

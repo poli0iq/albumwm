@@ -5,7 +5,6 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
-import { AcceleratorParse } from '../wm/acceleratorparse.js';
 import { getConflictSettings } from '../wm/settings.js';
 
 import type { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -315,7 +314,6 @@ class Keybinding extends GObject.Object implements Gio.ListModel<Combo> {
     declare _enabled: boolean;
 
     declare _settings: Gio.Settings;
-    declare acceleratorParse: AcceleratorParse;
 
     declare get_item_type: () => GObject.GType;
     declare get_n_items: () => number;
@@ -326,14 +324,9 @@ class Keybinding extends GObject.Object implements Gio.ListModel<Combo> {
         _added: number
     ) => void;
 
-    _init(
-        settings: Gio.Settings,
-        acceleratorParse: AcceleratorParse,
-        params = {}
-    ) {
+    _init(settings: Gio.Settings, params = {}) {
         super._init(params);
         this._settings = settings;
-        this.acceleratorParse = acceleratorParse;
         this._description = _(
             this._settings.settings_schema.get_key(this.action).get_summary()!
         );
@@ -449,12 +442,12 @@ class Keybinding extends GObject.Object implements Gio.ListModel<Combo> {
         const keystrs = this._settings.get_strv(this.action) || [];
         const combos = keystrs
             .map(translateAboveTab)
-            .map((keystr): [boolean, number, number] => {
-                if (keystr !== '')
-                    return this.acceleratorParse.accelerator_parse(keystr);
-                else return [true, 0, 0];
+            .map((keystr): [number, number] => {
+                if (keystr === '') return [0, 0];
+                const [, keyval, mods] = Gtk.accelerator_parse(keystr);
+                return [keyval, mods ?? 0];
             })
-            .map(([, keyval, mods]) => new Combo({ keyval, mods }));
+            .map(([keyval, mods]) => new Combo({ keyval, mods }));
 
         if (combos.length === 0) {
             combos.push(new Combo());
@@ -504,7 +497,6 @@ export class KeybindingsModel
         _added: number
     ) => void;
 
-    declare acceleratorParse: AcceleratorParse;
     declare _model: Gio.ListStore<Keybinding>;
     declare _combos: Gtk.FlattenListModel;
     declare _actionToBinding: Map<string, Keybinding>;
@@ -512,9 +504,8 @@ export class KeybindingsModel
     declare _collisions: Map<string, Set<string>>;
     declare _systemShortcuts: Map<string, string[]>;
 
-    _init(acceleratorParse: AcceleratorParse, params = {}) {
+    _init(params = {}) {
         super._init(params);
-        this.acceleratorParse = acceleratorParse;
         this._model = new Gio.ListStore({ itemType: Keybinding.$gtype });
         this._model.connect(
             'items-changed',
@@ -590,11 +581,10 @@ export class KeybindingsModel
                 const description = schema.get_key(key).get_summary() || key;
                 for (const raw of value.deep_unpack()) {
                     if (!raw) continue;
-                    const [ok, keyval, mods] =
-                        this.acceleratorParse.accelerator_parse(
-                            translateAboveTab(raw)
-                        );
-                    if (!ok) continue;
+                    const [ok, keyval, mods] = Gtk.accelerator_parse(
+                        translateAboveTab(raw)
+                    );
+                    if (!ok || mods === null) continue;
                     const keystr = Gtk.accelerator_name(keyval, mods);
                     if (!keystr) continue;
 
@@ -642,11 +632,10 @@ export class KeybindingsModel
         const bindings: Keybinding[] = [];
         for (const section in actions) {
             for (const action of actions[section as keyof typeof actions]) {
-                const binding = new Keybinding(
-                    this._settings,
-                    this.acceleratorParse,
-                    { section, action }
-                );
+                const binding = new Keybinding(this._settings, {
+                    section,
+                    action,
+                });
                 bindings.push(binding);
                 this._actionToBinding.set(action, binding);
             }
@@ -1366,7 +1355,6 @@ export class KeybindingsPage extends Adw.PreferencesPage {
     declare _keybindings_monitors_group: Adw.PreferencesGroup;
     declare _keybindings_floating_group: Adw.PreferencesGroup;
 
-    declare acceleratorParse: AcceleratorParse;
     declare _settings: Gio.Settings;
     declare _model: KeybindingsModel;
     declare _generalView: Gtk.FilterListModel;
@@ -1379,8 +1367,7 @@ export class KeybindingsPage extends Adw.PreferencesPage {
 
     init(extension: ExtensionPreferences) {
         this._settings = extension.getSettings(KEYBINDINGS_KEY);
-        this.acceleratorParse = new AcceleratorParse();
-        this._model = new KeybindingsModel(this.acceleratorParse);
+        this._model = new KeybindingsModel();
 
         this._generalView = sectionView(this._model, 'general');
         this._movementsView = sectionView(this._model, 'movements');
