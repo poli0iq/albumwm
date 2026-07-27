@@ -122,20 +122,6 @@
       <summary>Sets the maximum window scale (compared to actual window size) of Gnome overview windows</summary>
     </key>
 
-    <!-- Unused -->
-    <key type="s" name="restore-attach-modal-dialogs">
-      <default>''</default>
-      <summary>Original setting value (used for restore)</summary>
-    </key>
-    <key type="s" name="restore-workspaces-only-on-primary">
-      <default>''</default>
-      <summary>Original setting value (used for restore)</summary>
-    </key>
-    <key type="s" name="restore-edge-tiling">
-      <default>''</default>
-      <summary>Original setting value (used for restore)</summary>
-    </key>
-
     <!-- Window properties -->
     <key type="as" name="winprops">
       <default><![CDATA[[]]]></default>
