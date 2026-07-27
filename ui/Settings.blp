@@ -343,6 +343,25 @@ Adw.PreferencesPage advanced_page {
   Adw.PreferencesGroup {
     title: _("Other");
 
+    Adw.ActionRow user_guide_row {
+      title: _("User guide");
+      subtitle: _("Opens in browser");
+      activatable: true;
+
+      [suffix]
+      Gtk.Image {
+        icon-name: "external-link-symbolic";
+
+        accessibility {
+          label: _("Open external link");
+        }
+      }
+
+      styles [
+        "link",
+      ]
+    }
+
     Adw.SpinRow maximize-width-percent {
       title: _("Maximized horizontal width (%)");
       subtitle: _("Maximum width of a tiled window");

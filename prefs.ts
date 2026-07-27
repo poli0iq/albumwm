@@ -308,6 +308,18 @@ class SettingsWidget {
         );
 
         // Other
+        const userGuideUri =
+            'https://github.com/poli0iq/albumwm/blob/main/docs/user_guide.md';
+        const userGuideRow =
+            this.builder.get_object<Adw.ActionRow>('user_guide_row');
+        userGuideRow.tooltip_text = userGuideUri;
+        userGuideRow.connect('activated', () => {
+            new Gtk.UriLauncher({ uri: userGuideUri }).launch(
+                this.window,
+                null,
+                null
+            );
+        });
         percentValueChanged('maximize-width-percent', 'maximize-column-width');
         booleanStateChanged('topbar-mouse-scroll-enable');
     }

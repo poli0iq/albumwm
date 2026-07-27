@@ -7,6 +7,7 @@
     <file>enter-keyboard-shortcut.svg</file>
     <file>albumwm-general-symbolic.svg</file>
     <file>albumwm-other-symbolic.svg</file>
+    <file>external-link-symbolic.svg</file>
   </gresource>
   <gresource prefix="/dev/0iq/albumwm">
     <file>prefs.css</file>
