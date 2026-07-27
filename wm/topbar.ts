@@ -123,7 +123,7 @@ class BaseIcon extends St.Icon {
         tt.hide();
         // global.stage.add_child(tt);
         Utils.actorAddChild(global.stage, tt);
-        this.tooltip_parent.connect('enter-event', _icon => {
+        const enterId = this.tooltip_parent.connect('enter-event', _icon => {
             this.updateTooltipText();
             this._updateTooltipPosition();
             tt.show();
@@ -131,10 +131,18 @@ class BaseIcon extends St.Icon {
             // alignment needs to be set after actor is shown
             tt.clutter_text.set_line_alignment(Pango.Alignment.CENTER);
         });
-        this.tooltip_parent.connect('leave-event', (_icon, _event) => {
-            if (!this.has_pointer) {
-                tt.hide();
+        const leaveId = this.tooltip_parent.connect(
+            'leave-event',
+            (_icon, _event) => {
+                if (!this.has_pointer) {
+                    tt.hide();
+                }
             }
+        );
+        this.connect('destroy', () => {
+            this.tooltip_parent.disconnect(enterId);
+            this.tooltip_parent.disconnect(leaveId);
+            tt.destroy();
         });
         this.tooltip = tt;
     }
