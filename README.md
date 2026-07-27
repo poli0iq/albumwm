@@ -4,6 +4,47 @@ AlbumWM is a GNOME Shell extension which implements scrollable tiling support.
 
 AlbumWM is a fork of [PaperWM](https://github.com/paperwm/PaperWM).
 
+## Installation
+
+### Manual
+
+Install:
+
+```bash
+npm run install:ext
+```
+
+Re-login is required, because the shell can't be restarted on Wayland.
+
+Uninstall:
+
+```bash
+npm run uninstall:ext
+```
+
+### Nix
+
+The flake provides a `gnome-shell-extension-albumwm` package,
+which can be installed and enabled like any regular GNOME extension package from nixpkgs,
+for example, via `programs.gnome-shell.extensions` in Home Manager configuration.
+
+`flake.nix`:
+
+```nix
+albumwm = {
+  url = "github:poli0iq/albumwm";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+```
+
+Home Manager:
+
+```nix
+programs.gnome-shell.extensions = [
+  { package = inputs.albumwm.packages.${pkgs.stdenv.hostPlatform.system}.default; }
+];
+```
+
 ## Differences from PaperWM
 
 For now, there are mostly removals and code maintainability improvements.
@@ -46,47 +87,6 @@ Features that the fork author considered useless or harmful are dropped.
 
 - Dropped the "take window" navigation mode
 - Dropped the custom "live alt-tab" switcher, use GNOME's native switcher instead
-
-## Installation
-
-### Manual
-
-Install:
-
-```bash
-npm run install:ext
-```
-
-Re-login is required, because the shell can't be restarted on Wayland.
-
-Uninstall:
-
-```bash
-npm run uninstall:ext
-```
-
-### Nix
-
-The flake provides a `gnome-shell-extension-albumwm` package,
-which can be installed and enabled like any regular GNOME extension package from nixpkgs,
-for example, via `programs.gnome-shell.extensions` in Home Manager configuration.
-
-`flake.nix`:
-
-```nix
-albumwm = {
-  url = "github:poli0iq/albumwm";
-  inputs.nixpkgs.follows = "nixpkgs";
-};
-```
-
-Home Manager:
-
-```nix
-programs.gnome-shell.extensions = [
-  { package = inputs.albumwm.packages.${pkgs.stdenv.hostPlatform.system}.default; }
-];
-```
 
 ## Related projects
 
