@@ -34,7 +34,7 @@ export let spaces: Spaces;
 // Mutter prevints windows from being placed further off the screen than 75 pixels.
 export const stackMargin = 75;
 
-const mutterSettings = new Gio.Settings({ schema_id: 'org.gnome.mutter' });
+let mutterSettings: Gio.Settings | null;
 
 // Some features use this to determine if to sizes is considered equal. ie. `abs(w1 - w2) < sizeSlack`
 const sizeSlack = 30;
@@ -174,6 +174,7 @@ export function enable(extension: Extension) {
     saveState = saveState ?? new SaveState();
 
     gsettings = extension.getSettings();
+    mutterSettings = new Gio.Settings({ schema_id: 'org.gnome.mutter' });
 
     signals = new Utils.Signals();
     grabSignals = new Utils.Signals();
@@ -274,6 +275,7 @@ export function disable() {
     movingWindow = null;
     settlingDrop = null;
     gsettings = null;
+    mutterSettings = null;
 }
 
 /**
@@ -1006,7 +1008,7 @@ export class Space extends Array<Array<Window>> {
          * returns, so a position is only placeable if the real frame can sit
          * there without changing monitors. Non-placeable windows are shown
          * via their clone instead; moveDone keeps the frame on this.monitor. */
-        if (mutterSettings.get_boolean('workspaces-only-on-primary')) {
+        if (mutterSettings!.get_boolean('workspaces-only-on-primary')) {
             const frame = metaWindow.get_frame_rect();
             frame.x = this.monitor!.x + x;
             frame.y = this.visibleY(metaWindow);
