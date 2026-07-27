@@ -1,4 +1,153 @@
 <schemalist>
+  <!-- Main schema -->
+  <schema id="org.gnome.shell.extensions.albumwm" path="/org/gnome/shell/extensions/albumwm/">
+    <!-- General -->
+
+    <!-- Behavior -->
+    <key type="i" name="default-focus-mode">
+      <default>0</default>
+      <summary>Set the default focus mode. 0:DEFAULT 1:CENTER 2:EDGE</summary>
+    </key>
+    <key type="b" name="warp-pointer-on-focus">
+      <default>false</default>
+      <summary>Warp pointer onto window on focus change</summary>
+    </key>
+
+    <key type="b" name="gesture-enabled">
+      <default>true</default>
+      <summary>Enables AlbumWM touchpad gestures</summary>
+    </key>
+    <key type="i" name="gesture-horizontal-fingers">
+      <default>4</default>
+      <summary>Number of fingers for tiling horizontal swipe. Supported values are 3 and 4.</summary>
+    </key>
+
+    <key type="b" name="topbar-mouse-scroll-enable">
+      <default>true</default>
+      <summary>Enables mouse scrolling on topbar to switch window (left/right)</summary>
+    </key>
+
+    <!-- Margins -->
+    <key type="i" name="column-gap">
+      <default>10</default>
+      <summary>Minimum gap between columns</summary>
+    </key>
+    <key type="i" name="horizontal-margin">
+      <default>20</default>
+      <summary>Minimum margin from windows left and right edge</summary>
+    </key>
+    <key type="i" name="vertical-margin">
+      <default>10</default>
+      <summary>Minimum margin to the top and bottom monitor edge</summary>
+    </key>
+
+    <!-- Window dimensions -->
+    <key type="ad" name="preset-column-widths">
+      <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
+      <summary>cycle-preset-column-width cycles through these widths, each a ratio of the monitor width.</summary>
+    </key>
+    <key type="ad" name="preset-window-heights">
+      <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
+      <summary>cycle-preset-window-height cycles through these heights, each a ratio of the monitor height.</summary>
+    </key>
+
+    <!-- Other -->
+
+    <!-- Interface -->
+    <key type="b" name="show-focus-mode-icon">
+      <default>true</default>
+      <summary>Show the focus mode icon in the topbar</summary>
+    </key>
+    <key type="i" name="overview-min-windows-per-row">
+      <default>5</default>
+      <summary>Sets the minimum number or windows per row before adding a new window row</summary>
+    </key>
+    <key type="i" name="minimap-shade-opacity">
+      <default>160</default>
+      <summary>Sets the opacity of the non-selected windows during minimap navigation.</summary>
+    </key>
+
+    <!-- Animations -->
+    <key type="d" name="animation-time">
+      <default>0.25</default>
+      <summary>Duration of animations in seconds</summary>
+    </key>
+    <key type="i" name="drag-drift-speed">
+      <default>2</default>
+      <summary>Drift speed (px/ms) when mouse is at edge of monitor when dragging windows</summary>
+    </key>
+    <key type="i" name="overview-ensure-viewport-animation">
+      <default>1</default>
+      <summary>Sets the animation when exiting GNOME overview and ensuring selected window is in view. 0:NONE, 1:TRANSLATE, 2:FADE</summary>
+    </key>
+
+    <!-- Tiling edge preview -->
+    <key type="b" name="edge-preview-enable">
+      <default>true</default>
+      <summary>Enables tiling edge window previews</summary>
+    </key>
+    <key type="d" name="edge-preview-scale">
+      <default>0.15</default>
+      <summary>Scale of window previews at tiling edge. Scale is percent of actual window size.</summary>
+    </key>
+    <key type="b" name="edge-preview-click-enable">
+      <default>true</default>
+      <summary>Enables activating edge preview with click</summary>
+    </key>
+
+    <key type="b" name="edge-preview-timeout-enable">
+      <default>false</default>
+      <summary>Enables activating edge preview with a timeout</summary>
+    </key>
+    <key type="i" name="edge-preview-timeout">
+      <default>800</default>
+      <summary>Timeout (ms) before activating the edge preview</summary>
+    </key>
+    <key type="b" name="edge-preview-timeout-continual">
+      <default>false</default>
+      <summary>Enables the continual activation of windows if pointer is at edge of monitor</summary>
+    </key>
+
+    <!-- Interface scale -->
+    <key type="d" name="minimap-scale">
+      <default>0.15</default>
+      <summary>Scale of mini mini-map tiles compared to their actual window size.</summary>
+    </key>
+    <key type="d" name="window-switcher-preview-scale">
+      <default>0.15</default>
+      <summary>Scale of window switch previews.  Scale is percent of actual window size</summary>
+    </key>
+    <key type="d" name="overview-max-window-scale">
+      <default>0.95</default>
+      <summary>Sets the maximum window scale (compared to actual window size) of Gnome overview windows</summary>
+    </key>
+
+    <!-- Unused -->
+    <key type="s" name="restore-attach-modal-dialogs">
+      <default>''</default>
+      <summary>Original setting value (used for restore)</summary>
+    </key>
+    <key type="s" name="restore-workspaces-only-on-primary">
+      <default>''</default>
+      <summary>Original setting value (used for restore)</summary>
+    </key>
+    <key type="s" name="restore-edge-tiling">
+      <default>''</default>
+      <summary>Original setting value (used for restore)</summary>
+    </key>
+    <key type="b" name="default-show-top-bar">
+      <default>true</default>
+      <summary>Show the top bar on workspaces by default</summary>
+    </key>
+
+    <!-- Window properties -->
+    <key type="as" name="winprops">
+      <default><![CDATA[[]]]></default>
+      <summary>Array of winprops as (JSON) string objects</summary>
+    </key>
+
+    <child name="keybindings" schema="org.gnome.shell.extensions.albumwm.keybindings"/>
+  </schema>
 
   <!-- Keybindings -->
   <schema id="org.gnome.shell.extensions.albumwm.keybindings"
@@ -182,161 +331,4 @@
       <summary>Switch focus between the floating and tiling layers</summary>
     </key>
   </schema>
-
-  <schema id="org.gnome.shell.extensions.albumwm" path="/org/gnome/shell/extensions/albumwm/">
-    <key type="s" name="restore-attach-modal-dialogs">
-      <default>''</default>
-      <summary>Original setting value (used for restore)</summary>
-    </key>
-
-    <key type="s" name="restore-workspaces-only-on-primary">
-      <default>''</default>
-      <summary>Original setting value (used for restore)</summary>
-    </key>
-
-    <key type="s" name="restore-edge-tiling">
-      <default>''</default>
-      <summary>Original setting value (used for restore)</summary>
-    </key>
-
-    <!-- Settings -->
-    <key type="i" name="horizontal-margin">
-      <default>20</default>
-      <summary>Minimum margin from windows left and right edge</summary>
-    </key>
-
-    <key type="i" name="vertical-margin">
-      <default>10</default>
-      <summary>Minimum margin to the top and bottom monitor edge</summary>
-    </key>
-
-    <key type="i" name="column-gap">
-      <default>10</default>
-      <summary>Minimum gap between columns</summary>
-    </key>
-
-    <key type="d" name="minimap-scale">
-      <default>0.15</default>
-      <summary>Scale of mini mini-map tiles compared to their actual window size.</summary>
-    </key>
-
-    <key type="i" name="minimap-shade-opacity">
-      <default>160</default>
-      <summary>Sets the opacity of the non-selected windows during minimap navigation.</summary>
-    </key>
-
-    <key type="b" name="edge-preview-enable">
-      <default>true</default>
-      <summary>Enables tiling edge window previews</summary>
-    </key>
-
-    <key type="d" name="edge-preview-scale">
-      <default>0.15</default>
-      <summary>Scale of window previews at tiling edge. Scale is percent of actual window size.</summary>
-    </key>
-
-    <key type="b" name="edge-preview-click-enable">
-      <default>true</default>
-      <summary>Enables activating edge preview with click</summary>
-    </key>
-
-    <key type="b" name="edge-preview-timeout-enable">
-      <default>false</default>
-      <summary>Enables activating edge preview with a timeout</summary>
-    </key>
-
-    <key type="i" name="edge-preview-timeout">
-      <default>800</default>
-      <summary>Timeout (ms) before activating the edge preview</summary>
-    </key>
-
-    <key type="b" name="edge-preview-timeout-continual">
-      <default>false</default>
-      <summary>Enables the continual activation of windows if pointer is at edge of monitor</summary>
-    </key>
-
-    <key type="d" name="window-switcher-preview-scale">
-      <default>0.15</default>
-      <summary>Scale of window switch previews.  Scale is percent of actual window size</summary>
-    </key>
-
-    <key type="b" name="warp-pointer-on-focus">
-      <default>false</default>
-      <summary>Warp pointer onto window on focus change</summary>
-    </key>
-
-    <key type="ad" name="preset-column-widths">
-      <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
-      <summary>cycle-preset-column-width cycles through these widths, each a ratio of the monitor width.</summary>
-    </key>
-
-    <key type="ad" name="preset-window-heights">
-      <default><![CDATA[[0.38195, 0.5, 0.61804]]]></default>
-      <summary>cycle-preset-window-height cycles through these heights, each a ratio of the monitor height.</summary>
-    </key>
-
-    <key type="b" name="default-show-top-bar">
-      <default>true</default>
-      <summary>Show the top bar on workspaces by default</summary>
-    </key>
-
-    <key type="i" name="default-focus-mode">
-      <default>0</default>
-      <summary>Set the default focus mode. 0:DEFAULT 1:CENTER 2:EDGE</summary>
-    </key>
-
-    <key type="b" name="show-focus-mode-icon">
-      <default>true</default>
-      <summary>Show the focus mode icon in the topbar</summary>
-    </key>
-
-    <key type="b" name="topbar-mouse-scroll-enable">
-      <default>true</default>
-      <summary>Enables mouse scrolling on topbar to switch window (left/right)</summary>
-    </key>
-
-    <key type="d" name="animation-time">
-      <default>0.25</default>
-      <summary>Duration of animations in seconds</summary>
-    </key>
-
-    <key type="i" name="drag-drift-speed">
-      <default>2</default>
-      <summary>Drift speed (px/ms) when mouse is at edge of monitor when dragging windows</summary>
-    </key>
-
-    <key type="d" name="overview-max-window-scale">
-      <default>0.95</default>
-      <summary>Sets the maximum window scale (compared to actual window size) of Gnome overview windows</summary>
-    </key>
-
-    <key type="i" name="overview-min-windows-per-row">
-      <default>5</default>
-      <summary>Sets the minimum number or windows per row before adding a new window row</summary>
-    </key>
-
-    <key type="i" name="overview-ensure-viewport-animation">
-      <default>1</default>
-      <summary>Sets the animation when exiting GNOME overview and ensuring selected window is in view. 0:NONE, 1:TRANSLATE, 2:FADE</summary>
-    </key>
-
-    <key type="as" name="winprops">
-      <default><![CDATA[[]]]></default>
-      <summary>Array of winprops as (JSON) string objects</summary>
-    </key>
-
-    <key type="b" name="gesture-enabled">
-      <default>true</default>
-      <summary>Enables AlbumWM touchpad gestures</summary>
-    </key>
-
-    <key type="i" name="gesture-horizontal-fingers">
-      <default>4</default>
-      <summary>Number of fingers for tiling horizontal swipe. Supported values are 3 and 4.</summary>
-    </key>
-
-    <child name="keybindings" schema="org.gnome.shell.extensions.albumwm.keybindings"/>
-
-  </schema>
-
 </schemalist>
