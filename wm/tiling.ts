@@ -390,7 +390,6 @@ export class Space extends Array<Array<Window>> {
 
     // Less used dynamic fields
     _inLayout?: boolean;
-    showTopBar?: boolean;
     _layoutQueued?: boolean;
     _isAnimating?: boolean;
 
@@ -439,7 +438,6 @@ export class Space extends Array<Array<Window>> {
         this.targetX = 0;
 
         this.uuid = GLib.uuid_string_random();
-        this.initWorkspaceState();
 
         this.selectedWindow = null;
         this.columnsLastActiveWindows = new WeakMap();
@@ -831,8 +829,8 @@ export class Space extends Array<Array<Window>> {
     }
 
     /**
-     * Work area to lay out into: with the top bar hidden, or the selected
-     * window fullscreen, it extends over the top bar's area.
+     * Work area to lay out into: with the selected window fullscreen, it
+     * extends over the top bar's area.
      */
     layoutWorkArea() {
         const workArea = this.workArea();
@@ -840,10 +838,6 @@ export class Space extends Array<Array<Window>> {
          * to avoid a "flash of topbar spacing" before the next layout call resolves. */
         if (this.selectedWindow?.fullscreen) {
             workArea.y = 0;
-        } else if (!this.showTopBar) {
-            const panelBoxHeight = Topbar.panelBox.height;
-            workArea.y -= panelBoxHeight;
-            workArea.height += panelBoxHeight;
         }
         return workArea;
     }
@@ -1630,21 +1624,6 @@ export class Space extends Array<Array<Window>> {
                 break;
             }
         }
-    }
-
-    initWorkspaceState() {
-        this.updateShowTopBar();
-
-        this.signals.connect(
-            gsettings!,
-            'changed::default-show-top-bar',
-            this.updateShowTopBar.bind(this)
-        );
-    }
-
-    updateShowTopBar() {
-        this.showTopBar = Settings.prefs!.default_show_top_bar;
-        if (this._populated) Topbar.fixTopBar();
     }
 
     createBackground() {

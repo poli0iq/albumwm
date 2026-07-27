@@ -29,7 +29,6 @@ export type Prefs = {
     horizontal_margin: number;
     animation_time: number;
     drag_drift_speed: number;
-    default_show_top_bar: boolean;
     preset_column_widths: number[];
     preset_window_heights: number[];
     minimap_scale: number;

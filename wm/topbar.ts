@@ -355,9 +355,7 @@ export function fixTopBar() {
         ? focused.fullscreen
         : selected && selected.fullscreen;
 
-    if (normal && !space.showTopBar) {
-        hideTopBar();
-    } else if (normal && fullscreen) {
+    if (normal && fullscreen) {
         hideTopBar();
     } else {
         showTopBar();

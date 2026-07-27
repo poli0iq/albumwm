@@ -135,10 +135,6 @@
       <default>''</default>
       <summary>Original setting value (used for restore)</summary>
     </key>
-    <key type="b" name="default-show-top-bar">
-      <default>true</default>
-      <summary>Show the top bar on workspaces by default</summary>
-    </key>
 
     <!-- Window properties -->
     <key type="as" name="winprops">
