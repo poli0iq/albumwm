@@ -37,6 +37,9 @@
           ];
 
           # Default buildPhase already includes "npm run build"
+          postBuild = ''
+            glib-compile-schemas --strict dist/schemas
+          '';
 
           installPhase = ''
             runHook preInstall
