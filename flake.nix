@@ -2,11 +2,13 @@
   description = "Tiled, scrollable window management for GNOME Shell";
 
   inputs."nixpkgs".url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs."nixpkgs-gnome-next".url = "github:theCapypara/nixpkgs/gnome51";
 
   outputs =
     {
       self,
       nixpkgs,
+      nixpkgs-gnome-next,
       flake-utils,
       ...
     }:
@@ -14,6 +16,23 @@
       system:
       let
         hostPkgs = import nixpkgs { inherit system; };
+        # Build QEMU for the host system to avoid double emulation.
+        mkVm =
+          hostConfig:
+          let
+            localConfig = hostConfig.extendModules {
+              modules = [
+                (
+                  { modulesPath, ... }:
+                  {
+                    imports = [ "${modulesPath}/virtualisation/qemu-vm.nix" ];
+                    virtualisation.host.pkgs = hostPkgs;
+                  }
+                )
+              ];
+            };
+          in
+          localConfig.config.system.build.vm;
       in
       {
         packages.default = hostPkgs.buildNpmPackage {
@@ -62,98 +81,93 @@
           ];
         };
 
-        # This allows us to build Qemu for the host system thus avoiding
-        # double emulation
-        packages.vm =
-          let
-            hostConfig = self.nixosConfigurations.testbox;
-            localConfig = hostConfig.extendModules {
-              modules = [
-                (
-                  { modulesPath, ... }:
-                  {
-                    imports = [ "${modulesPath}/virtualisation/qemu-vm.nix" ];
-                    virtualisation.host.pkgs = hostPkgs;
-                  }
-                )
-              ];
-            };
-          in
-          localConfig.config.system.build.vm;
+        packages.vm = mkVm self.nixosConfigurations.testbox;
+        packages.vm-gnome-next = mkVm self.nixosConfigurations.testbox-gnome-next;
       }
     )
     // {
-      nixosConfigurations."testbox" =
-        let
-          system = "x86_64-linux";
-        in
-        nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [
-            (
-              { pkgs, lib, ... }:
-              {
-                # Make AlbumWM available in system environment
-                environment.systemPackages = with pkgs; [
-                  albumwm
-                  (lib.getBin libinput)
-                ];
+      nixosConfigurations =
+        builtins.mapAttrs
+          (
+            name: pkgsInput:
+            let
+              system = "x86_64-linux";
+            in
+            pkgsInput.lib.nixosSystem {
+              inherit system;
+              modules = [
+                (
+                  { pkgs, lib, ... }:
+                  {
+                    networking.hostName = lib.mkIf (name != "testbox") name;
 
-                # Set graphical session to auto-login GNOME
-                services.xserver = {
-                  enable = true;
-                  displayManager.autoLogin = {
-                    enable = true;
-                    user = "user";
-                  };
-                  displayManager.gdm.enable = true;
-                  desktopManager.gnome.enable = true;
-                };
+                    # Make AlbumWM available in system environment
+                    environment.systemPackages = with pkgs; [
+                      albumwm
+                      (lib.getBin libinput)
+                    ];
 
-                # Set dconf to enable AlbumWM out of the box
-                programs.dconf = {
-                  enable = true;
-                  profiles."user".databases = [
-                    {
-                      settings = {
-                        "org/gnome/shell" = {
-                          enabled-extensions = [ "albumwm@0iq.dev" ];
-                          disable-user-extensions = false;
-                        };
+                    # Set graphical session to auto-login GNOME
+                    services.xserver = {
+                      enable = true;
+                      displayManager.autoLogin = {
+                        enable = true;
+                        user = "user";
                       };
-                      # NOTE: You can add more dconf settings to test with here!
-                    }
+                      displayManager.gdm.enable = true;
+                      desktopManager.gnome.enable = true;
+                    };
+
+                    # Set dconf to enable AlbumWM out of the box
+                    programs.dconf = {
+                      enable = true;
+                      profiles."user".databases = [
+                        {
+                          settings = {
+                            "org/gnome/shell" = {
+                              enabled-extensions = [ "albumwm@0iq.dev" ];
+                              disable-user-extensions = false;
+                              disable-extension-version-validation = name == "testbox-gnome-next";
+                            };
+                          };
+                          # NOTE: You can add more dconf settings to test with here!
+                        }
+                      ];
+                    };
+
+                    # Remove unnecessary dependencies
+                    # NOTE: This drops many GTK4 apps, re-enable if needed for testing.
+                    services.gnome.core-utilities.enable = false;
+
+                    # Set default user
+                    users.users."user" = {
+                      isNormalUser = true;
+                      createHome = true;
+                      home = "/home";
+                      description = "AlbumWM test user";
+                      extraGroups = [ "wheel" ];
+                      password = "albumwm";
+                    };
+
+                    # No-password sudo
+                    security.sudo = {
+                      enable = true;
+                      extraConfig = "%wheel ALL=(ALL) NOPASSWD: ALL";
+                    };
+                  }
+                )
+                {
+                  nixpkgs.overlays = [
+                    # Introduce AlbumWM into our extensions
+                    (s: super: { albumwm = self.packages.${system}.default; })
                   ];
-                };
-
-                # Remove unnecessary dependencies
-                # NOTE: This drops many GTK4 apps, re-enable if needed for testing.
-                services.gnome.core-utilities.enable = false;
-
-                # Set default user
-                users.users."user" = {
-                  isNormalUser = true;
-                  createHome = true;
-                  home = "/home";
-                  description = "AlbumWM test user";
-                  extraGroups = [ "wheel" ];
-                  password = "albumwm";
-                };
-
-                # No-password sudo
-                security.sudo = {
-                  enable = true;
-                  extraConfig = "%wheel ALL=(ALL) NOPASSWD: ALL";
-                };
-              }
-            )
-            {
-              nixpkgs.overlays = [
-                # Introduce AlbumWM into our extensions
-                (s: super: { albumwm = self.packages.${system}.default; })
+                }
               ];
             }
-          ];
-        };
+          )
+          {
+            testbox = nixpkgs;
+            testbox-gnome-next = nixpkgs-gnome-next;
+          };
     };
 }

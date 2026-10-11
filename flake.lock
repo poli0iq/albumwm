@@ -33,10 +33,27 @@
         "type": "github"
       }
     },
+    "nixpkgs-gnome-next": {
+      "locked": {
+        "lastModified": 1791714898,
+        "narHash": "sha256-Q2zl/HfV+A6HrtEw9albQfmaBuYrLdylSulYnMlsZNM=",
+        "owner": "theCapypara",
+        "repo": "nixpkgs",
+        "rev": "83dbec5c6184841c943acf8dd4c96f6f20777045",
+        "type": "github"
+      },
+      "original": {
+        "owner": "theCapypara",
+        "ref": "gnome51",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "nixpkgs-gnome-next": "nixpkgs-gnome-next"
       }
     },
     "systems": {
