@@ -3,8 +3,6 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-// @ts-expect-error not typed in girs
-import * as PointerWatcher from 'resource:///org/gnome/shell/ui/pointerWatcher.js';
 
 import { Gestures, Grab, Tiling, Utils } from './imports.js';
 import { Easer } from './utils.js';
@@ -21,15 +19,12 @@ import type { Extension } from 'resource:///org/gnome/shell/extensions/extension
  * is governed by "auto-raise".
  */
 
-/* Mutter's pointer-rest check interval, reused as both the poll interval
- * and the rest delay to match native hover focus latency. */
+/* Mutter's pointer-rest delay, to match native hover focus latency. */
 const FOCUS_TIMEOUT_DELAY = 25;
 
 let wmPreferences: Gio.Settings | null;
 let signals: Utils.Signals | null;
-// Not typed in girs.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let watch: any | null;
+let watch: number | null;
 let restTimeout: number | null;
 
 export function enable(_extension: Extension) {
@@ -42,17 +37,18 @@ export function enable(_extension: Extension) {
 }
 
 export function disable() {
+    stopWatch();
     signals!.destroy();
     signals = null;
     wmPreferences = null;
-    stopWatch();
 }
 
 function syncWatch() {
     const followsMouse = wmPreferences!.get_string('focus-mode') !== 'click';
     if (followsMouse && !watch) {
-        watch = PointerWatcher.getPointerWatcher().addWatch(
-            FOCUS_TIMEOUT_DELAY,
+        watch = signals!.connect(
+            global.backend.get_cursor_tracker(),
+            'position-invalidated',
             onPointerMoved
         );
     } else if (!followsMouse) {
@@ -61,15 +57,18 @@ function syncWatch() {
 }
 
 function stopWatch() {
-    watch?.remove();
+    if (watch) {
+        signals!.disconnect(global.backend.get_cursor_tracker(), watch);
+    }
     watch = null;
     Utils.timeoutRemove(restTimeout);
     restTimeout = null;
 }
 
-function onPointerMoved(x: number, y: number) {
+function onPointerMoved() {
     Utils.timeoutRemove(restTimeout);
     restTimeout = null;
+    const [x, y] = global.get_pointer();
     if (!getCloneWindowAtPoint(x, y)) return;
 
     restTimeout = GLib.timeout_add(

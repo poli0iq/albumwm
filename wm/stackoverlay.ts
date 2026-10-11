@@ -5,8 +5,6 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-// @ts-expect-error not typed in girs
-import * as PointerWatcher from 'resource:///org/gnome/shell/ui/pointerWatcher.js';
 
 import { Settings, Utils, Tiling, Grab } from './imports.js';
 
@@ -46,14 +44,16 @@ import type { Extension } from 'resource:///org/gnome/shell/extensions/extension
   restack loops)
 */
 
-// Not typed in girs.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let previewPointerWatcher: any | null;
+let previewPointerSignals: Utils.Signals | null;
 export function enable(_extension: Extension) {}
 
 export function disable() {
-    previewPointerWatcher?.remove();
-    previewPointerWatcher = null;
+    stopPreviewPointerWatch();
+}
+
+function stopPreviewPointerWatch() {
+    previewPointerSignals?.disconnect(global.backend.get_cursor_tracker());
+    previewPointerSignals = null;
 }
 
 export function createAppIcon(metaWindow: Meta.Window, size: number) {
@@ -205,15 +205,15 @@ export class StackOverlay {
             return;
         }
 
-        // create pointerwatcher to ensure preview is removed
-        previewPointerWatcher?.remove();
-        previewPointerWatcher = PointerWatcher.getPointerWatcher().addWatch(
-            200,
+        stopPreviewPointerWatch();
+        previewPointerSignals = this.signals;
+        this.signals.connect(
+            global.backend.get_cursor_tracker(),
+            'position-invalidated',
             () => {
                 if (!this._pointerIsAtEdge()) {
                     this.removePreview();
-                    previewPointerWatcher?.remove();
-                    previewPointerWatcher = null;
+                    stopPreviewPointerWatch();
                 }
             }
         );
