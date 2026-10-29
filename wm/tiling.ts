@@ -1545,7 +1545,10 @@ export class Space extends Array<Array<Window>> {
     }
 
     /**
-     * Applies clipping to metaWindow's clone.
+     * Clips metaWindow's actor to this.monitor, but only if it would spill
+     * onto another monitor otherwise. A clip replaces the actor's paint
+     * volume, which offscreen effects (eg. rounded corners extensions) use
+     * as their framebuffer size, so a needless clip distorts them.
      */
     applyClipToClone(metaWindow: Window) {
         if (!metaWindow) {
@@ -1559,6 +1562,19 @@ export class Space extends Array<Array<Window>> {
 
         // The actor's width/height is not correct right after resize
         const b = metaWindow.get_buffer_rect();
+        const spills = Main.layoutManager.monitors.some(
+            m =>
+                m.index !== this.monitor!.index &&
+                b.x < m.x + m.width &&
+                m.x < b.x + b.width &&
+                b.y < m.y + m.height &&
+                m.y < b.y + b.height
+        );
+        if (!spills) {
+            actor.remove_clip();
+            return;
+        }
+
         const x = this.monitor!.x - b.x;
         const y = this.monitor!.y - b.y;
         const cw = this.monitor!.width;
